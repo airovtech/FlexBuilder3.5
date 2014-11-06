@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas implements="com.maninsoft.smart.formeditor.property.IFormItemPropertyView" 
+	width="100%" height="100%" fontSize="11" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:type="com.maninsoft.smart.formeditor.model.type.*" 
+	xmlns:type1="com.maninsoft.smart.formeditor.refactor.view.property.detail.type.*" 
+	xmlns:component="com.maninsoft.smart.formeditor.component.*" 
+	xmlns:property="com.maninsoft.smart.formeditor.refactor.view.property.*" 
+	xmlns:detail="com.maninsoft.smart.formeditor.refactor.view.property.detail.*" 
+	xmlns:component1="com.maninsoft.smart.formeditor.refactor.component.*" 
+	xmlns:code="com.maninsoft.smart.common.code.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.util.RefFormFieldSelWin;
+			import com.maninsoft.smart.formeditor.refactor.util.RefFormSelectWindow;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.code.CodeSelectWindow;
+			import com.maninsoft.smart.formeditor.model.func.FunctionLibrary;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormItemCommandUtil;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormListType;
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormItemLabelPlacement;
+			import mx.containers.FormItem;
+			import mx.controls.DateChooser;
+			import com.maninsoft.smart.formeditor.model.format.FormatType;
+			import com.maninsoft.smart.formeditor.model.format.FormatTypes;
+			import com.maninsoft.smart.formeditor.refactor.edit.part.FormItemEditorEditPart;
+			import flash.sampler.NewObjectSample;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import mx.formatters.DateBase;
+			import com.maninsoft.smart.formeditor.model.property.FormDateType;
+			import com.maninsoft.smart.formeditor.model.property.FormDateTypes;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+			[Bindable]
+			public var formDocument:FormDocument;
+			
+			private var formItemEditorEdiPart:FormItemEditorEditPart = new FormItemEditorEditPart();
+			
+			private var _formItem:FormEntity;
+			
+			[Bindable]
+			public function set formItem(formItem:FormEntity):void{
+				this._formItem = formItem;
+				
+				formItemEditorEdiPart.editDomain = this.editDomain;
+				formItemEditorEdiPart.formItemEditor = this;
+				formItemEditorEdiPart.formEntityModel = this._formItem;				
+				
+				formatTypeArray = FormatTypes.getEnableFormatTypeArray(this._formItem);
+//				this.labelDetailBtn.selected = false;
+//				this.typeDetailBtn.selected = false;
+//				this.formatDetailBtn.selected = false;
+				
+				refreshVisual();
+			}
+			
+			public function get formItem():FormEntity{
+				return this._formItem;
+			}
+			
+			[Bindable]
+			private var formItemType:FormItemType;
+			
+//			[Bindable]
+//			private var formItemFormat:FormItemFormat;
+
+			/***************************화면*****************************/
+			public function refreshVisual():void{
+				formItemType = this.formItem.type;		
+			}						
+			
+			/***********************************서식***********************************/
+			// 서식에서 선택할 수 있는 서식종류
+			[Bindable]
+			private var choiceTypes:Array = [
+				{ name: "일반", type:FormItemType.TEXT},
+				{ name: "숫자", type:FormItemType.NUMBER},
+				{ name: "통화", type:FormItemType.MONEY},
+				{ name: "날짜", type:FormItemType.DATE},
+				{ name: "시간", type:FormItemType.TIME},
+				{ name: "백분율", type:FormItemType.PERCENT},
+				{ name: "기타", type:FormItemType.ETC}
+			];
+			private function selectType(type:String):void{
+				var newType:FormItemType = formItem.type.clone();
+				newType.type = type;
+				
+				FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, newType, FormEntity.PROP_TYPE);				
+			}
+			private function getTypeIndex(formItemType:FormItemType):int{
+				if(formItemType != null)
+					for(var i:int = 0 ; i < choiceTypes.length ; i++){
+						if(choiceTypes[i].type == formItemType.type)
+							return i;
+					}			
+				return -1;	
+			}
+			private function getTypeFomats(formItemType:FormItemType):Array{
+				return choiceTypes[getTypeIndex(formItemType)].formats;
+			}
+			// 서식 세부 설정창 크기
+			private static const TYPE_DETAIL_HEIGHT:int = 50;
+			
+			private function clickTypeDetail(event:Event):void{
+				if(typeDetailBtn.selected){
+					typeDetailBox.percentHeight = 100; 
+				}else{
+					typeDetailBox.height = 0;
+				}
+			}
+			/********************************날짜시간 서식****************************************/
+
+			/***********************************입력**********************************/
+			// 입력에서 선택할 수 있는 입력종류
+			private function get choiceInputTypes():ArrayCollection{
+				// 서식 선택에 따라서 고를수 있는 종류가 변함
+				return null;
+			}
+			/********************************표시형식***************************************/
+			
+			[Bindable]
+			private var formatTypeArray:Array;
+			
+			private function addUniqueItemToList(list:ArrayCollection, item:String):Boolean{
+				if(list.contains(item))
+					return false;
+				list.addItem(item);
+				return true;
+			}
+			
+			private function getFormatDetailIndex(formatType:String):int{
+				switch(formatType){
+						case FormatTypes.textInput.type:
+							return 0;
+						case FormatTypes.comboBox.type:
+							return 2;	
+						case FormatTypes.dateChooser.type:
+							return 3;		
+						case FormatTypes.numericStepper.type:
+							return 4;	
+						case FormatTypes.radioButton.type:
+							return 1;
+						case FormatTypes.refFormField.type:
+							return 6;
+						default:
+							return 5;
+				}
+			}
+
+			private function getFormatIndex(formatType:String):int{
+				for(var i:int = 0 ; i < formatTypeArray.length ; i++){
+					if(FormatType(formatTypeArray[i]).type == formatType)
+						return i;
+				}
+				return 0;
+			}
+			
+//			private function initDayBar():void{
+//				for each(var displayObj:DisplayObject in this.dayBar.getChildren()){
+//					if(displayObj is Button){
+//						Button(displayObj).setStyle('fontSize', 10);
+//		           		Button(displayObj).toggle = true;						
+//					}
+//				}
+//			}			
+
+			private function funcLabelFunc(item:Object):String{
+				if(item != null && item is XML){
+					return item.toString();
+				}
+				return "";
+			}
+			
+			private function getFuncIndex(funcLibrary:XML, expr:String):int{
+				var funcXMLList:XMLList = funcLibrary.func;
+				var funcXML:XML;
+				
+				for(var i:int = 0 ; i < funcXMLList.length() ; i++){
+					funcXML = XML(funcXMLList[i]);
+					if(funcXML.@value == expr){
+						return i;
+					}
+				}
+				
+				return -1;
+			}
+			
+			private var codeSelWin:CodeSelectWindow;
+			
+			private function codePopup():void{
+				codeSelWin = CodeSelectWindow(PopUpManager.createPopUp(this, CodeSelectWindow));
+				PopUpManager.centerPopUp(codeSelWin);
+				
+				codeSelWin.addEventListener(Event.COMPLETE, codeSelComplete);
+				
+				codeSelWin.connUserId = FormEditorConfig.userId;
+				codeSelWin.baseUrl = FormEditorConfig.baseUrl;
+			}
+			
+			private function codeSelComplete(e:Event):void{
+				var format:FormFormatInfo = this.formItem.format.clone();
+				format["refCodeCategoryId"] = codeSelWin.categoryId;
+				format["refCodeCategoryName"] = codeSelWin.categoryName;
+				
+				var command:Command = FormItemCommandUtil.updateFormItemProperty(this.formItem, format, FormEntity.PROP_FORMAT);
+
+				editDomain.getCommandStack().execute(command);
+			}
+			
+			private var refFormSelWin:RefFormFieldSelWin;
+			
+			private function refFormPopup():void{
+				refFormSelWin = RefFormFieldSelWin(PopUpManager.createPopUp(this, RefFormFieldSelWin));
+				PopUpManager.centerPopUp(refFormSelWin);
+				
+				refFormSelWin.addEventListener(Event.COMPLETE, refFormSelComplete);
+				
+				refFormSelWin.serviceClient = editDomain.serviceClient;
+				refFormSelWin.start();
+			}
+			
+			private function refFormSelComplete(e:Event):void{
+				var format:FormFormatInfo = this.formItem.format.clone();
+				format["refFormId"] = refFormSelWin.selectFormId;
+				format["refFormVer"] = refFormSelWin.selectFormVersion;
+				format["refFormName"] = refFormSelWin.selectFormModel.name;
+				format["refFormFieldId"] = refFormSelWin.selectFormFieldId;;
+				format["refFormFieldName"] = refFormSelWin.selectFormFieldName;
+				
+				var command:Command = FormItemCommandUtil.updateFormItemProperty(this.formItem, format, FormEntity.PROP_FORMAT);
+
+				editDomain.getCommandStack().execute(command);
+			}
+		]]>
+	</mx:Script>
+	<mx:Style>
+		.textInputStyle{
+			backgroundAlpha: 0;
+		}
+		.normalLabel {
+			fontFamily: MALGUN;
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+	</mx:Style>
+	<!-- left="10" right="10" bottom="10" top="10" -->
+	<mx:Box borderThickness="0.5" height="1" width="100%" backgroundColor="#666666" borderColor="#666666"/>
+	<mx:ViewStack id="propViewStack" width="100%" height="{this.height - this.propViewTab.height}" left="0" top="10" 
+		selectedIndex="0">
+		<mx:VBox label="일반" verticalGap="3" paddingLeft="10">
+			<mx:HBox>
+				<mx:Label text="이름  " />
+				<mx:TextInput id="nameInput" width="218" styleName="textInputStyle"
+					text="{formItem.name}" 
+					change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, nameInput.text, FormEntity.PROP_NAME)}" fontSize="11"/>
+			</mx:HBox>
+			<!--<mx:HBox>
+				<mx:Label text="제목  " />
+				<mx:TextInput id="titleInput" width="100%" 
+					text="{formItem.title}" fontSize="11"
+					change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, titleInput.text, FormEntity.PROP_TITLE)}" />
+				<mx:Button id="titleDetailBtn" label="..." useHandCursor="true" buttonMode="true" width="35" toggle="true"
+					change="{
+						if(titleDetailBtn.selected)
+							labelDetailBox.height=55; 
+						else 
+							labelDetailBox.height=0;
+					}"
+					creationComplete="{
+						if(titleDetailBtn.selected)
+							labelDetailBox.height=55; 
+						else 
+							labelDetailBox.height=0;
+					}"/>
+			</mx:HBox>
+			<mx:HBox id="labelDetailBox" height="94" width="100%" fontSize="15"
+				verticalGap="3">			
+				<mx:Box width="20"/>
+				<mx:VBox height="100%" width="100%">
+					<mx:CheckBox id="labelUseCheck" label="라벨표시"  selected="{formItem.labelVisible}"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, labelUseCheck.selected, FormEntity.PROP_LABEL_USE)}"/>
+					<mx:Label text="표시위치 :"  />
+					<mx:HBox id="labelPlacment"  label="표시위치" enabled="{labelUseCheck.selected}">
+						<mx:RadioButtonGroup id="labelDetailGroup"
+												selectedValue="{this.formItem.labelLoc}" 
+												change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, labelDetailGroup.selectedValue, FormEntity.PROP_LABEL_LOC)}"/>
+						<mx:RadioButton label="좌" groupName="labelDetailGroup" fontSize="11" value="{FormItemLabelPlacement.LEFT}"/>
+						<mx:RadioButton label="우" groupName="labelDetailGroup" fontSize="11" value="{FormItemLabelPlacement.RIGHT}"/>			
+						<mx:RadioButton label="위" groupName="labelDetailGroup" fontSize="11" value="{FormItemLabelPlacement.TOP}"/>
+						<mx:RadioButton label="아래" groupName="labelDetailGroup" fontSize="11" value="{FormItemLabelPlacement.BOTTOM}"/>
+					</mx:HBox>
+				</mx:VBox>			
+			</mx:HBox>-->
+			<mx:CheckBox id="hiddenUseCheck" label="항목숨김" selected="{formItem.hidden}"
+				change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, hiddenUseCheck.selected, FormEntity.PROP_HIDDEN_USE)}"/>
+			<mx:CheckBox id="readOnlyUseCheck" label="읽기전용" selected="{formItem.readOnly}"
+				change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, readOnlyUseCheck.selected, FormEntity.PROP_READONLY_USE)}"/>
+			<mx:CheckBox id="requiredUseCheck" label="필수" selected="{formItem.required}"
+				change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, requiredUseCheck.selected, FormEntity.PROP_REQUIRED_USE)}"/>
+			<mx:HBox>
+				<mx:CheckBox id="arrayUseCheck" label="복수항목"/>
+				<mx:Button id="arrayDetailBtn" label="..." useHandCursor="true" buttonMode="true" width="35" toggle="true" 
+					change="{
+						if(arrayDetailBtn.selected)
+							arrayDetailBox.height=70; 
+						else 
+							arrayDetailBox.height=0;
+					}"
+					creationComplete="{
+						if(arrayDetailBtn.selected)
+							arrayDetailBox.height=70; 
+						else 
+							arrayDetailBox.height=0;
+					}"/>
+			</mx:HBox>
+			<property:ArrayDetailEditor id="arrayDetailBox" formItem="{this.formItem}" editDomain="{this.editDomain}"/>
+			<mx:HBox>
+				<mx:Text text="함수         " width="65"/>
+				<mx:ComboBox id="funcCombo" dataProvider="{FunctionLibrary.library.general[0].func}" labelFunction="funcLabelFunc" styleName="normalLabel"
+					selectedIndex="{getFuncIndex(FunctionLibrary.library.general[0], this.formItem.expression)}"
+					change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, XML(funcCombo.selectedItem).@value, FormEntity.PROP_EXPRESSION)}">					
+				</mx:ComboBox>
+				<mx:Button label="추가"/>
+			</mx:HBox>
+			
+			<mx:HBox width="100%">	
+				<mx:Label text="표시방식" width="65"/>		
+				<mx:ComboBox id="formatCombo" styleName="normalLabel"
+					dataProvider="{formatTypeArray}" selectedIndex="{getFormatIndex(formItem.format.type)}" 
+					change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, FormatType(formatCombo.selectedItem).type, 'type')}">
+				</mx:ComboBox>	
+				<mx:Button id="formatDetailBtn" label="..." useHandCursor="true" buttonMode="true" height="25" width="35" fontSize="10" toggle="true"
+					change="{
+						if(formatDetailBtn.selected)
+							formatDetailBox.percentHeight=100; 
+						else 
+							formatDetailBox.height=0;
+					}"
+					creationComplete="{
+						if(formatDetailBtn.selected)
+							formatDetailBox.percentHeight=100; 
+						else 
+							formatDetailBox.height=0;
+					}"/>
+			</mx:HBox>		
+			<mx:ViewStack id="formatDetailBox" height="100%" width="100%"
+					selectedIndex="{getFormatDetailIndex(FormatType(formatCombo.selectedItem).type)}">
+				<mx:VBox id="textFormatDetail" height="100%" width="100%" >
+					<mx:Label text="서식 :" width="65"/>
+					<mx:HBox width="100%">					
+						<mx:ComboBox id="choiceType" labelField="name" dataProvider="{choiceTypes}" 
+							selectedIndex="{getTypeIndex(this.formItemType)}" styleName="normalLabel"
+							change="{selectType(choiceType.selectedItem.type)}"></mx:ComboBox>	
+						<mx:Button id="typeDetailBtn" label="..." useHandCursor="true" buttonMode="true" height="25" width="35" fontSize="10" toggle="true" change="clickTypeDetail(event)"/>			
+					</mx:HBox>
+					<mx:ViewStack id="typeDetailBox" height="0" width="100%" selectedIndex="{choiceType.selectedIndex}">
+						<type1:TypeDetailView id="textDetail" formItemType="{this.formItemType}" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, textDetail.changeFormItemType, FormEntity.PROP_TYPE)}"/>
+						<type1:NumberTypeDetailView id="numberDetail" formItemType="{this.formItemType}" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, numberDetail.changeFormItemType, FormEntity.PROP_TYPE)}"/>
+						<type1:MoneyTypeDetailView id="moneyDetail" formItemType="{this.formItemType}" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, moneyDetail.changeFormItemType, FormEntity.PROP_TYPE)}"/>
+						<type1:DateTypeDetailView id="dateDetail" formItemType="{this.formItemType}" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, dateDetail.changeFormItemType, FormEntity.PROP_TYPE)}"/>
+						<type1:TimeTypeDetailView id="timeDetail" formItemType="{this.formItemType}" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, timeDetail.changeFormItemType, FormEntity.PROP_TYPE)}"/>
+						<type1:PercentTypeDetailView id="percentDetail" formItemType="{this.formItemType}" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, formItem, percentDetail.changeFormItemType, FormEntity.PROP_TYPE)}"/>
+						<mx:Panel id="etcDetail" title="기타" height="100%" width="100%" fontSize="15" fontWeight="bold"  >
+							<mx:VBox height="100%" width="100%">
+							</mx:VBox>
+						</mx:Panel>		
+					</mx:ViewStack>				
+				</mx:VBox>
+				<detail:FormatStaticListEditor id="staticChoiceFormatDetail" 
+					staticItemList="{this.formItem.format.staticListExamples}"
+					change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, staticChoiceFormatDetail.staticList, 'staticListExamples')}"/>	
+				<mx:Box id="choiceFormatDetail" height="100%" width="100%" fontSize="15" fontWeight="bold"  >
+					<mx:HBox>
+						<mx:RadioButtonGroup id="choiceListType"
+							selectedValue="{this.formItem.format.listType}"
+							change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, choiceListType.selectedValue, 'listType')}"/>
+						<mx:RadioButton label="고정목록" value="{FormListType.STATIC}" groupName="choiceListType" fontSize="11"/>
+						<mx:RadioButton label="코드" value="{FormListType.CODE}" groupName="choiceListType" fontSize="11"/>
+						<!--<mx:RadioButton label="폼" value="{FormListType.FORM}" groupName="choiceListType" fontSize="11"/>-->
+					</mx:HBox>
+					<mx:ViewStack id="choiceListDetail" height="100%" width="100%" 
+						selectedIndex="{(choiceListType.selectedValue == 'static')?0:(choiceListType.selectedValue == 'code')?1:0}">
+						<detail:FormatStaticListEditor id="choiceStaticChoiceFormatDetail" 
+							staticItemList="{this.formItem.format.staticListExamples}"
+							change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, choiceStaticChoiceFormatDetail.staticList, 'staticListExamples')}"
+							height="100%" width="100%"/>	
+						<mx:Canvas height="100%" width="100%">					
+							<mx:Text x="0" y="0" height="30"
+								text="{'코드명 : ' + this.formItem.format.refCodeCategoryName}"/>
+							<mx:Button x="0" y="40" label="설정" click="{codePopup()}" styleName="normalLabel"/>
+						</mx:Canvas>
+						<!--<mx:VBox height="100%" width="100%" verticalGap="3">					
+							<mx:Text text="폼"/>
+						</mx:VBox>	-->
+					</mx:ViewStack>
+				</mx:Box>
+				<mx:Box id="dateFormatDetail" height="100%" width="100%" fontSize="15" >
+					<mx:VBox>
+						<mx:Text text="선택불가 요일 : " />
+						<mx:HBox horizontalGap="0" fontSize="11">
+							<mx:Button id="sunUseCheck" width="35" height="24" label="일" toolTip="선택하시면 달력에서 일요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.sunNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, sunUseCheck.selected, 'sunNotUse')}"/>                   
+							<mx:Button id="monUseCheck" width="35" height="24" label="월" toolTip="선택하시면 달력에서 월요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.monNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, monUseCheck.selected, 'monNotUse')}"/>
+							<mx:Button id="tueUseCheck" width="35" height="24" label="화" toolTip="선택하시면 달력에서 화요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.tueNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, tueUseCheck.selected, 'tueNotUse')}"/>
+							<mx:Button id="wedUseCheck" width="35" height="24" label="수" toolTip="선택하시면 달력에서 수요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.wedNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, wedUseCheck.selected, 'wedNotUse')}"/>                   
+							<mx:Button id="thuUseCheck" width="35" height="24" label="목" toolTip="선택하시면 달력에서 목요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.thuNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, thuUseCheck.selected, 'thuNotUse')}"/>
+							<mx:Button id="friUseCheck" width="35" height="24" label="금" toolTip="선택하시면 달력에서 금요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.friNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, friUseCheck.selected, 'friNotUse')}"/>
+							<mx:Button id="satUseCheck" width="35" height="24" label="토" toolTip="선택하시면 달력에서 토요일을 선택할 수 없습니다." toggle="true" selected="{this.formItem.format.satNotUse}"
+								change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, satUseCheck.selected, 'satNotUse')}"/>
+						</mx:HBox>
+	<!--					<mx:ButtonBar id="dayBar" borderStyle="solid" horizontalGap="0" fontSize="11" creationComplete="{initDayBar()}"
+							buttonWidth="35" buttonHeight="24">
+					        <mx:dataProvider>
+					            <mx:Array>
+									<mx:Object label="일" toolTip="선택하시면 달력에서 일요일을 선택할 수 없습니다." selected="true"/>                   
+									<mx:Object label="월" toolTip="선택하시면 달력에서 월요일을 선택할 수 없습니다." selected="true"/>
+									<mx:Object label="화" toolTip="선택하시면 달력에서 화요일을 선택할 수 없습니다." selected="true"/>
+									<mx:Object label="수" toolTip="선택하시면 달력에서 수요일을 선택할 수 없습니다." selected="true"/>                   
+									<mx:Object label="목" toolTip="선택하시면 달력에서 목요일을 선택할 수 없습니다." selected="true"/>
+									<mx:Object label="금" toolTip="선택하시면 달력에서 금요일을 선택할 수 없습니다." selected="true"/>
+									<mx:Object label="토" toolTip="선택하시면 달력에서 토요일을 선택할 수 없습니다." selected="true"/>
+					            </mx:Array>
+					        </mx:dataProvider>
+					    </mx:ButtonBar>	-->
+					</mx:VBox>				
+					<mx:CheckBox id="formatYearUseCheck" label="연도 선택표시" fontWeight="bold" selected="{this.formItem.format.yearUse}"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, formatYearUseCheck.selected, 'yearUse')}"/>
+				</mx:Box>	
+				<mx:VBox id="numberFormatDetail" height="100%" width="100%" fontSize="15" fontWeight="bold"  >
+					<mx:CheckBox id="formatMaxNumUseCheck" label="최대값 : " selected="{this.formItem.format.maxNumUse}"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, formatMaxNumUseCheck.selected, 'maxNumUse')}"/>						
+					<mx:TextInput id="formatMaxNum" text="{this.formItem.format.maxNum}" styleName="textInputStyle"
+						enabled="{formatMaxNumUseCheck.selected}"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, formatMaxNum.text, 'maxNum')}"/>	
+					<mx:CheckBox id="formatMinNumUseCheck" label="최소값 : " selected="{this.formItem.format.minNumUse}"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, formatMinNumUseCheck.selected, 'minNumUse')}"/>
+					<mx:TextInput id="formatMinNum" text="{this.formItem.format.minNum}" styleName="textInputStyle"
+						enabled="{formatMinNumUseCheck.selected}"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, formatMinNum.text, 'minNum')}"/>	
+					<mx:Text text="증감값 : " />
+					<mx:TextInput id="formatStepNum" text="{this.formItem.format.stepSize}" styleName="textInputStyle"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, formatStepNum.text, 'stepSize')}"/>
+				</mx:VBox>	
+				<mx:Box id="blankDetail" height="100%" width="100%" fontSize="15" />
+				<mx:Box id="refFormDetail" height="100%" width="100%" fontSize="11">
+					<mx:VBox>
+						<mx:Text
+								text="{'참조대상 : ' + ((this.formItem.format.refFormName == null)?'없음':this.formItem.format.refFormName + '.' + this.formItem.format.refFormFieldName)}"/>
+						<mx:Button label="설정" click="{refFormPopup()}"/>
+					</mx:VBox>
+				</mx:Box>
+			</mx:ViewStack>
+		</mx:VBox>
+		<mx:VBox label="글꼴" verticalGap="3">
+			<mx:HBox>
+				<mx:Label text="제목 글꼴 : " />
+				<mx:Button id="titleTextDetailBtn" label="..." useHandCursor="true" buttonMode="true" width="35" toggle="true"
+					change="{
+						if(titleTextDetailBtn.selected)
+							titleTextStyle.height=200; 
+						else 
+							titleTextStyle.height=0;
+					}"
+					creationComplete="{
+						if(titleTextDetailBtn.selected)
+							titleTextStyle.height=200; 
+						else 
+							titleTextStyle.height=0;
+					}"/>	
+			</mx:HBox>				
+			<component1:TextProperty id="titleTextStyle" model="{this.formItem.titleTextStyle}"
+				dataChange="{FormItemCommandUtil.executeUpdateFormItemProperty(editDomain, formItem, titleTextStyle.getNewModel(), FormEntity.PROP_TITLE_TEXTSTYLE)}"/>
+			<mx:HBox>
+				<mx:Label text="내용 글꼴 : " />	
+				<mx:Button id="contentsTextDetailBtn" label="..." useHandCursor="true" buttonMode="true" width="35" toggle="true"
+					change="{
+						if(contentsTextDetailBtn.selected)
+							contentsTextStyle.height=200; 
+						else 
+							contentsTextStyle.height=0;
+					}"
+					creationComplete="{
+						if(contentsTextDetailBtn.selected)
+							contentsTextStyle.height=200; 
+						else 
+							contentsTextStyle.height=0;
+					}"/>	
+			</mx:HBox>				
+			<component1:TextProperty id="contentsTextStyle" model="{this.formItem.contentsTextStyle}"
+				dataChange="{FormItemCommandUtil.executeUpdateFormItemProperty(editDomain, formItem, contentsTextStyle.getNewModel(), FormEntity.PROP_CONTENTS_TEXTSTYLE)}"/>
+		</mx:VBox>
+		<mx:VBox label="그리기" verticalGap="3">
+			<mx:HBox>
+				<mx:Label text="크기 : " />
+				<mx:Button id="sizeDetailBtn" label="..." useHandCursor="true" buttonMode="true" width="35" toggle="true"
+					change="{
+						if(sizeDetailBtn.selected)
+							sizeDetailBox.height=97; 
+						else 
+							sizeDetailBox.height=0;
+					}"
+					creationComplete="{
+						if(sizeDetailBtn.selected)
+							sizeDetailBox.height=97; 
+						else 
+							sizeDetailBox.height=0;
+					}"/>
+			</mx:HBox>
+			<mx:HBox id="sizeDetailBox" height="97" width="100%" 
+				verticalGap="3">
+				<mx:Box width="20"/>
+				<mx:Canvas height="100%" width="100%">
+					<mx:Label x="10" y="7" text="제목 크기 : "/>
+					<mx:Label x="10" y="37" text="내용 크기 : "/>
+					<mx:Label x="10" y="66" text="높       이 : "/>			
+					<mx:TextInput id="labelSizeStepper" x="83" y="6" text="{formItem.labelWidth}" width="50" styleName="textInputStyle"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, labelSizeStepper.text, FormEntity.PROP_LABEL_WIDTH)}"/>
+					<mx:TextInput id="contentsSizeStepper" x="83" y="35" text="{formItem.contentWidth}" width="50" styleName="textInputStyle"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, contentsSizeStepper.text, FormEntity.PROP_CONTENT_WIDTH)}"/>
+					<mx:TextInput id="heightSizeStepper" x="83" y="65" text="{formItem.height}" width="50" styleName="textInputStyle"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, heightSizeStepper.text, FormEntity.PROP_HEIGHT)}"/>
+				</mx:Canvas>			
+			</mx:HBox>
+			<mx:HBox>
+				<mx:Label text="그리기 설정 : " />
+				<mx:Button id="graphicDetailBtn" label="..." useHandCursor="true" buttonMode="true" width="35" toggle="true"
+					change="{
+						if(graphicDetailBtn.selected)
+							graphicDetailBox.height=380; 
+						else 
+							graphicDetailBox.height=0;
+					}"
+					creationComplete="{
+						if(graphicDetailBtn.selected)
+							graphicDetailBox.height=380; 
+						else 
+							graphicDetailBox.height=0;
+					}"/>
+			</mx:HBox>
+			<mx:HBox id="graphicDetailBox" 
+				verticalGap="3">
+				<mx:Label text=" 색  : " />
+				<mx:ColorPicker id="colorPicker" width="49" selectedColor="{this.formItem.bgColor}" 
+					close="{FormItemCommandUtil.executeUpdateFormItemProperty(editDomain, formItem, colorPicker.selectedColor, FormEntity.PROP_COLOR_BACKGROUND)}"/>							
+			</mx:HBox>
+		</mx:VBox>
+	</mx:ViewStack>
+	<mx:TabBar id="propViewTab" dataProvider="{propViewStack}" height="25" bottom="0" styleName="normalLabel"/>
+</mx:Canvas>

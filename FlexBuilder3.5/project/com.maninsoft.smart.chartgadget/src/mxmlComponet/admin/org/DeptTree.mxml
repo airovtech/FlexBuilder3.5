@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="treeDataInit()">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.PopUpButton;
+			import mx.managers.PopUpManager;
+			import mx.controls.Alert;
+			import portalAs.Properties
+			
+			[Bindable]
+			public var deptId:String;
+
+			private function alert():void{
+				Alert.show(deptId);
+			}
+			private function treeDataInit():void {
+				treeInit(deptTree, Properties.basePath + "smartserver/services/common/organizationService.jsp");
+		    }
+			public function treeDataRefresh():void {
+				tree_status = "init";
+				treeDataInit();
+			}
+		    private function modifyDept(buttonType:String):void {
+		    	var pop:DeptTree_Pop = DeptTree_Pop(PopUpManager.createPopUp(this, DeptTree_Pop, true));
+		    	pop._deptId = deptId;
+		    	pop._buttonType = buttonType;
+		    	
+		    	pop.showCloseButton = true;
+		    	pop.owner = this;
+				pop.x = 120;
+				pop.y = 20;
+		    }
+		    			
+		]]>
+	</mx:Script>
+	<mx:Script source="../../../portalAs/OrgTreeUtil.as"/>
+    <mx:Metadata>
+        [Event(name="custormItemClick", type="portalAs.CustormEvent")]
+    </mx:Metadata>	
+	<mx:Tree id="deptTree" x="0" y="0" width="100%" height="100%" labelField="@name" 
+		alternatingItemColors="[#FFFFFF,#EEEEEE]" showRoot="false"  
+		itemClick="this.treeSelect()"  itemOpening="this.treeOpening(event)"/>	
+		
+	<mx:HBox x="0" y="0" width="100%" height="26" horizontalAlign="right" 
+		paddingRight="2" paddingLeft="2" paddingTop="2" paddingBottom="2">
+		<mx:Button label="+" height="20" click="modifyDept('create')" width="25" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1"/>
+		<mx:Button label="-" height="20" click="modifyDept('delete')" width="25" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1"/>
+	</mx:HBox>
+</mx:Canvas>

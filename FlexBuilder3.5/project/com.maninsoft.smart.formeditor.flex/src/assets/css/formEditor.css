@@ -1,0 +1,428 @@
+/* CSS file */
+
+.searchButton {
+	skin:Embed(source="assets/icon/search.gif");
+}
+.mergeCellButton {
+	skin: Embed(source="assets/icon/tbtn_celmerge.png");
+}
+.removeFieldButton {
+	skin: Embed(source="assets/icon/remove.gif");
+}
+.importButton {
+	skin: Embed(source="assets/icon/import.gif");
+}
+.exportButton {
+	skin: Embed(source="assets/icon/export.gif");
+}
+.browseButton {
+	skin: Embed(source="assets/icon/browse.gif");
+}
+.inMappingExistButton{
+	skin: Embed(source="assets/swf/fe_skin.swf", symbol="InMap_over");
+}
+.outMappingExistButton{
+	skin: Embed(source="assets/swf/fe_skin.swf", symbol="OutMap_over");
+}
+.dialog {
+	headerColors: #000000, #888888;
+	borderColor: #888888;
+	borderStyle: solid;
+	borderThickness: 1;
+	fontSize: 11;
+	paddingLeft: 10;
+	paddingRight: 10;
+	paddingTop: 10;
+	paddingBottom: 10;
+}
+.contextMenu {
+	fontSize: 11;
+	fontFamily: "Tahoma";
+}
+
+.fit {
+	percentWidth: 100;
+	percentHeight: 100;
+	paddingLeft: 0;
+	paddingRight: 0;
+	paddingTop: 0;
+	paddingBottom: 0;
+	horizontalScrollPolicy: off;
+	verticalScrollPolicy: off;
+}
+
+.formFormat {
+	percentWidth: 100;
+	percentHeight: 100;
+	fontSize: 12;
+	paddingLeft: 5;
+	paddingRight: 1;
+	paddingTop: 2;
+	paddingBottom: 0;
+	horizontalScrollPolicy: off;
+	verticalScrollPolicy: off;
+	verticalAlign: middle;
+}
+
+.ComboBox {
+	disabledSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_upSkin");
+	downSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_downSkin");
+	overSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_overSkin");
+	upSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_upSkin");
+	
+	dropDownStyleName: "comboDropDown";
+	fontSize: 9;
+	fontFamily : "Tahoma";
+	fontWeight: normal;
+}
+.ComboBoxs {
+	disabledSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_upSkin");
+	downSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_downSkin");
+	overSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_overSkin");
+	upSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="ComboBoxArrow_upSkin");
+	
+	dropDownStyleName: "comboDropDown";
+	fontSize: 9;
+	fontFamily : "Tahoma";
+	fontWeight: normal;
+}
+.comboDropDown {
+	paddingTop: 1;
+	fontSize: 9;
+	fontFamily : "Tahoma";
+	fontWeight: normal;
+}
+.formEditorBase {
+	fontFamily: "Tahoma";
+	/*backgroundColor: #F9F6F6;*/
+	backgroundColor: #FFFFFF;
+}
+
+.formDocumentView {
+	fontFamily: "Tahoma";
+	fontSize: 12;
+	backgroundColor: #FFFFFF;
+}
+
+.formPallete {
+	backgroundColor: #F9F6F6;
+}
+.formLayoutGrid {
+	
+	/*
+	 borderStyle : "solid";
+	 */
+}
+.formLayoutGridRow {
+	/*
+	borderStyle : "inset";
+	*/
+}
+.formLayoutGridItem {
+	borderStyle : "solid";
+}
+/* dialog */	
+.formEditorDialogTitle {
+}
+.formEditorDialogSubmit {
+}
+.formEditorDialogStepper {
+}
+.staticListAUp{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_over");	
+	disabledSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_up");
+	backgroundColor: #a5a5a5;
+	width : 12;
+	height : 12;
+}
+.staticListUp{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_over");	
+	disabledSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_up");
+	backgroundColor: #a5a5a5;
+	width : 12;
+	height : 12;
+}
+.staticListRemove{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_over");	
+	disabledSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_up");
+	backgroundColor: #a5a5a5;
+	width : 12;
+	height : 12;
+}
+.staticListDown{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_over");
+	disabledSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_up");	
+	backgroundColor: #a5a5a5;
+	width : 12;
+	height : 12;
+}
+.staticListADown{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_over");
+	disabledSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_up");	
+	backgroundColor: #a5a5a5;
+	width : 12;
+	height : 12;
+}
+.formFieldView{
+	paddingLeft : 0;
+	paddingRight : 0;
+	paddingTop : 0;
+	paddingBottom: 0;
+}
+.formTextInputLabel{
+	fontSize: 11;
+	verticalAlign: "middle";
+	fontFamily:"Tahoma";
+	paddingTop: 4;
+}
+.formTextInputLabelBox{
+	verticalAlign:"middle";
+	backgroundColor: #ececec;
+	horizontalGap:0;
+
+}
+.formTextInputLabelReqBox{
+	backgroundColor: #FF8544;
+}
+
+.myHeaderSelectStyles {
+    color: #0000FF;
+    font-weight: bold;
+    font-size: 11;
+    fontFamily : "Tahoma";
+}
+
+.myHeaderBasicStyles {
+	color: black;
+    font-weight: normal;
+    font-size: 11;
+    fontFamily : "Tahoma";
+}
+
+.formFileBtn{
+	fontSize:11;
+}
+/* grid */
+.colPreAddBtn{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="ColPreAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="ColPreAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="ColPreAdd_over");	
+	backgroundColor: #a5a5a5;
+}
+.colNextAddBtn{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="ColNextAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="ColNextAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="ColNextAdd_over");	
+	backgroundColor: #a5a5a5;
+}
+.colRemoveBtn{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_over");	
+	backgroundColor: #a5a5a5;
+}
+
+.rowPreAddBtn{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowPreAdd_over");	
+	backgroundColor: #a5a5a5;
+}
+.rowNextAddBtn{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="RowNextAdd_over");	
+	backgroundColor: #a5a5a5;
+}
+.rowRemoveBtn{
+	downSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_down");
+	upSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_up");	
+	overSkin: Embed(source="assets/swf/fe_skin.swf", symbol="Del_over");	
+	backgroundColor: #a5a5a5;
+}
+/* */
+.formGridVerticalHeader{
+}
+.formGridHorizontalHeader{
+}
+.formGridVerticalHeaderBtn{
+	backgroundColor: #a5a5a5;
+}
+.formGridHorizontalHeaderBtn{
+	backgroundColor: #a5a5a5;
+}
+/**/
+.layoutToolBar{
+	verticalAlign : "middle";
+	backgroundColor : #E9EEEE;
+}
+.formGridLayoutMerge{
+	icon: Embed(source='assets/icon/tbtn_celmerge.png');
+	paddingLeft: 0;
+	paddingRight: 0;
+	paddingTop: 0;
+	paddingBottom: 0;
+}
+.formGridLayoutMode{
+	icon: Embed(source='assets/icon/field_on.png');
+}
+.formGridLayoutMode2{
+	icon: Embed(source='assets/icon/move_on.png');
+}
+/**/
+.formPropertyEdit{
+}
+.formNonePropEditor{
+	backgroundColor: #E4E4E4;
+}
+.formDocPropEditor{
+	backgroundColor: #E4E4E4;
+}
+.formFieldPropEditor{
+	backgroundColor: #E4E4E4;
+}
+.formGridPropEditor{
+	backgroundColor: #E4E4E4;
+}
+.propTextInputEdit{
+	fontSize : 10;
+}
+.propComboEdit{
+}
+.propCheckBoxEdit{
+}
+.propProperty{
+	horizontalGap: 1;
+}
+.propLabel{
+	/* width:"100%"; */
+	/*width:144;*/
+	fontSize : 10;
+	/*backgroundColor : #C6E0FB;*/
+	textAlign : 'left';
+}
+.propLabelCon{
+	padding-left : 1;
+	padding-right : 1;
+	padding-top : 1;
+	padding-bottom : 1;
+}
+.propValue{
+	/*width:400;*/
+	backgroundColor : #D0D1D3;
+}
+.propForm{
+	fontSize : 10;
+	paddingBottom:0;
+	paddingTop:0;
+	paddingLeft:5;
+	paddingRight:5;
+}
+.propFormItem{
+	/*backgroundColor : #D0D1D3;*/
+	fontSize : 10;
+	/*backgroundColor : #FFFFFF;*/
+	paddingLeft:5;
+}
+.propContents{
+	fontSize : 10;
+}
+.propDetailBtnEdit{
+}
+.propBtnEdit{
+}
+.propTitle{
+	fontSize: 12;
+	fontFamily: "Tahoma";
+}
+
+.mappingFormCondGridItem{
+	verticalAlign : "middle";
+	horizontalAlign : "center";
+	
+	paddingBottom  : 0;
+	paddingLeft : 0;
+	paddingRight : 0;
+	paddingTop : 0;
+}
+
+.formScrollBar
+{
+	downArrowDisabledSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowDown_disabledSkin");
+	downArrowDownSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowDown_downSkin");
+	downArrowOverSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowDown_overSkin");
+	downArrowUpSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowDown_upSkin");
+	thumbDownSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollThumb_downSkin");
+	thumbIcon: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollBar_thumbIcon");
+	thumbOverSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollThumb_overSkin");
+	thumbUpSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollThumb_upSkin");
+	upArrowDisabledSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowUp_disabledSkin");
+	upArrowDownSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowUp_downSkin");
+	upArrowOverSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowUp_overSkin");
+	upArrowUpSkin: Embed(source="assets/swf/AeonGraphical.swf", symbol="pScrollArrowUp_upSkin");
+    trackColors: #FFFFFF, #FFFFFF;	
+    trackSkin: Embed("assets/icon/blankScrollTrack.png");
+}
+.formPalleteBox{
+	borderThicknessLeft : 0;
+	borderThicknessRight : 0;
+	borderThicknessBottom : 0;
+	shadowDistance : 0;
+}
+/**/
+.titleStyle {
+	fontSize: 11px;
+}
+.titleWin {	
+	headerColors : #000000, #888888;
+	cornerRadius : "10";
+	paddingTop : 5;
+	borderColor : #888888;
+	borderThickness : "1";
+	fontSize : 11;
+
+/*shadowDirection : "left";
+	shadowDistance : "8";*/
+}
+
+.selectFormFieldDG{
+	backgroundColor: #ffffff;
+	alternatingItemColors: #ffffff,#ffffff;
+	borderStyle: none;
+	verticalGridLines: false;
+	horizontalGridLines: false;
+}
+
+.selectRefFormIdTree{
+	verticalAlign: middle;
+}
+
+.mappingExpressionDG{
+	backgroundColor: #ffffff;
+	alternatingItemColors: #ffffff,#ffffff;
+	borderStyle: none;
+	textAlign: left;
+	verticalGridLines: false;
+	horizontalGridLines: true;
+	headerColors: #E0EAF3, #E0EAF3;
+}
+
+.mappingFieldMappingDG{
+	backgroundColor: #ffffff;
+	alternatingItemColors: #ffffff,#ffffff;
+	borderStyle: none;
+	textAlign: left;
+	verticalGridLines: false;
+	horizontalGridLines: true;
+	headerColors: #E0EAF3, #E0EAF3;
+}

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:schema="com.maninsoft.smart.formeditor.refactor.simple.view.schema.*" 
+	xmlns:view="com.maninsoft.smart.formeditor.refactor.simple.view.*" cornerRadius="10"
+	creationComplete="{init()}">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.event.CommandEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormDocumentCommandUtil;
+			import com.maninsoft.smart.formeditor.assets.IconLibrary;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.event.FormPropertyEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			
+			[Bindable]
+			public var swForm:SWForm;
+			
+			// 폼 오픈 
+			public function openForm(swForm:SWForm):void{
+				if(this.swForm != swForm){
+					this.swForm = swForm;
+					formEditor.load(this.swForm);
+					
+					registerFormEditor();
+				}
+
+			}
+			
+			private function init():void{
+				registerFormEvent();
+			}
+			
+			private function registerFormEvent():void{
+				this.addEventListener(FormEditEvent.SELECT_FORM_DOCUMENT, selectFormDocument, true);
+				this.addEventListener(FormEditEvent.SELECT_FORM_ITEM, selectFormItem, true);
+				this.addEventListener(FormEditEvent.SELECT_FORM_ITEMS, selectFormItems, true);
+				this.addEventListener(FormPropertyEvent.UPDATE_FORM_STRUCTURE, updateFormStructure, true);	
+				
+			}
+			
+			private function registerMsgTxt():void{
+				MsgUtil.resultTxt = this.msgTxt;
+			}
+			
+			private function registerFormEditor():void{
+				this.formEditor.addEventListener(FormEditEvent.LOAD_FORM_DOCUMENT, 
+					function (e:Event):void{
+						refreshBasicVisual();
+						registerCommandStack();
+					});
+			}
+			
+			private function registerCommandStack():void{
+					
+				this.formEditor.editDomain.getCommandStack().addEventListener(CommandEvent.EXECUTE_COMMAND, changeCommandListener); 
+				this.formEditor.editDomain.getCommandStack().addEventListener(CommandEvent.UNDO_COMMAND, changeCommandListener);
+				this.formEditor.editDomain.getCommandStack().addEventListener(CommandEvent.REDO_COMMAND, changeCommandListener);
+			}
+			
+			private function changeCommandListener(e:Event):void{
+				refreshBasicVisual();
+			}
+			
+			private function refreshBasicVisual():void{
+				formTitleTxt.text = ((this.formEditor.editDomain != null && this.formEditor.editDomain.getCommandStack().isDirty())?dirtyMark:'') + this.formEditor.formModel.name;
+				MsgUtil.clearMsg();
+			}
+			/**************************폼 문서 변경****************************************/
+			// 폼 문서 오픈 
+			private function selectFormDocument(event:FormEditEvent):void{
+				var formResources:ArrayCollection = new ArrayCollection();
+				formResources.addItem(event.formDocument);				
+				formEditor.selectFormResource(formResources);
+				
+//				formPropertyEditor.load(this.formEditor.formModel); 
+			}
+			// 폼 아이템 오픈 
+			private function selectFormItem(event:FormEditEvent):void{
+				var formResources:ArrayCollection = new ArrayCollection();
+				formResources.addItem(event.formItem);				
+				formEditor.selectFormResource(formResources);
+				
+//				formPropertyEditor.load(this.formEditor.formModel, event.formItem);
+			}
+			// 멀티 폼 아이템 오픈 
+			private function selectFormItems(event:FormEditEvent):void{
+				formEditor.selectFormResource(event.formItems);
+				
+				// TODO 멀티 실렉션 프로퍼티 처리
+			}
+			// 멀티 폼 아이템 오픈 
+			private function updateFormStructure(event:FormPropertyEvent):void{
+				formEditor.refreshVisual();
+			}
+			
+			public function discloseView():void {
+//				if (formSchemaStack.selectedIndex == 0) {
+//					resTreeShrink.end();
+//					formGrow.end();
+//					resTreeShrink.play();
+//					formGrow.play();
+//					formSchemaStack.selectedIndex = 1;
+////					resourceArea.setStyle("horizontalAlign", "left");
+//				} else {
+//					resTreeGrow.end();
+//					formShrink.end();
+//					resTreeGrow.play();
+//					formShrink.play();
+//					formSchemaStack.selectedIndex = 0;
+////					resourceArea.setStyle("horizontalAlign", "right");
+//				}
+			}	
+			
+			private const dirtyMark:String = "*";
+		]]>
+	</mx:Script>
+	<!--<mx:Resize id="resTreeShrink" widthTo="{20}" target="{formSchemaStack}" duration="0"/>
+	<mx:Resize id="resTreeGrow" widthTo="{139}" target="{formSchemaStack}" duration="0"/>-->
+	
+	<mx:Resize id="formShrink" widthTo="{584}" target="{formEditor}" duration="0"/>
+	<mx:Resize id="formGrow" widthTo="{703}" target="{formEditor}" duration="0"/>
+	
+	<!--<mx:HBox id="titleBox" left="10" right="10" top="5" height="30" backgroundColor="#E9975A" horizontalAlign="right" verticalAlign="middle">
+		
+
+	</mx:HBox>-->
+	<mx:HBox top="5" left="10" right="340" height="24"
+		backgroundColor="#FFFFFF" horizontalAlign="left" horizontalGap="2" verticalAlign="middle">
+		<mx:Image source="{FormEditorAssets.formIcon}" width="18" height="18"/>
+		<mx:Label id="formTitleTxt" fontSize="14" styleName="normalLabel"/>				
+	</mx:HBox>
+	<mx:Box top="5" right="190" width="150" height="24" verticalAlign="middle">
+		<mx:Text id="msgTxt" width="100%"
+			fontFamily="Arial" textAlign="left" fontSize="11" creationComplete="{registerMsgTxt()}" 
+			><!--   -->
+			
+		</mx:Text>
+	</mx:Box>
+	<mx:TabBar id="formTabBar" top="5" right="10" width="177" height="24"
+		dataProvider="{formEditor.formEditorView}"
+			tabStyleName="nomalLabel" selectedTabTextStyleName="nomalLabel"><!--  -->
+	</mx:TabBar>
+	<mx:Box top="30" left="10" right="10" height="6"
+		backgroundColor="#E9975A"/>
+	<!--<mx:ViewStack id="formSchemaStack" left="10" top="40" bottom="14" width="139" height="585" cornerRadius="10" borderColor="#3C96DC" borderStyle="solid" borderThickness="2">
+		<view:SimpleSchemaEditor id="formSchemaArea"
+		editDomain="{this.formEditor.editDomain}" formDocument="{this.formEditor.formModel}" swForm="{this.swForm}"
+		close="{discloseView()}"/>
+		<mx:Canvas>
+			<mx:Image source="@Embed(source='assets/play.PNG')" useHandCursor="true" buttonMode="true" 
+				mouseChildren="false" id="openSchemaBtnRight" left="0" top="5"
+				click="{discloseView()}" />
+		</mx:Canvas>
+	</mx:ViewStack>-->
+
+	<view:FormDocumentViewer id="formEditor" left="10" right="10" top="40" bottom="14" height="585" creationComplete="{registerFormEditor()}"/>
+		 <!-- cornerRadius="10" borderStyle="solid" borderThickness="2" width="584" -->
+	<!--<mx:VBox right="5" top="40">
+		<mx:Button id="minusFormDocSacle" label="-" toolTip="10% 줄이기"
+			click="{minusScale()}" width="20"/> 
+		<mx:VSlider id="formDocumentScale" right="10" value="{this.formEditor.formModel.scalePercent / 100}" 
+			change="{FormDocumentCommandUtil.executeUpdateFormDocumentProperty(this.formEditor.editDomain, this.formEditor.formModel, 
+				formDocumentScale.value * 100, FormDocument.PROP_SCALE)}" 
+			allowTrackClick="true" minimum="0.5" maximum="2" liveDragging="true"/>
+		<mx:Button id="plusFormDocSacle" label="+" toolTip="10% 늘이기"
+			click="{plusScale()}" width="20"/>
+	</mx:VBox>-->
+</mx:Canvas>

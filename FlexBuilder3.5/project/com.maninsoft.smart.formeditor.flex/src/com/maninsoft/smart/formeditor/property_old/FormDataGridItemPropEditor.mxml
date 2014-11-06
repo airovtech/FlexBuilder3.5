@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox implements="com.maninsoft.smart.formeditor.property.IFormPropertyEditor" 
+	label="{resourceManager.getString('FormEditorETC', 'tableItemPropertiesText')}" 
+	width="100%" height="100%" fontSize="9" styleName="formFieldPropEditor" 
+	creationComplete="{refreshVisual()}" creationPolicy="all" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:controls="com.maninsoft.smart.common.controls.*" 
+	xmlns:detail="com.maninsoft.smart.formeditor.refactor.view.property.detail.*" 
+	xmlns:property="com.maninsoft.smart.formeditor.view.property.*" xmlns:util="com.maninsoft.smart.formeditor.view.util.*">
+	<mx:Style>
+		.textInputStyle{
+			backgroundAlpha: 0;
+		}
+		.normalLabel {
+			fontFamily: MALGUN;
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import flash.utils.describeType;
+			import com.maninsoft.smart.formeditor.property.part.FormItemPropController;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.code.CodeSelectWindow;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormItemCommandUtil;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import com.maninsoft.smart.formeditor.model.format.FormatType;
+			import com.maninsoft.smart.formeditor.model.format.FormatTypes;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.collections.ArrayCollection;
+			
+			private var _editDomain:FormEditDomain;
+			private var _selectModel:ISelectableModel;
+			
+			public function get editDomain():FormEditDomain{
+			    return this._editDomain;
+			}
+			public function set editDomain(editDomain:FormEditDomain):void{
+			    this._editDomain = editDomain;
+			}
+			public function get selectModel():ISelectableModel{
+			    return this._selectModel;
+			}
+			public function set selectModel(selectModel:ISelectableModel):void{
+			    this._selectModel = selectModel;
+			    
+			    this.formItem = this._selectModel as FormEntity;
+			}
+			
+			private var formItem:FormEntity;
+			
+			private var _formItemPropController:FormItemPropController;
+			
+			public function set formItemPropController(formItemPropController:FormItemPropController):void{
+			    this._formItemPropController = formItemPropController;
+			}
+			public function get formItemPropController():FormItemPropController{
+			    return this._formItemPropController;
+			}
+			
+			public function registerViewer():void{
+				if(formItemPropController == null){
+					this.formItemPropController = new FormItemPropController();
+					this.formItemPropController.editDomain = this.editDomain;
+				}
+				this.formItemPropController.formView = this;
+				this.formItemPropController.formEntityModel = this.formItem;
+				
+			}
+			
+			/***************************화면*****************************/
+			public function refreshVisual():void{
+				if(this.formItem != null && this.initialized){
+					this.registerViewer();
+					
+					this.formatTypeArray = FormatTypes.getDataGridFormatTypeArray();
+					this.childWidth.value = this.formItem.contentWidth;
+//					this.alignCombo.selectedIndex = getAlignIndex(this.formItem.contentsTextStyle.align);
+					
+					this.formatComboBox.dataProvider = this.formatTypeArray;
+					
+					this.nameInput.text = this.formItem.name;
+					this.textAlignComboBox.selectItem(this.formItem.textAlign);
+					this.formatComboBox.selectedIndex = getFormatIndex(this.formItem.format.type);
+					refreshFormatType(FormatType(formatComboBox.selectedItem));
+					
+					this.comboBoxList.staticItemList = this.formItem.format.staticListExamples;
+					
+					this.formRefProperty.field = this.formItem;
+					this.formRefProperty.refresh();
+					
+					this.currencyCodeComboBox.selectedItem = this.formItem.format.currencyCode;
+				}
+			}
+			
+			/********************************표시형식***************************************/
+			
+			private var formatTypeArray:Array;
+			
+			private function setFormatType(event:Event = null):void {
+				var formatType:FormatType = FormatType(formatComboBox.selectedItem);
+				var type:String = formatType.type;
+				
+				FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, type, 'type');
+				
+				refreshFormatType(formatType, true);
+			}
+			private function refreshFormatType(formatType:FormatType, changed:Boolean = false):void {
+				var type:String = formatType.type;
+				
+//				var isFixedWidth:Boolean = type == "dateChooser" || type == "timeField" || type == "userField" || type == "percentInput";
+				var isFixedWidth:Boolean = false;
+				if ((changed || isFixedWidth) && this.formItem.contentWidth != formatType.contentWidth)
+					this.formItem.contentWidth = formatType.contentWidth;
+				if (isFixedWidth) {
+					this.childWidth.enabled = false;
+				} else {
+					this.childWidth.enabled = true;
+				}
+				
+				this.formatPropScope.selectedIndex = getFormatDetailIndex(type);
+			}
+			
+			private function getFormatDetailIndex(formatType:String):int{
+				switch(formatType){
+						case FormatTypes.textInput.type:
+							return 0;
+						case FormatTypes.comboBox.type:
+							return 1;
+						case FormatTypes.dateChooser.type:
+							return 2;		
+						case FormatTypes.numericStepper.type:
+							return 3;	
+						case FormatTypes.refFormField.type:
+							return 4;
+						case FormatTypes.currencyInput.type:
+							return 5;
+						default:
+							return 6;
+				}
+			}
+			
+			private function getFormatIndex(formatType:String):int{
+				for(var i:int = 0 ; i < formatTypeArray.length ; i++){
+					if(FormatType(formatTypeArray[i]).type == formatType)
+						return i;
+				}
+				return 0;
+			}
+			
+			private var codeSelWin:CodeSelectWindow;
+			
+			private function codePopup():void{
+				codeSelWin = CodeSelectWindow(PopUpManager.createPopUp(this, CodeSelectWindow));
+				PopUpManager.centerPopUp(codeSelWin);
+				
+				codeSelWin.addEventListener(Event.COMPLETE, codeSelComplete);
+				
+				codeSelWin.connUserId = FormEditorConfig.userId;
+				codeSelWin.baseUrl = FormEditorConfig.baseUrl;
+			}
+			
+			private function codeSelComplete(e:Event):void{
+				var format:FormFormatInfo = this.formItem.format.clone();
+				format["refCodeCategoryId"] = codeSelWin.categoryId;
+				format["refCodeCategoryName"] = codeSelWin.categoryName;
+				
+				var command:Command = FormItemCommandUtil.updateFormItemProperty(this.formItem, format, FormEntity.PROP_FORMAT);
+
+				editDomain.getCommandStack().execute(command);
+			}
+			/*************************************************************************************************/
+			private function widthChange():void{
+				this.formItem.contentWidth = childWidth.value;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox paddingLeft="5" paddingTop="5" width="100%" height="100%" verticalScrollPolicy="off">
+		
+		<mx:VBox width="50%" styleName="propForm" verticalGap="3">
+			<mx:HBox width="100%">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'itemNameText')}" width="80"/>
+				<controls:KoreanTextInput id="nameInput" styleName="propTextInputEdit" width="100%" height="22"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, nameInput.text, FormEntity.PROP_NAME)}"/>
+			</mx:HBox>
+			<!-- height와 visible 속성을 지우면 정렬 정의 기능이 동작한다. -->
+			<mx:HBox width="100%" verticalAlign="middle" height="0" visible="false">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'alignText')}" width="80"/>
+				<util:AlignComboBox id="textAlignComboBox" width="100%"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, textAlignComboBox.selectedItem.value, FormEntity.PROP_TEXTALIGN)}"/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'widthText')}" width="80"/>
+				<mx:NumericStepper id="childWidth" width="100" height="20" textAlign="right" change="widthChange()" fontSize="9" stepSize="1" minimum="0" maximum="1000"/>
+			</mx:HBox>
+		</mx:VBox>
+		
+		<mx:VBox width="50%" height="100%" styleName="propForm" verticalGap="3">
+			<mx:HBox width="100%">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'formatTypeText')}" width="80"/>
+				<mx:ComboBox id="formatComboBox" width="100%" change="setFormatType(event)"/>
+			</mx:HBox>
+			
+			<mx:ViewStack id="formatPropScope" width="100%" height="100%">
+				
+				<mx:Box id="textFormatPropScope" width="100%"/>
+				
+				<mx:HBox id="comboBoxFormatPropScope" width="100%">
+					<mx:Label text="{resourceManager.getString('FormEditorETC', 'optionText')}" width="80"/>
+					<detail:FormatStaticListEditor id="comboBoxList" width="100%" height="100%"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, comboBoxList.staticList, 'staticListExamples')}"/>	
+				</mx:HBox>
+				
+				<mx:Box id="dateFormatPropScope" width="100%"/>
+				
+				<mx:Box id="numberFormatPropScope" width="100%"/>
+				
+				<mx:Box id="formRefFormatPropScope" width="100%">
+					<property:FormRefPropertyView id="formRefProperty"/>
+				</mx:Box>
+				
+				<mx:HBox id="currencyFormatPropScope" width="100%">
+					<mx:Label text="{resourceManager.getString('FormEditorETC', 'currencyMarkText')}" width="80"/>
+					<util:CurrencyComboBox id="currencyCodeComboBox" styleName="propComboEdit" fontFamily="Arial"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, currencyCodeComboBox.selectedItem, 'currencyCode')}"/>
+				</mx:HBox>
+				
+				<mx:Box id="blankFormatPropScope" width="100%"/>
+				
+			</mx:ViewStack>
+		</mx:VBox>
+		
+	</mx:HBox>
+</mx:VBox>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flexLibProperties version="1">
+<includeClasses>
+<classEntry path="com.maninsoft.smart.ganttchart.view.GanttMilestoneView"/>
+<classEntry path="com.maninsoft.smart.ganttchart.tool.GanttConnectionTool"/>
+<classEntry path="com.maninsoft.smart.ganttchart.command.GanttNodeCreateCommand"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.GanttTaskGroup"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.GanttChartViewer"/>
+<classEntry path="com.maninsoft.smart.ganttchart.view.ConstraintLineView"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.process.GanttProcess"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.property.GanttTaskGroupIdPropertyInfo"/>
+<classEntry path="com.maninsoft.smart.ganttchart.controller.GanttMilestoneController"/>
+<classEntry path="com.maninsoft.smart.ganttchart.command.GanttLinkDeleteCommand"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.GanttActivityTypes"/>
+<classEntry path="com.maninsoft.smart.ganttchart.tool.GanttMoveTracker"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.GanttChart"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.EventDay"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.WorkHour"/>
+<classEntry path="com.maninsoft.smart.ganttchart.controller.GanttTaskGroupController"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.service.LoadGanttDiagramService"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.GanttLinkFactory"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.service.SaveGanttDiagramService"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.handle.GanttSelectHandle"/>
+<classEntry path="com.maninsoft.smart.ganttchart.controller.GanttRootController"/>
+<classEntry path="com.maninsoft.smart.ganttchart.util.CalendarUtil"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.GanttChartMonitor"/>
+<classEntry path="com.maninsoft.smart.ganttchart.request.GanttLinkCreationRequest"/>
+<classEntry path="com.maninsoft.smart.ganttchart.view.GanttChartGridView"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.process.GanttPackage"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.service.DeployGanttDiagramService"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.GanttChartGrid"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.GanttMilestone"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.property.DateTimePropertyInfo"/>
+<classEntry path="com.maninsoft.smart.ganttchart.controller.GanttTaskController"/>
+<classEntry path="com.maninsoft.smart.ganttchart.tool.GanttSelectionTool"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.GanttControllerFactory"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.WorkCalendar"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.service.GetCompanyCalendarService"/>
+<classEntry path="com.maninsoft.smart.ganttchart.util.GraphicsUtil"/>
+<classEntry path="com.maninsoft.smart.ganttchart.assets.GanttChartCSS"/>
+<classEntry path="com.maninsoft.smart.ganttchart.parser.GanttReader"/>
+<classEntry path="com.maninsoft.smart.ganttchart.command.GanttNodeDeleteCommand"/>
+<classEntry path="com.maninsoft.smart.ganttchart.view.GanttTaskView"/>
+<classEntry path="com.maninsoft.smart.ganttchart.controller.GanttChartGridController"/>
+<classEntry path="com.maninsoft.smart.ganttchart.syntax.GanttSyntaxChecker"/>
+<classEntry path="com.maninsoft.smart.ganttchart.command.GanttLinkCreateCommand"/>
+<classEntry path="com.maninsoft.smart.ganttchart.view.GanttTaskGroupView"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.property.GanttActivityTypePropertyInfo"/>
+<classEntry path="com.maninsoft.smart.ganttchart.request.GanttNodeCreationRequest"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.GanttTask"/>
+<classEntry path="com.maninsoft.smart.ganttchart.model.ConstraintLine"/>
+<classEntry path="com.maninsoft.smart.ganttchart.controller.ConstraintLineController"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.WorkHourPolicy"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.Holiday"/>
+<classEntry path="com.maninsoft.smart.ganttchart.server.CalendarInfo"/>
+<classEntry path="com.maninsoft.smart.ganttchart.parser.GanttWriter"/>
+<classEntry path="com.maninsoft.smart.ganttchart.editor.property.DateTimePropertyEditor"/>
+</includeClasses>
+<includeResources>
+<resourceEntry destPath="assets/icon/ic_overleft.png" sourcePath="assets/icon/ic_overleft.png"/>
+<resourceEntry destPath="assets/icon/ic_sch_milestone.png" sourcePath="assets/icon/ic_sch_milestone.png"/>
+<resourceEntry destPath="assets/icon/ic_left.png" sourcePath="assets/icon/ic_left.png"/>
+<resourceEntry destPath="assets/icon/ic_right.png" sourcePath="assets/icon/ic_right.png"/>
+<resourceEntry destPath="assets/icon/ic_overright_w.png" sourcePath="assets/icon/ic_overright_w.png"/>
+<resourceEntry destPath="assets/css/ganttChart.css" sourcePath="assets/css/ganttChart.css"/>
+<resourceEntry destPath="assets/icon/ic_overright.png" sourcePath="assets/icon/ic_overright.png"/>
+<resourceEntry destPath="assets/icon/ic_milestone.png" sourcePath="assets/icon/ic_milestone.png"/>
+<resourceEntry destPath="assets/icon/ic_overleft_w.png" sourcePath="assets/icon/ic_overleft_w.png"/>
+</includeResources>
+<namespaceManifests/>
+</flexLibProperties>

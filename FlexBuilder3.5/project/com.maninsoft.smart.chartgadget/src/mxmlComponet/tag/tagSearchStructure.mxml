@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="67" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import portalAs.event.PackageEvent;
+			[Bindable]
+			public var tagId:String;
+			[Bindable]
+			public var refType:String;
+			[Bindable]
+			public var refId:String;
+			[Bindable]
+			public var createdTime:String;
+			[Bindable]
+			public var title:String;
+			[Bindable]
+			public var tagList:String;
+			
+			private function packageClick():void{
+				/* var pe:PackageEvent = new PackageEvent(PackageEvent.LOAD_PACKAGE, packageId, int(version));
+				pe.categoryId = categoryId;
+				pe.categoryName = categoryName;
+				dispatchEvent(pe); */
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox x="0" y="0" width="100%" height="63" verticalGap="0" verticalAlign="top">
+		<mx:HBox width="100%" height="23" verticalAlign="middle" horizontalAlign="left" horizontalGap="3">
+			<mx:LinkButton label="{title}" color="0xff6600" click="packageClick()" fontSize="12" styleName="boldLabel" textAlign="left"/>
+			<mx:Label text="|  폼타이틀" color="0xff6600"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+			<mx:Label text="   " fontSize="11" color="#808080"/>
+			<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+			<mx:Label text="생성일: {createdTime}" fontSize="11" color="#808080"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+			<mx:Label text="   " fontSize="11" color="#808080"/>
+			<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+			<mx:Label text="태그: " fontSize="11" color="#808080"/>
+		</mx:HBox>
+	</mx:VBox> 
+	<mx:HBox x="0" y="65" width="100%" height="1" backgroundColor="#999999">
+	</mx:HBox>
+</mx:Canvas>

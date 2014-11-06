@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flexLibProperties version="1">
+<includeClasses>
+<classEntry path="com.maninsoft.smart.common.assets.Cursors"/>
+<classEntry path="com.maninsoft.smart.common.assets.DialogAssets"/>
+<classEntry path="com.maninsoft.smart.common.assets.FileAssets"/>
+<classEntry path="com.maninsoft.smart.common.assets.OrgAssets"/>
+<classEntry path="com.maninsoft.smart.common.assets.locale.Icons"/>
+<classEntry path="com.maninsoft.smart.common.controls.AddButton"/>
+<classEntry path="com.maninsoft.smart.common.controls.DeleteItemButton"/>
+<classEntry path="com.maninsoft.smart.common.controls.GradientBox"/>
+<classEntry path="com.maninsoft.smart.common.controls.KoreanTextArea"/>
+<classEntry path="com.maninsoft.smart.common.controls.KoreanTextInput"/>
+<classEntry path="com.maninsoft.smart.common.controls.RemoveButton"/>
+<classEntry path="com.maninsoft.smart.common.controls.SimpleComboBox"/>
+<classEntry path="com.maninsoft.smart.common.dialog.AbstractDialog"/>
+<classEntry path="com.maninsoft.smart.common.dialog.AbstractSimpleDialog"/>
+<classEntry path="com.maninsoft.smart.common.file.FileField"/>
+<classEntry path="com.maninsoft.smart.common.file.FileUpload"/>
+<classEntry path="com.maninsoft.smart.common.org.OrgPersonField"/>
+<classEntry path="com.maninsoft.smart.common.org.PopDeptSelect"/>
+<classEntry path="com.maninsoft.smart.common.org.PopDeptTree"/>
+<classEntry path="com.maninsoft.smart.common.org.PopEmployeeList"/>
+<classEntry path="com.maninsoft.smart.common.page.PageNavigate"/>
+<classEntry path="com.maninsoft.smart.common.util.EncodeImageOpts"/>
+<classEntry path="com.maninsoft.smart.common.util.Map"/>
+<classEntry path="com.maninsoft.smart.common.util.SmartUtil"/>
+</includeClasses>
+<includeResources>
+<resourceEntry destPath="locale/en_US/assets/bt_e_cancel.gif" sourcePath="locale/en_US/assets/bt_e_cancel.gif"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_close.gif" sourcePath="locale/ko_KR/assets/bt_close.gif"/>
+<resourceEntry destPath="assets/cursor/sizeNWSE.png" sourcePath="assets/cursor/sizeNWSE.png"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_cancel.gif" sourcePath="locale/ko_KR/assets/bt_cancel.gif"/>
+<resourceEntry destPath="assets/cursor/sizeWE.png" sourcePath="assets/cursor/sizeWE.png"/>
+<resourceEntry destPath="assets/button/close.gif" sourcePath="assets/button/close.gif"/>
+<resourceEntry destPath="assets/button/dialog/btn_x_w.png" sourcePath="assets/button/dialog/btn_x_w.png"/>
+<resourceEntry destPath="assets/cursor/test2.png" sourcePath="assets/cursor/test2.png"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_search.gif" sourcePath="locale/ko_KR/assets/bt_search.gif"/>
+<resourceEntry destPath="assets/cursor/verticalSize.gif" sourcePath="assets/cursor/verticalSize.gif"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_worksclist.png" sourcePath="locale/ko_KR/assets/bt_worksclist.png"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_formlist.png" sourcePath="locale/ko_KR/assets/bt_formlist.png"/>
+<resourceEntry destPath="locale/ko_KR/ProcessEditorETC.properties" sourcePath="locale/ko_KR/ProcessEditorETC.properties"/>
+<resourceEntry destPath="locale/ko_KR/CommonETC.properties" sourcePath="locale/ko_KR/CommonETC.properties"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_formlist.png" sourcePath="locale/en_US/assets/bt_e_formlist.png"/>
+<resourceEntry destPath="assets/cursor/sizeNESW.png" sourcePath="assets/cursor/sizeNESW.png"/>
+<resourceEntry destPath="locale/en_US/WorkbenchMessages.properties" sourcePath="locale/en_US/WorkbenchMessages.properties"/>
+<resourceEntry destPath="assets/button/btn_x.png" sourcePath="assets/button/btn_x.png"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_ok.gif" sourcePath="locale/ko_KR/assets/bt_ok.gif"/>
+<resourceEntry destPath="assets/button/bt_complete.gif" sourcePath="assets/button/bt_complete.gif"/>
+<resourceEntry destPath="assets/button/search.gif" sourcePath="assets/button/search.gif"/>
+<resourceEntry destPath="assets/button/cancel.gif" sourcePath="assets/button/cancel.gif"/>
+<resourceEntry destPath="locale/en_US/WorkbenchETC.properties" sourcePath="locale/en_US/WorkbenchETC.properties"/>
+<resourceEntry destPath="assets/button/levelUp.png" sourcePath="assets/button/levelUp.png"/>
+<resourceEntry destPath="locale/ko_KR/GanttChartMessages.properties" sourcePath="locale/ko_KR/GanttChartMessages.properties"/>
+<resourceEntry destPath="assets/image/logo_w.png" sourcePath="assets/image/logo_w.png"/>
+<resourceEntry destPath="locale/ko_KR/ProcessEditorMessages.properties" sourcePath="locale/ko_KR/ProcessEditorMessages.properties"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_add.gif" sourcePath="locale/ko_KR/assets/bt_add.gif"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_worklist.png" sourcePath="locale/ko_KR/assets/bt_worklist.png"/>
+<resourceEntry destPath="assets/cursor/leftRightSize.gif" sourcePath="assets/cursor/leftRightSize.gif"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_delete.gif" sourcePath="locale/ko_KR/assets/bt_delete.gif"/>
+<resourceEntry destPath="assets/button/browse.gif" sourcePath="assets/button/browse.gif"/>
+<resourceEntry destPath="locale/en_US/CommonETC.properties" sourcePath="locale/en_US/CommonETC.properties"/>
+<resourceEntry destPath="assets/cursor/horizontalSize.gif" sourcePath="assets/cursor/horizontalSize.gif"/>
+<resourceEntry destPath="assets/icon/file/application_put.png" sourcePath="assets/icon/file/application_put.png"/>
+<resourceEntry destPath="locale/en_US/FormEditorETC.properties" sourcePath="locale/en_US/FormEditorETC.properties"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_delete.gif" sourcePath="locale/en_US/assets/bt_e_delete.gif"/>
+<resourceEntry destPath="assets/button/bt_cancel.gif" sourcePath="assets/button/bt_cancel.gif"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_worksclist.png" sourcePath="locale/en_US/assets/bt_e_worksclist.png"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_close.gif" sourcePath="locale/en_US/assets/bt_e_close.gif"/>
+<resourceEntry destPath="locale/ko_KR/assets/bt_save.gif" sourcePath="locale/ko_KR/assets/bt_save.gif"/>
+<resourceEntry destPath="assets/css/smartCommon.css" sourcePath="assets/css/smartCommon.css"/>
+<resourceEntry destPath="assets/button/moveUp.png" sourcePath="assets/button/moveUp.png"/>
+<resourceEntry destPath="assets/button/dialog/browse.gif" sourcePath="assets/button/dialog/browse.gif"/>
+<resourceEntry destPath="assets/button/levelDown.png" sourcePath="assets/button/levelDown.png"/>
+<resourceEntry destPath="assets/icon/file/new_attach_file_16.gif" sourcePath="assets/icon/file/new_attach_file_16.gif"/>
+<resourceEntry destPath="assets/icon/file/new_bullet_go.png" sourcePath="assets/icon/file/new_bullet_go.png"/>
+<resourceEntry destPath="assets/button/moveDown.png" sourcePath="assets/button/moveDown.png"/>
+<resourceEntry destPath="locale/ko_KR/WorkbenchMessages.properties" sourcePath="locale/ko_KR/WorkbenchMessages.properties"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_worklist.png" sourcePath="locale/en_US/assets/bt_e_worklist.png"/>
+<resourceEntry destPath="assets/button/dialog/btn_x.png" sourcePath="assets/button/dialog/btn_x.png"/>
+<resourceEntry destPath="assets/button/complete.gif" sourcePath="assets/button/complete.gif"/>
+<resourceEntry destPath="assets/button/remove.gif" sourcePath="assets/button/remove.gif"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_ok.gif" sourcePath="locale/en_US/assets/bt_e_ok.gif"/>
+<resourceEntry destPath="assets/button/ok.gif" sourcePath="assets/button/ok.gif"/>
+<resourceEntry destPath="locale/ko_KR/WorkbenchETC.properties" sourcePath="locale/ko_KR/WorkbenchETC.properties"/>
+<resourceEntry destPath="assets/icon/file/application_get.png" sourcePath="assets/icon/file/application_get.png"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_save.gif" sourcePath="locale/en_US/assets/bt_e_save.gif"/>
+<resourceEntry destPath="assets/button/mergeCell.png" sourcePath="assets/button/mergeCell.png"/>
+<resourceEntry destPath="assets/button/dialog/property.png" sourcePath="assets/button/dialog/property.png"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_add.gif" sourcePath="locale/en_US/assets/bt_e_add.gif"/>
+<resourceEntry destPath="locale/en_US/assets/new_bt_e_complete.gif" sourcePath="locale/en_US/assets/new_bt_e_complete.gif"/>
+<resourceEntry destPath="assets/button/add.gif" sourcePath="assets/button/add.gif"/>
+<resourceEntry destPath="locale/en_US/assets/bt_e_search.gif" sourcePath="locale/en_US/assets/bt_e_search.gif"/>
+<resourceEntry destPath="assets/cursor/test3.png" sourcePath="assets/cursor/test3.png"/>
+<resourceEntry destPath="assets/icon/org/new_user.gif" sourcePath="assets/icon/org/new_user.gif"/>
+<resourceEntry destPath="assets/cursor/rightLeftSize.gif" sourcePath="assets/cursor/rightLeftSize.gif"/>
+<resourceEntry destPath="assets/cursor/sizeNS.png" sourcePath="assets/cursor/sizeNS.png"/>
+<resourceEntry destPath="assets/cursor/test.png" sourcePath="assets/cursor/test.png"/>
+<resourceEntry destPath="locale/ko_KR/assets/new_bt_complete.gif" sourcePath="locale/ko_KR/assets/new_bt_complete.gif"/>
+</includeResources>
+<namespaceManifests/>
+</flexLibProperties>

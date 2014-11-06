@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas width="100%" height="100%" creationComplete="init()"
+	xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:ns1="mxmlComponet.common.*" xmlns:page="com.maninsoft.smart.common.page.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.XMLListCollection;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.rpc.events.ResultEvent;
+			import portalAs.Properties;
+			public var importanceType:Array = [ {label:"", data:""}, {label:"상", data:"H"}, {label:"중", data:"M"}, {label:"하", data:"L"} ];
+			public var priorityType:Array = [ {label:"", data:""}, {label:"상", data:"H"}, {label:"중", data:"M"}, {label:"하", data:"L"} ];
+			private var filterset: Array = [ {label:"모든업무", data:1}, {label:"프로세스업무", data:2}, {label:"지시업무", data:3}, {label:"보고업무 ", data:3} ];
+			
+			public function getWorkList():void{
+				getWorkListService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=getMyInstructedWorkList";
+				getWorkListService.send();
+			}
+			
+			public function searchWorkList():void{
+				getWorkListService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=getMyInstructedWorkList";
+				getWorkListService.send();
+			}
+			
+			private function getWorkListResult(event:ResultEvent):void {
+				workListGrid.dataProvider = event.result.WorkItemInfo;
+				naviPg.totalCount = Number(String(event.result.@totalCount));
+				workListGrid.rowHeight = 22;
+
+				var eventObj:CustormEvent = new CustormEvent("custormItemLoad");
+				if(event.result.WorkItemInfo.length() > 0){
+					eventObj.workId = event.result.WorkItemInfo[0].id;
+					dispatchEvent(eventObj);	
+					workListGrid.selectedIndex = 0;			
+				}
+				//var searchCount:int;
+				//var xmlResult:XML = XML(event.result);    
+				//var titleList:XMLListCollection = new XMLListCollection(xmlResult.WorkItemInfo);
+				//searchCount = titleList.length;
+				//workListGrid.height = Number(workListGrid.headerHeight) + Number(workListGrid.rowHeight)*searchCount;
+			}
+			
+			private function init():void{
+				getWorkList();
+			}
+			
+			/*private function getMetaInfo():void{
+				var eventObj:CustormEvent = new CustormEvent("custormItemClick");
+				eventObj.workId = workListGrid.selectedItem.id;
+				eventObj.prcInstId = workListGrid.selectedItem.groupId;
+				dispatchEvent(eventObj);
+			}*/
+			
+			private function changeFormPage():void{
+				var eventObj:CustormEvent = new CustormEvent("custormItemClick");
+				eventObj.workId = workListGrid.selectedItem.id;
+				dispatchEvent(eventObj);
+			}
+
+			private function moveFormPage():void{
+				var eventObj:CustormEvent = new CustormEvent("custormItemDoubleClick");
+				eventObj.workId = workListGrid.selectedItem.id;
+				eventObj.prcInstId = workListGrid.selectedItem.groupId;
+				eventObj.title = workListGrid.selectedItem.title;
+				dispatchEvent(eventObj);
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="custormItemClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+    <mx:Metadata>
+        [Event(name="custormItemDoubleClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:HTTPService id="getWorkListService"  resultFormat="e4x" useProxy="false" result="getWorkListResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<pageCount>{naviPg.pageCount}</pageCount>
+			<recordCount>{naviPg.pageSize}</recordCount>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HBox id="titleBox" x="0" y="0" width="100%" height="30" backgroundColor="#E9975A" horizontalAlign="left" verticalAlign="top">
+		<mx:HBox width="100%" backgroundColor="#FFFFFF" height="27">
+			<mx:HBox y="0" width="50%" height="25" horizontalAlign="left" verticalAlign="middle" horizontalGap="2">
+				<mx:Image source="@Embed('images/portal_main/contentTitle/contentTitle_notice.PNG')" width="20" height="20"/>
+				<mx:Label text="지시한 업무" fontSize="13" styleName="normalLabel"/>
+				<mx:ComboBox height="20" width="100" dataProvider="{filterset}" fontSize="11" styleName="normalLabel"></mx:ComboBox>
+			</mx:HBox>
+			<mx:HBox y="0" width="50%" height="25" horizontalAlign="right" verticalAlign="middle" horizontalGap="2">				
+			</mx:HBox>
+		</mx:HBox>
+	</mx:HBox>		
+	<mx:Canvas width="100%" height="100%" x="0" y="33">
+		<mx:VBox width="100%" height="100%" x="0" y="0" verticalGap="3">
+			<mx:DataGrid width="100%" height="100%" dataProvider="{getWorkListService.lastResult.WorkItemInfo}" 
+				id="workListGrid" itemClick="changeFormPage()" itemDoubleClick="moveFormPage()" 
+				verticalScrollPolicy="off" doubleClickEnabled="true">
+				<mx:columns>
+					<mx:DataGridColumn headerText="제목" 	dataField="title" 			textAlign="center"/>                    
+					<mx:DataGridColumn headerText="업무타입"	dataField="workTypeName" 	textAlign="center"/>
+					<mx:DataGridColumn headerText="처리상태"	dataField="statusName" 		textAlign="center"/>                  
+					<mx:DataGridColumn headerText="지시자" dataField="assignerName" 	textAlign="center"/>       
+					<mx:DataGridColumn headerText="지시업무수행자" dataField="assigneeName" 	textAlign="center"/>      
+					<mx:DataGridColumn headerText="업무생성시간"	dataField="createdTime" textAlign="center"/>         
+					<mx:DataGridColumn headerText="업무완료시간 "	dataField="completedTime" textAlign="center"/>        
+					<mx:DataGridColumn headerText="지연"		dataField="isOverDue" 		textAlign="center"/>
+
+					<mx:DataGridColumn headerText="workTypeId" dataField="workTypeId" textAlign="center" visible="false"/>           
+					<mx:DataGridColumn headerText="workTypeType" dataField="workTypeType" textAlign="center" visible="false"/>      
+					<mx:DataGridColumn headerText="workTypeStepCount" dataField="workTypeStepCount" textAlign="center" visible="false"/>
+					<mx:DataGridColumn headerText="id" dataField="id" textAlign="center" visible="false"/>                       
+					<mx:DataGridColumn headerText="status" dataField="status" textAlign="center" visible="false"/>                  
+					<mx:DataGridColumn headerText="step" dataField="step" textAlign="center" visible="false"/>
+					<mx:DataGridColumn headerText="type" dataField="type" textAlign="center" visible="false"/>                   
+					<mx:DataGridColumn headerText="assignerId" dataField="assignerId" textAlign="center" visible="false"/>            
+					<mx:DataGridColumn headerText="assigneeType" dataField="assigneeType" textAlign="center" visible="false"/>        
+					<mx:DataGridColumn headerText="assigneeId" dataField="assigneeId" textAlign="center" visible="false"/>            
+					<mx:DataGridColumn headerText="importance" dataField="importance" textAlign="center" visible="false"/>          
+					<mx:DataGridColumn headerText="priority" dataField="priority" textAlign="center" visible="false"/>                
+					<mx:DataGridColumn headerText="refType" dataField="refType" textAlign="center" visible="false"/>
+					<mx:DataGridColumn headerText="groupId" dataField="groupId" textAlign="center" visible="false"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<page:PageNavigate   width="100%" height="16" clickPageItem="getWorkList()" id="naviPg" pageSize="10"/>
+		</mx:VBox>
+	</mx:Canvas>
+</mx:Canvas>
+

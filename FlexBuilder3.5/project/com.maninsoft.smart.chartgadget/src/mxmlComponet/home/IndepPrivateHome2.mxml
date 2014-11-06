@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="smartWork.custormObj.*" creationComplete="init()" 
+		horizontalScrollPolicy="off" xmlns:ns2="mxmlComponet.test.*" >
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import smartWork.custormObj.event.PanelEvent;
+			import smartWork.util.StringTokenizer;
+			import portalAs.gridComponent.FindSelectItem;
+			import mx.managers.PopUpManager;
+			import portalAs.Properties;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import mxmlComponet.gadget.declaration.GadgetDeclaration;
+			import mxmlComponet.test.testGaject;
+			import smartWork.custormObj.GadgetPanel;
+			import mx.events.DragEvent;
+			import mx.containers.VBox;
+			import mx.core.IUIComponent;
+			import mx.managers.DragManager;
+			import mxmlComponet.test.*;
+			import mx.events.FlexEvent;
+			import portalAs.Properties;
+			
+			private var format:String = "^";
+			private var gadgetDeclaration:GadgetDeclaration;
+			
+			private function updateCompleteHandler(event:Event):void{
+				gadgetLoactionSave();
+        	}
+        	
+        	private function init():void{
+				var reqParameter:Object = new Object();
+				reqParameter["method"] = "findGadget";
+				reqParameter["userId"] = Properties.userId;
+				retrieveGadgetService.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+				retrieveGadgetService.send(reqParameter);
+			}
+			
+			private function initOnResult(event:ResultEvent):void{
+				var xmlResult:XML = XML(event.result); 
+				var gadgetList:XMLList = xmlResult.Gadget as XMLList; 
+				try{
+				  	for(var i:int=0; i<gadgetList.length(); i++){
+				  		makeGadget(String(gadgetList[i].id), String(gadgetList[i].name), String(gadgetList[i].className), String(gadgetList[i].location));
+				  	}
+				}catch (err: Error) {}
+				makeTempCanvas();
+			}
+			
+			public function createGadget(name:String, type:String, formId:String, chartXml:String, className:String):void{
+				var reqParameter:Object = new Object();
+				reqParameter["method"] = "createGadget";
+				reqParameter["userId"] = Properties.userId;
+				reqParameter["name"] = name;
+				reqParameter["type"] = type;
+				reqParameter["formId"] = formId;
+				reqParameter["desc"] = "";
+				reqParameter["content"] = chartXml;
+				reqParameter["className"] = className;
+				reqParameter["location"] = gadgetLocation();
+				createGadgetService.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+				createGadgetService.send(reqParameter);
+			}
+			
+			private function createGadgetResult(event:ResultEvent):void {
+				newAddGadget(event.result.Gadget.id);
+				if(event.result.@status == "OK"){
+					Alert.show("저장 되었습니다");
+				}else{
+					Alert.show("저장 실패되었습니다");
+				}
+			}
+			
+			public function newAddGadget(gadgetId:String):void{
+				var reqParameter:Object = new Object();
+				reqParameter["method"] = "getGadget";
+				reqParameter["userId"] = Properties.userId;
+				reqParameter["gadgetId"] = gadgetId;
+				getGadgetService.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+				getGadgetService.send(reqParameter);
+			}
+			
+			private function getGadgetResult(event:ResultEvent):void {
+				makeGadget(String(event.result.Gadget.id), String(event.result.Gadget.name), String(event.result.Gadget.className),
+							String(event.result.Gadget.location));
+				makeTempCanvas();
+			}
+			
+			private function makeGadget(gadgetId:String, name:String, className:String, location:String):void{
+				var parentCanvas:Canvas = new Canvas();
+				parentCanvas.addEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler);
+				parentCanvas.percentWidth = 100;
+				parentCanvas.height = 250;
+				var gadgetPanel:GadgetPanel;
+				var clazz:Class = Class(getDefinitionByName(className));
+				gadgetPanel = GadgetPanel(new clazz());
+				gadgetPanel.gadgetId = gadgetId;
+				gadgetPanel.title = name;
+				gadgetPanel.showControls = true;
+				gadgetPanel.closeEnable = true;
+				gadgetPanel.mainCanvas = this;
+				gadgetPanel.layOutBox = true;
+				gadgetPanel.insertEnable = true;
+				gadgetPanel.addEventListener(PanelEvent.PANEL_CLOSE, gadgetColseHandler);
+				parentCanvas.addChild(gadgetPanel);
+				var token:StringTokenizer = new StringTokenizer(location, ":");
+				if(token.getTokenCount==2){
+					VBox(hBox.getChildByName("vBox"+token.nextToken())).addChild(parentCanvas);
+				}
+			}
+			
+			private function gadgetColseHandler(event:PanelEvent):void{
+				if(event.target is GadgetPanel){
+					var gp:GadgetPanel = event.target as GadgetPanel;
+					gp.parent.removeChild(gp);
+					gp.parentCanvas.parent.removeChild(gp.parentCanvas);
+				}
+				var reqParameter:Object = new Object();
+				reqParameter["method"] = "deleteGadget";
+				reqParameter["userId"] = Properties.userId;
+				reqParameter["gadgetId"] = event.gadgetId;
+				deleteGadgetService.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+				deleteGadgetService.send(reqParameter);
+			}
+			
+			 public function gadgetLoactionSave():void{
+	        	try{
+	        		for (var k:int = 0; k < hBox.numChildren; k++) { 
+	        			var vBox:VBox = VBox(hBox.getChildAt(k));
+	        			for (var i:int = 0; i < vBox.numChildren-1; i++) {
+	        				var gadget:GadgetPanel = Canvas(vBox.getChildAt(i)).getChildAt(0) as GadgetPanel;
+	        				var reqParameter:Object = new Object();
+							reqParameter["method"] = "updateGadgetLocation";
+							reqParameter["location"] = (k+1) + ":" + (i+1);
+							reqParameter["gadgetId"] = gadget.gadgetId;
+							updateGadgetLocationService.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+							updateGadgetLocationService.send(reqParameter);
+	        			}
+	        		}
+	        	}catch(err:Error){}
+			}
+			
+			private function doDragEnter(event:DragEvent):void{
+				if(event.dragSource.hasFormat(format)){
+					DragManager.acceptDragDrop(IUIComponent(event.target));
+				}
+	        }
+	        
+	        private function doDragOver(event:DragEvent):void{
+	        	if(this.mouseY+250 > this.height){
+	        		this.verticalScrollPosition = this.verticalScrollPosition + 100;
+	        	}else{
+	        		this.verticalScrollPosition = this.verticalScrollPosition - 100;
+	        	}
+	        }
+	        
+	        private function doDragDrop(event:DragEvent):void{
+	        	var targetVBox:VBox = VBox(event.target);
+				var obj:Object=new Object();
+				obj=event.dragSource.dataForFormat(format);
+				var moveCanvas:Canvas = Canvas(obj);	
+				var movePanel:GadgetPanel = GadgetPanel(moveCanvas.getChildAt(0));	
+				try{
+					moveCanvas.parent.removeChild(moveCanvas);
+				}catch(err:Error){}
+				targetVBox.addChildAt(moveCanvas, targetVBox.getChildren().length - 1);
+	        }
+	        
+	       
+			
+			private function makeTempCanvas():void{
+				//빈Canvas생성.
+				var tempCanvas1:Canvas = new Canvas();
+				tempCanvas1.percentWidth = 100;
+				tempCanvas1.height = 50;
+				tempCanvas1.addEventListener(DragEvent.DRAG_OVER, doDragOver);
+				vBox1.addChild(tempCanvas1);
+				
+				var tempCanvas2:Canvas = new Canvas();
+				tempCanvas2.percentWidth = 100;
+				tempCanvas2.height = 50;
+				tempCanvas2.addEventListener(DragEvent.DRAG_OVER, doDragOver);
+				vBox2.addChild(tempCanvas2);
+				
+//				var tempCanvas3:Canvas = new Canvas();
+//				tempCanvas3.percentWidth = 100;
+//				tempCanvas3.height = 250;
+//				tempCanvas3.addEventListener(DragEvent.DRAG_OVER, doDragOver);
+//				vBox3.addChild(tempCanvas3);
+			}
+			
+			public function gadgetLocation():String{
+				var loaction:String = "";
+				vBox1.removeChildAt(vBox1.numChildren-1);
+				vBox2.removeChildAt(vBox2.numChildren-1);
+				//vBox3.removeChildAt(vBox3.numChildren-1);
+				var minBox:VBox = vBox1;
+				loaction = "1:" + (vBox1.numChildren+1);
+				if(minBox.numChildren > vBox2.numChildren){
+					minBox = vBox2;
+					loaction = "2:" + (vBox2.numChildren+1);
+				}
+//				else if(minBox.numChildren > vBox3.numChildren){
+//					minBox = vBox3;
+//					loaction = "3:" + (vBox3.numChildren+1);
+//				}
+				return loaction;
+			}
+			
+			private function gadgetSearchPop():void{
+				var pop:GadgetType = GadgetType(PopUpManager.createPopUp(this, GadgetType, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.x = 20;
+				pop.y = 20;
+			}
+			
+			public function gadgetDefault():void{
+				createGadget("업무현황", "BASIC_CHART", "", "", "mxmlComponet.gadget::DefaultGadget");
+			}
+			
+			public function gadgetChartPop():void{
+				var pop:GadgetChart2 = GadgetChart2(PopUpManager.createPopUp(this, GadgetChart2, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.width = 620;
+				pop.height = 550;
+				pop.x = 20;
+				pop.y = 20;
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="updateGadgetLocationService"  resultFormat="e4x" useProxy="false" method="post"/>
+	<mx:HTTPService id="retrieveGadgetService"  resultFormat="e4x" useProxy="false" result="initOnResult(event)" method="post"/>
+	<mx:HTTPService id="deleteGadgetService"  resultFormat="e4x" useProxy="false" method="post"/>
+	<mx:HTTPService id="getGadgetService"  resultFormat="e4x" useProxy="false" result="getGadgetResult(event)" method="post"/>
+	<mx:HTTPService id="createGadgetService"  resultFormat="e4x" useProxy="false" result="createGadgetResult(event)" method="post"/>
+	
+	<mx:VDividedBox width="100%" height="100%" verticalGap="0" verticalAlign="middle" horizontalAlign="center">
+		<mx:HBox width="100%" height="17" verticalAlign="top" horizontalAlign="right" horizontalGap="0" paddingTop="0" paddingBottom="0">
+			<mx:Canvas width="200" height="100%">
+				<mx:Image width="16" height="16" source="@Embed('images/portal_main/main_content_gadget_add_icon.png')" click="gadgetSearchPop()" x="131.6" y="1"/>
+				<mx:Label text="가젯추가" height="17" styleName="normalLabel" fontSize="12" click="gadgetSearchPop()" x="147" y="-2"/>
+			</mx:Canvas>
+		</mx:HBox> 
+		<mx:HBox width="100%" height="100%" id="hBox" horizontalGap="4">
+			<mx:VBox  height="100%" width="50%" dragEnter="doDragEnter(event)" dragDrop="doDragDrop(event)" dragOver="doDragOver(event)" 
+				id="vBox1" verticalGap="4"  backgroundColor="#ffffff">
+			</mx:VBox>
+			<mx:VBox  height="100%" width="50%" dragEnter="doDragEnter(event)" dragDrop="doDragDrop(event)" dragOver="doDragOver(event)" 
+				id="vBox2" verticalGap="4"  backgroundColor="#fffffe">
+			</mx:VBox>
+			<!--
+			<mx:VBox height="100%" width="33.4%" dragEnter="doDragEnter(event)" dragDrop="doDragDrop(event)" dragOver="doDragOver(event)" 
+				id="vBox3" verticalGap="4"  backgroundColor="#fffffd">
+			</mx:VBox>
+			-->
+		</mx:HBox>
+	</mx:VDividedBox>
+</mx:Canvas>

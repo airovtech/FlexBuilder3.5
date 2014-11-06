@@ -1,0 +1,348 @@
+/* CSS file */ 
+/*
+@font-face { 
+ 	src:url("./font/MALGUN.TTF");
+	fontFamily: MALGUN;
+	fontWeight: normal;
+}	
+@font-face { 
+ 	src:url("./font/MALGUNBD.TTF");
+	fontFamily: MALGUNBD;
+	fontWeight: bold;
+}	
+*/
+@font-face { 
+ 	src:url("./font/맑은 고딕.swf");
+	fontFamily: "맑은 고딕";
+}	 
+
+
+/* 
+	fontAntiAliasType: advanced;
+*/
+Application { 
+	backgroundImage: Embed(source="./../images/portal_main/application_bg_00.jpg");
+}	
+DataGrid { 
+	backgroundAlpha: 1;
+	headerColors: #ff9966, #ffffff;
+	horizontalGridLines: true;
+	letterSpacing: 0;
+	horizontalGridLineColor: #cccccc;
+	rollOverColor: #cccccc;
+	textRollOverColor: #cc3300;
+	
+	selectionColor: #ffffcc;
+	color: #666666;
+	textSelectedColor: #cc3300;
+	textIndent: 0;
+	headerStyleName: "grdiHeaderStyle";
+	fontFamily: "맑은 고딕";
+	fontAntiAliasType: advanced;
+	fontSize: 10;
+}
+.grdiHeaderStyle{
+	color: #333333;
+	headerHeight: 24; 
+	letterSpacing: 0;
+	textAlign: center;
+	fontFamily: "맑은 고딕";
+	fontAntiAliasType: advanced;
+	fontSize: 10;
+}
+.leftCustomPanel {
+	horizontalAlign: center;
+	verticalAlign: top;
+	borderAlpha: 1;
+	borderColor: #999999;
+	borderStyle: solid;
+	borderThickness: 1;
+	borderThicknessBottom: 0;
+	borderThicknessLeft: 0;
+	borderThicknessRight: 0;
+	borderThicknessTop: 0;
+	cornerRadius: 5;
+	dropShadowEnabled: false;
+	fontAntiAliasType: advanced;
+	fontFamily: "맑은 고딕";
+	fontSize: 13;
+	headerColors: #FFFFFF, #CCCCCC;	
+	headerHeight: 40;
+	backgroundColor: #F9F6F6;
+	horizontalAlign: center;
+	roundedBottomCorners: true;
+}
+.leftCustomPanelTitle {
+	color: #333333;
+	letterSpacing: 1;
+	textAlign: center;
+	fontFamily: "맑은 고딕";
+	fontAntiAliasType: advanced;
+	fontSize: 13;
+	fontWeight: bold;
+}
+.taskTree{
+	fontFamily: "맑은 고딕";
+	fontSize: 11;
+	backgroundColor: #F9F6F6;
+	disclosureOpenIcon: ClassReference(null);
+	disclosureClosedIcon: ClassReference(null);
+}
+.tagList{
+	fontFamily: "맑은 고딕";
+	fontSize: 11;
+}
+GadgetPanel{
+	horizontalAlign: center;
+	verticalAlign: top;
+	borderAlpha: 1;
+	borderColor: #999999;
+	borderStyle: solid;
+	borderThickness: 1;
+	borderThicknessBottom: 0;
+	borderThicknessLeft: 0;
+	borderThicknessRight: 0;
+	borderThicknessTop: 0;
+	cornerRadius: 5;
+	headerHeight: 20;
+	backgroundAlpha: 1;
+	highlightAlphas: 0.5, 0;
+	headerColors: #666666, #cccccc;
+	footerColors: #e7e7e7, #333333;
+	backgroundColor: #ffffff;
+	dropShadowEnabled: false;
+	paddingBottom: 3;
+ 	paddingLeft: 3;
+	paddingRight: 3;
+	paddingTop: 3;
+	titleStyleName: "gadgetPanelTitle"; 
+}
+.gadgetPanelTitle {
+	color: #333333;
+	letterSpacing: 0;
+	textAlign: left;
+	fontFamily: "맑은 고딕";
+	fontAntiAliasType: advanced;
+	fontSize: 11;
+	fontWeight: normal;
+}
+.boldLabel {
+	fontFamily: "맑은 고딕";
+	fontAntiAliasType: advanced;
+	fontWeight: bold;	
+}
+.normalLabel {
+	fontFamily: "맑은 고딕";
+	fontAntiAliasType: advanced;
+	fontWeight: normal;	
+}
+
+.pageNavigaterStyle {
+   fontFamily: "맑은 고딕";
+   fontSize: 9;   
+   buttonHeight: 16;
+   buttonWidth: 35;
+   horizontalGap: 0;
+   textIndent: 0;
+   letterSpacing: 0;
+   buttonStyleName: "mytoggleButtonBarButtonStyle";
+   firstButtonStyleName: "mytoggleButtonBarFirstButtonStyle";
+   lastButtonStyleName: "mytoggleButtonBarLastButtonStyle";
+   selectedButtonTextStyleName: "mytoggleButtonBarSelectedButtonStyle";
+}
+
+.mytoggleButtonBarButtonStyle {
+   fontFamily: "맑은 고딕";
+   fontSize: 9;   
+   textRollOverColor: #ff9933;
+   textSelectedColor: #ff9933;
+   themeColor: #ff9933;
+}
+
+.mytoggleButtonBarFirstButtonStyle {
+   fontFamily: "맑은 고딕";
+   fontSize: 9;   
+   cornerRadius: 10;
+}
+
+.mytoggleButtonBarLastButtonStyle {
+   fontFamily: "맑은 고딕";
+   fontSize: 9;   
+   cornerRadius: 10;
+}
+
+.mytoggleButtonBarSelectedButtonStyle {
+   fontFamily: "맑은 고딕";
+   fontSize: 9;   
+   color: #ff9966;
+}
+
+
+.categoryTabs {
+   tabHeight: 25;
+   cornerRadius: 0;
+   horizontalGap: 1;
+   horizontalAlign: left;
+   paddingLeft: 0;
+   textIndent: 0;
+   backgroundAlpha: 1;
+   borderStyle: solid;
+   borderColor: #B9BCBE;
+   borderThickness: 1;
+   fontFamily: "맑은 고딕";
+   fontWeight: normal;
+   fontSize: 11;   
+   tabStyleName: "categorymyTabs";
+   firstTabStyleName: "categorymyTabs";
+   lastTabStyleName: "categorymyTabs";
+   selectedTabTextStyleName: "categorymySelectedTabs";
+}
+
+.categorymyTabs {
+   cornerRadius: 5;
+   letterSpacing: 0;
+   horizontalGap: 2;
+   backgroundAlpha: 0.8;
+   themeColor: #FF6500;
+   fontWeight: normal;
+   fontFamily: "맑은 고딕";
+   fontSize: 11;
+   textAlign: center;
+   fillAlphas: 0.5, 0.5;
+   fillColors: #cccccc, #666666;   
+}
+
+.categorymySelectedTabs {
+   color: #FF6500;
+   fontWeight: bold;
+   fontFamily: "맑은 고딕";
+   fontSize: 11;   
+}
+
+.propBtnQuickMenu {
+	skin: Embed(source="./../images/skinPams.swf", symbol="menuSetting_upSkin");
+	overSkin: Embed(source="./../images/skinPams.swf", symbol="menuSetting_overSkin");
+}
+
+.processMiniMap{
+	disabledSkin: Embed(source="skinPams.swf", symbol="processMiniMapDisabled");
+	downSkin: Embed(source="skinPams.swf", symbol="processMiniMapOver");
+	overSkin: Embed(source="skinPams.swf", symbol="processMiniMapOver");
+	upSkin: Embed(source="skinPams.swf", symbol="processMiniMapUp");
+}
+
+
+.processFitMap{
+	disabledSkin: Embed(source="skinPams.swf", symbol="processFitMapOver");
+	downSkin: Embed(source="skinPams.swf", symbol="processFitMapOver");
+	overSkin: Embed(source="skinPams.swf", symbol="processFitMapOver");
+	upSkin: Embed(source="skinPams.swf", symbol="processFitMapUp");
+}
+
+/*
+.processPlus{
+	disabledSkin: Embed(source="activityStyle.swf", symbol="processPlusDisabled");
+	downSkin: Embed(source="activityStyle.swf", symbol="processPlusDown");
+	overSkin: Embed(source="activityStyle.swf", symbol="processPlusOver");
+	upSkin: Embed(source="activityStyle.swf", symbol="processPlusUp");	
+}
+
+
+.processMinus{
+	disabledSkin: Embed(source="activityStyle.swf", symbol="processMinusDisabled");
+	downSkin: Embed(source="activityStyle.swf", symbol="processMinusDown");
+	overSkin: Embed(source="activityStyle.swf", symbol="processMinusOver");
+	upSkin: Embed(source="activityStyle.swf", symbol="processMinusUp");	
+}
+*/
+.processPlus{
+	disabledSkin: Embed(source="./images/bt_vu.gif");
+	downSkin: Embed(source="./images/bt_vu.gif");
+	overSkin:Embed(source="./images/bt_vu.gif");
+	upSkin: Embed(source="./images/bt_vu.gif");
+}
+
+
+.processMinus{
+	disabledSkin: Embed(source="./images/bt_vd.gif");
+	downSkin: Embed(source="./images/bt_vd.gif");
+	overSkin: Embed(source="./images/bt_vd.gif");
+	upSkin: Embed(source="./images/bt_vd.gif");
+}
+
+.sliderBg{
+	borderSkin: Embed(source="activityStyle.swf", symbol="sliderBg");
+	headerHeight: 0;
+	borderThicknessTop: 0;
+	borderThicknessBottom: 0;
+	borderThicknessLeft: 0;
+	borderThicknessRight: 0;
+	dropShadowEnabled: false;
+}
+
+.loadProcessing{
+	disabledSkin: Embed(source="activityStyle.swf", symbol="loadProcessing");
+	downSkin: Embed(source="activityStyle.swf", symbol="loadProcessing");
+	overSkin: Embed(source="activityStyle.swf", symbol="loadProcessing");
+	upSkin: Embed(source="activityStyle.swf", symbol="loadProcessing");
+}
+
+
+
+.loadProcessing2{
+	disabledSkin: Embed(source="activityStyle.swf", symbol="loadProcessing2");
+	downSkin: Embed(source="activityStyle.swf", symbol="loadProcessing2");
+	overSkin: Embed(source="activityStyle.swf", symbol="loadProcessing2");
+	upSkin: Embed(source="activityStyle.swf", symbol="loadProcessing2");
+}
+
+
+.loadProcessing3{
+	disabledSkin: Embed(source="activityStyle.swf", symbol="loadProcessing3");
+	downSkin: Embed(source="activityStyle.swf", symbol="loadProcessing3");
+	overSkin: Embed(source="activityStyle.swf", symbol="loadProcessing3");
+	upSkin: Embed(source="activityStyle.swf", symbol="loadProcessing3");
+}
+
+
+
+
+.PSlider{
+	thumbDisabledSkin: Embed(source="activityStyle.swf", symbol="PSliderThumb_disabledSkin");
+	thumbDownSkin: Embed(source="activityStyle.swf", symbol="PSliderThumb_downSkin");
+	thumbOverSkin: Embed(source="activityStyle.swf", symbol="PSliderThumb_overSkin");
+	thumbUpSkin: Embed(source="activityStyle.swf", symbol="PSliderThumb_upSkin");
+	trackHighlightSkin: Embed(source="activityStyle.swf", symbol="PSliderHighlight_Skin");
+	trackSkin: Embed(source="activityStyle.swf", symbol="PSliderTrack_Skin");
+}
+
+
+
+
+
+.quickPanel{
+	borderSkin: Embed(source="activityStyle.swf", symbol="quick_panel");
+	headerHeight: 0;
+	borderThicknessTop: 2;
+	borderThicknessBottom: 2;
+	borderThicknessLeft: 2;
+	borderThicknessRight: 2;
+}
+
+
+.processZoomBox{
+	borderSkin: Embed(source="activityStyle.swf", symbol="process_zoom_box");
+	headerHeight: 0;
+	borderThicknessTop: 0;
+	borderThicknessBottom: 0;
+	borderThicknessLeft: 0;
+	borderThicknessRight: 0;
+}
+
+.overview
+{
+	disabledSkin: Embed(source="overview.swf", symbol="overview");
+	downSkin: Embed(source="overview.swf", symbol="overview");
+	overSkin: Embed(source="overview.swf", symbol="overview");
+	upSkin: Embed(source="overview.swf", symbol="overview");
+}

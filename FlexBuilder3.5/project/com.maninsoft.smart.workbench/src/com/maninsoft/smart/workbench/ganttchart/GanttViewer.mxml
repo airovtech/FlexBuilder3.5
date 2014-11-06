@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:smart="com.maninsoft.smart.ganttchart.editor.*" backgroundColor="#ffffff">
+	<mx:Script source="GanttViewer_mxml.as"/>
+	<mx:VBox width="100%" height="100%" verticalGap="3" horizontalAlign="center" backgroundColor="#ffffff" verticalAlign="middle" paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="1"
+			borderStyle="none" borderThickness="1" horizontalScrollPolicy="off" verticalScrollPolicy="off">	
+		<mx:Canvas id="editorHeaderToolBar" visible="true" width="100%" height="27" backgroundColor="#e9eeee" borderStyle="none" borderThickness="0">
+		</mx:Canvas>
+		<mx:HBox width="100%" height="100%" borderStyle="none" borderThickness="0">
+			<smart:GanttChartViewer id="xpdlViewer" width="100%" height="100%" backgroundColor="#ffffff" resize="xpdlViewer_resize(event);"/>						
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

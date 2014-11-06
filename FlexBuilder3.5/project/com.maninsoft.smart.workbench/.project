@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>com.maninsoft.smart.workbench</name>
+	<comment></comment>
+	<projects>
+		<project>com.maninsoft.smart.common</project>
+		<project>com.maninsoft.smart.formeditor.flex</project>
+		<project>com.maninsoft.smart.workbench.common</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>com.adobe.flexbuilder.project.flexbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.adobe.flexbuilder.project.flexnature</nature>
+		<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>
+	</natures>
+</projectDescription>

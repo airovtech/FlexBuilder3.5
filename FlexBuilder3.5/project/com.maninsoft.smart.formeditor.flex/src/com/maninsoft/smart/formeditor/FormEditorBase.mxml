@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas 
+	width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off" 
+	backgroundColor="{backgroundColor}" 
+	styleName="formEditorBase" 
+	creationComplete="init()" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:form="com.maninsoft.smart.formeditor.form.*" 
+	xmlns:form1="com.maninsoft.smart.formeditor.refactor.simple.view.form.*" 
+	xmlns:mapping="com.maninsoft.smart.formeditor.refactor.simple.view.mapping.*"
+	xmlns:property="com.maninsoft.smart.formeditor.property.*" 
+	xmlns:pallet="com.maninsoft.smart.formeditor.pallet.*" 
+	xmlns:view="com.maninsoft.smart.formeditor.view.*"
+	xmlns:tools="com.maninsoft.smart.formeditor.tools.*" xmlns:formeditor="com.maninsoft.smart.formeditor.*">
+	<mx:Style source="/assets/css/formEditor.css"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			import com.maninsoft.smart.formeditor.util.FormEditorPopup;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormModelUtil;
+			import com.maninsoft.smart.workbench.common.property.page.PropertyPage;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.common.util.EncodeImageOpts;
+			import com.maninsoft.smart.formeditor.util.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.util.FormEditorInvoker;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.formeditor.view.FieldView;
+			import mx.core.UIComponent;
+			import com.maninsoft.smart.workbench.common.resource.MsgConf;
+			import com.maninsoft.smart.workbench.common.preloader.CustomPreloadEvent;
+			import com.maninsoft.smart.workbench.common.preloader.SquaresSpinnerPreloadingWindow;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.formeditor.view.ISelectableView;
+			import com.maninsoft.smart.formeditor.util.DebugWindow;
+			import com.maninsoft.smart.formeditor.layout.grid.view.FormGridContainer;
+			import com.maninsoft.smart.formeditor.layout.grid.view.FormGridItemView;
+			import com.maninsoft.smart.formeditor.layout.grid.util.FormGridLayoutToolbar;
+			import com.maninsoft.smart.formeditor.layout.grid.view.FormGridCanvas;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.refactor.event.service.ServiceEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormPropertyEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.workbench.common.event.CommandEvent;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain;
+			import mx.binding.utils.BindingUtils;
+			
+			/****************************************************************************************/
+			private static var instance:FormEditorBase;
+			public static function getInstance():FormEditorBase {
+				return instance;
+			}
+			
+			/*******************************디버그*********************************/
+			[Bindable]
+			public var spy:Boolean = false;
+			
+			[Bindable]
+			private var backgroundColor:Number = 0xE9EEEE;
+			
+			public var _editDomain:FormEditDomain;
+			public var packageId:String;
+			private var formId:String;
+			private var formName:String;
+			[Bindable]
+			public var form:FormDocument;
+			
+			public var isWorkForm:Boolean = false;
+			
+			public var propertyPage:PropertyPage = new PropertyPage();
+			
+			public function get editDomain():FormEditDomain {
+				return _editDomain;
+			}
+			[Bindable]
+			public function set editDomain(editDomain:FormEditDomain):void {
+				this._editDomain = editDomain;
+				FormEditorInvoker.editDomain = editDomain;
+			}
+			
+			/********************************************************/
+		
+			// 초기화
+			private function init():void {
+				instance = this;
+				registerEvent();
+				propertyPage.width = 345;
+				propertyPage.labelWidth = 110;
+				propertyPage.valueWidth = 205;
+			}
+			private function registerEvent():void {
+				this.addEventListener(FormEditEvent.SELECT_FORM_DOCUMENT, selectFormDocument, true);
+				this.addEventListener(FormEditEvent.SELECT_FORM_ITEM, selectFormItem, true);
+				this.addEventListener(FormEditEvent.SELECT_FORM_ITEMS, selectFormItems, true);
+				this.addEventListener(FormPropertyEvent.UPDATE_FORM_STRUCTURE, updateFormStructure, true);	
+				
+				this.formModelEditPartViewer.addEventListener(FormEditorEvent.SELECTVIEW, selectFormElement);
+				
+				this.addEventListener(CustomPreloadEvent.SAVE_PROGRESS_IMG, openProgressHandler);
+				this.addEventListener(CustomPreloadEvent.CLOSE_PROGRESS_IMG, closeProgressHandler);
+			}
+			private function refreshProperty():void{
+				this.propertyPage.propSource = this.form;
+				this.propertyPage.title = resourceManager.getString("FormEditorETC", "formDocPropertiesText")
+//				this.propertyPage.show(this, false);
+			}
+			
+			/**************** 프로그레스 바 ***********************/
+			private var timer:Timer;
+			private var repeatCount:Number;
+			private var timeoutId:uint;
+			private var _popupWindow:SquaresSpinnerPreloadingWindow = null;
+			private var _popupWindowCenterWindow:UIComponent = null;
+			private function openProgressHandler(event:CustomPreloadEvent):void {
+				timer = new Timer(1000, repeatCount);
+				timer.addEventListener(TimerEvent.TIMER, timerEventHandler);
+				timer.start();
+				onOpen(MsgConf.MESSAGE_SAVEPROGRESS);
+			}
+			private function closeProgressHandler(event:CustomPreloadEvent):void {
+				onComplete();
+			}
+			private function timerEventHandler(event:TimerEvent):void {
+				repeatCount ++;
+			}
+			private function onOpen(textInput:String):void {
+				if (_popupWindowCenterWindow == null) {
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(this, SquaresSpinnerPreloadingWindow, true));
+					_popupWindow.popupMsg = textInput;
+				}
+				else
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(_popupWindowCenterWindow, SquaresSpinnerPreloadingWindow));
+				}
+				PopUpManager.centerPopUp(_popupWindow);
+			}
+			private function onComplete():void {
+				if(_popupWindow)
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+				 }	
+			}
+			
+			private var oldFormGridItemView:FormGridItemView = null;
+			public function selectFormElement(e:FormEditorEvent):void{
+				var formView:ISelectableView = e.view;
+				if (formView is FormGridCanvas || formView is FormGridContainer) {
+					refreshGridLayoutToolbar(formView);
+					this.propertyPage.propSource = null;
+					this.propertyPage.title = resourceManager.getString("FormEditorETC", "formGridPropertiesText")				
+				} else if(formView is FormGridItemView) {
+					refreshGridLayoutToolbar(formView);					
+					var formGridItemView:FormGridItemView = formView as FormGridItemView;
+					if(formGridItemView.fieldView != null) {
+						var formEntity:FormEntity = (formView as FormGridItemView).fieldView.dataGridSelectFormEntity;
+						if(formEntity != null) {
+							this.propertyPage.propSource =  formEntity;
+							this.propertyPage.title = resourceManager.getString("FormEditorETC", "tableItemPropertiesText")
+						} else {
+							var formEntityModel:FormEntity =  FormModelUtil.getFormFieldById(formGridItemView.gridCell.fieldId, formGridItemView.container);
+							this.propertyPage.propSource =  formEntityModel;
+							this.propertyPage.title = resourceManager.getString("FormEditorETC", "itemPropertiesText")
+						}
+					} else {
+						this.propertyPage.propSource =  null;
+						this.propertyPage.title = resourceManager.getString("FormEditorETC", "itemPropertiesText")
+					}
+					if (oldFormGridItemView != null && oldFormGridItemView != formGridItemView && 
+						oldFormGridItemView.fieldView != null && oldFormGridItemView.fieldView.formatView != null)
+						oldFormGridItemView.fieldView.formatView.release();
+					oldFormGridItemView = formGridItemView;
+					
+				} else {
+					this.propertyPage.propSource =  null;
+					this.propertyPage.title = resourceManager.getString("FormEditorETC", "itemPropertiesText")					
+				}				
+//				this.propertyPage.show(this, false);
+			}
+			private function release():void {
+				if (oldFormGridItemView != null && oldFormGridItemView.fieldView != null && oldFormGridItemView.fieldView.formatView != null)
+					oldFormGridItemView.fieldView.formatView.release();
+			}
+			
+			private var formGridLayoutToolbar:FormGridLayoutToolbar;
+			
+			private function refreshGridLayoutToolbar(formView:ISelectableView):void{
+				var formGridCanvas:FormGridCanvas;
+				if(formView is FormGridCanvas){
+					formGridCanvas = formView as FormGridCanvas;
+				}else if(formView is FormGridContainer && formView.parent is FormGridCanvas){
+					formGridCanvas = formView.parent as FormGridCanvas;
+				}else if(formView is FormGridItemView) {
+					formGridCanvas = formView.parent.parent.parent as FormGridCanvas;
+				}
+				
+				if (formGridLayoutToolbar == null) {
+//					formGridLayoutToolbar = new FormGridLayoutToolbar(this.formEditorToolbar.etcToolBarBox, this.editDomain, formGridCanvas, this.formModelEditPartViewer);
+					formGridLayoutToolbar = new FormGridLayoutToolbar(this.formEditorToolbar.formToolBar1Sub, this.editDomain, formGridCanvas, this.formModelEditPartViewer);
+				} else {
+					if (formGridLayoutToolbar.formGridCanvas != null) {
+						formGridLayoutToolbar.formGridCanvas.formGridLayoutToolBar = null; 
+					}
+					formGridLayoutToolbar.formGridCanvas = formGridCanvas;
+					formGridLayoutToolbar.createVisual();
+				}
+				
+				formGridCanvas.formGridLayoutToolBar = formGridLayoutToolbar;
+				
+				
+			}
+			
+			// 폼 오픈 
+			public function openForm(formId:String, formVer:int = 1, formName:String = null):void{
+				if (this.spy == true) {
+					this.formEditorToolbar.visible = true;
+				}
+				
+				this.formId = formId;
+				this.formName = formName;
+				this.workNameLabel.text = (isWorkForm ? resourceManager.getString("WorkbenchETC", "formNameText"):resourceManager.getString("WorkbenchETC", "workNameText")) + " : " + formName;
+				
+				this.editDomain = new FormEditDomain(FormEditorConfig.serviceUrl);
+				registerCommandStack();
+				
+				// 초기화 비주얼 아이템
+				formModelEditPartViewer.initVisual();
+				
+				loadForm();	
+			}
+			// 커맨드 스택 이벤트 처리
+			private function registerCommandStack():void {
+				this.editDomain.getCommandStack().addEventListener(CommandEvent.EXECUTE_COMMAND, changeCommandListener); 
+				this.editDomain.getCommandStack().addEventListener(CommandEvent.UNDO_COMMAND, changeCommandListener);
+				this.editDomain.getCommandStack().addEventListener(CommandEvent.REDO_COMMAND, changeCommandListener);
+				
+				if (debugable) {
+					this.editDomain.getCommandStack().addEventListener(CommandEvent.EXECUTE_COMMAND, function(e:CommandEvent):void {appendDebugStr("execute : \n" + e.debugStr + "\n-----\n ");}); 
+					this.editDomain.getCommandStack().addEventListener(CommandEvent.UNDO_COMMAND, function(e:CommandEvent):void {appendDebugStr("undo : \n" + e.debugStr + "\n-----\n ");});
+					this.editDomain.getCommandStack().addEventListener(CommandEvent.REDO_COMMAND, function(e:CommandEvent):void {appendDebugStr("redo : \n" + e.debugStr + "\n-----\n ");});
+				}
+			}
+			
+			public var debugable:Boolean = false;
+			public var debugWindow:DebugWindow;
+
+			public function appendDebugStr(debugStr:String):void{
+				if (debugWindow == null)
+					debugWindow = PopUpManager.createPopUp(this, DebugWindow) as DebugWindow;
+				debugWindow.append(debugStr);
+			}
+			
+			private function changeCommandListener(e:Event):void{
+				refreshBasicVisual();
+			}
+			
+			private function refreshBasicVisual():void{
+			}
+			/**************************폼 문서 변경****************************************/
+			// 폼 문서 오픈 
+			private function selectFormDocument(event:FormEditEvent):void{				
+				this.propertyPage.propSource = this.form;
+				this.propertyPage.title = resourceManager.getString("FormEditorETC", "formDocPropertiesText")
+//				this.propertyPage.show(this, false);
+			}
+			// 폼 아이템 오픈 
+			private function selectFormItem(event:FormEditEvent):void{				
+				this.propertyPage.propSource = event.formItem;
+				this.propertyPage.title = resourceManager.getString("FormEditorETC", "itemPropertiesText")
+//				this.propertyPage.show(this, false);
+			}
+			// 멀티 폼 아이템 오픈 
+			private function selectFormItems(event:FormEditEvent):void{
+
+				// TODO 멀티 실렉션 프로퍼티 처리
+			}
+			// 멀티 폼 아이템 오픈 
+			private function updateFormStructure(event:FormPropertyEvent):void{
+				this.refreshVisual();
+			}
+			
+			/******************** 서버 통신 **************************/
+			// 폼 저장
+			public function saveForm():void{
+				this.editDomain.serviceClient.formService.save(this.formId, 1, this.form.toXML(), saveResult, serviceFault);
+				
+				try {
+					this.release();
+					
+					var view:IBitmapDrawable = IBitmapDrawable((this.formModelEditPartViewer.layoutView as FormGridCanvas).grid);
+					var opts:EncodeImageOpts = new EncodeImageOpts();
+					opts.fixedScale = true;
+					opts.width = 1024;
+					var img:String = SmartUtil.encodeImageAsBase64(view, opts);
+					opts.width = 200;
+					opts.minHeight = 120;
+					opts.height = 120;
+					opts.cutHeightEnabled = false;
+					var imgTn:String = SmartUtil.encodeImageAsBase64(view, opts);
+					
+					var url:String = FormEditorConfig.basePath + "/services/builder/SmartApi.jsp";
+					var params:Object = new Object();
+					params.method = "setImage";
+					params.companyId = FormEditorConfig.compId;
+					params.group = this.packageId;
+					
+					params.id = this.formId;
+					params.base64 = img;
+					SmartUtil.send(url, params);
+					
+					params.id += "_tn";
+					params.base64 = imgTn;
+					SmartUtil.send(url, params);
+					
+				} catch (e:Error) {
+				}
+			}
+			// 폼 로드
+			public function loadForm():void{
+				this.editDomain.serviceClient.formService.load(this.formId, 1, loadResult, serviceFault);			
+			}
+
+			// 폼 저장결과
+			private function saveResult(event:FormPersistenceEvent):void{
+				timerCheck();
+				dispatchEvent(new Event("saveFormComplete"));
+				trace("[Event]FormEditorBase saveResult dispatch event : " + "saveFormComplete");
+				trace(this.form.toXML());
+			}
+			
+			private function timerCheck():void {
+				if (timer != null && timer.currentCount >= 1) {
+					closePreload();
+				} else if (timer != null) {
+					this.timeoutId = setTimeout(closePreload, 1500);
+				}
+			}
+			private function closePreload():void {
+				timer.stop();
+				timer.removeEventListener(TimerEvent.TIMER, timerEventHandler);
+				this.dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.CLOSE_PROGRESS_IMG));
+				trace("[Event]FormEditorBase closePreload dispatch event : " + CustomPreloadEvent.CLOSE_PROGRESS_IMG);
+			}
+			
+			// 폼 로드 결과
+			private function loadResult(event:FormPersistenceEvent):void{
+				if(event.formModel){
+					this.form = event.formModel;
+				}else{
+					this.form = new FormDocument();
+					this.form.id = this.formId;
+					this.form.name = this.formName;
+				}
+
+				this.form.widthVar = formModelEditPartViewer.width;
+
+				BindingUtils.bindSetter(widthVarChanged, formModelEditPartViewer, "width");
+												
+				checkModel();
+				
+				refreshVisual();
+				
+				refreshProperty();
+				
+				dispatchEvent(new FormEditEvent(FormEditEvent.LOAD_FORM_DOCUMENT));	
+				trace("[Event]FormEditorBase loadResult dispatch event : " + FormEditEvent.LOAD_FORM_DOCUMENT);
+			}
+		
+			private function widthVarChanged(value:Object):void{
+				this.form.widthVar = value as int;	
+				this.formModelEditPartViewer.selectionViewer = null;							
+				refreshVisual();
+			}
+
+			// 모델이 존재하는 지를 체크하고 없으면 모델생성
+			private function checkModel():void{
+				if(this.form == null){
+					this.form = new FormDocument();
+					this.form.id = this.formId;
+					this.form.name = this.formName;
+				}						
+			}
+			// 폼 서비스 실
+			private function serviceFault(event:ServiceEvent):void{
+				MsgUtil.showError(event.msg);
+			}
+
+			public function isApplicationService(activityId:String=null):Boolean{	
+					parentDocument["requestActivityId"] = activityId;	
+					return parentDocument["isApplicationService"];
+			}
+			
+			public function getProcessFormalParameters(subFlowId:String=null):Array{	
+					parentDocument["requestSubFlowId"] = subFlowId;	
+					return parentDocument["processFormalParameters"];
+			}
+			
+			public function getApplicationServiceReturnParams(taskApplicationId:String=null):Array{	
+					parentDocument["requestTaskApplicationId"] = taskApplicationId;	
+					return parentDocument["applicationServiceReturnParams"];
+			}
+			
+			public function getSystemServiceMessageOut(taskServiceId:String=null):Array{	
+					parentDocument["requestTaskServiceId"] = taskServiceId;	
+					return parentDocument["systemServiceMessageOut"];
+			}
+			
+			public function getProcessSubProcesses():Array{
+				return parentDocument["processSubProcesses"];
+			}
+			
+			public function getProcessTaskServices():Array{
+				return parentDocument["processTaskServices"];
+			}
+			
+			public function getProcessApplicationServices():Array{
+				return parentDocument["processApplicationServices"];
+			}
+			
+			/***************************그리기******************************/
+			public function refreshVisual():void{
+				if (formModelEditPartViewer.editDomain == null)
+					formModelEditPartViewer.editDomain = this.editDomain;
+				
+				formModelEditPartViewer.formModel = this.form;
+								
+				this.invalidateDisplayList();
+			}
+			
+			private function getTopSize(screenHeight:int, formHeight:int, scalePercent:int):int{
+				return 0;
+			}
+			
+			private function getSideSize(screenWidth:int, formWidth:int, scalePercent:int):int{
+				return 0;
+			}
+			
+			public function clickFormDocument(event:Event):void{
+				if (event.target == this.formScreen) {
+					this.formModelEditPartViewer.select();
+				}
+			}
+
+			private function popupFormLinkMenu():void {
+				var point:Point = formEditorHeaderToolBar.localToGlobal(new Point(formLinkButton.x, formLinkButton.y + formLinkButton.height));
+				FormEditorPopup.popupFormLinkMenu(this, point.x, point.y, this.form);
+			}
+
+			private function popupServiceLinkMenu():void {
+				var point:Point = formEditorHeaderToolBar.localToGlobal(new Point(serviceLinkButton.x, serviceLinkButton.y + serviceLinkButton.height));
+				FormEditorPopup.popupServiceLinkMenu(this, point.x, point.y, this.form);
+			}
+
+			private function doToolBoxDragEnter(event: DragEvent):void{
+               if (    event.dragSource.hasFormat("toolBox") 
+               		&& HBox(event.currentTarget).mouseY < HBox(event.currentTarget).height 
+               		&& HBox(event.currentTarget).mouseX > FormEditorToolBar(event.dragInitiator).x 
+               		&& HBox(event.currentTarget).mouseX < FormEditorToolBar(event.dragInitiator).x + FormEditorToolBar(event.dragInitiator).width ) 
+                {
+                    DragManager.acceptDragDrop(HBox(event.currentTarget));
+                }				
+			}
+			
+			private function doToolBoxDragDrop(event: DragEvent):void{
+               if (    event.dragSource.hasFormat("toolBox") 
+               		&& HBox(event.currentTarget).mouseY < HBox(event.currentTarget).height 
+               		&& HBox(event.currentTarget).mouseX > FormEditorToolBar(event.dragInitiator).x 
+               		&& HBox(event.currentTarget).mouseX < FormEditorToolBar(event.dragInitiator).x + FormEditorToolBar(event.dragInitiator).width ) 
+                {
+                	if(HBox(event.currentTarget).mouseY<HBox(event.currentTarget).height-FormEditorToolBar(event.dragInitiator).height)
+                		FormEditorToolBar(event.dragInitiator).y = HBox(event.currentTarget).mouseY ;
+                	else
+                		FormEditorToolBar(event.dragInitiator).y = HBox(event.currentTarget).height-FormEditorToolBar(event.dragInitiator).height-4;
+                }
+			}		
+		]]>
+	</mx:Script>
+
+	<!-- 툴 박스 --> 
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalAlign="center" backgroundColor="#FFFFFF" verticalAlign="middle"
+		 horizontalScrollPolicy="off" verticalScrollPolicy="off" borderStyle="none" borderThickness="0">
+		<mx:HBox id="formEditorHeaderToolBar" visible="true" width="100%" height="27" backgroundColor="#e6e7ed" x="0" y="0" horizontalGap="10" paddingLeft="4" paddingTop="4" verticalGap="0" borderColor="#ffffff" borderSides="bottom" borderStyle="solid" borderThickness="4">
+			<mx:LinkButton id="formLinkButton" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.connectOtherWorkIcon}" click="popupFormLinkMenu()" visible="true"/>
+			<mx:LinkButton id="serviceLinkButton" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.connectSystemServiceIcon}" click="popupServiceLinkMenu()" visible="true"/>
+			<mx:Spacer width="50" />
+			<mx:Label id="workNameLabel" fontFamily="Tahoma" visible="false" fontSize="12" fontWeight="bold" color="#000000" textAlign="center"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="100%" id="formEditorBox" horizontalGap="4" borderStyle="none" backgroundColor="#FFFFFF" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				paddingLeft="4" paddingRight="4" paddingTop="0" paddingBottom="4" dragEnter="{doToolBoxDragEnter(event)}" dragDrop="{doToolBoxDragDrop(event)}">
+			<mx:ViewStack id="formEditor" left="0" width="100%" height="100%" borderStyle="none" borderThickness="0" backgroundColor="#FFFFFF">
+				<mx:Canvas id="formScreen" width="100%" height="100%" click="{clickFormDocument(event)}" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<view:FormDocumentView id="formModelEditPartViewer" width="100%" height="100%"/>
+				</mx:Canvas>
+			</mx:ViewStack>		
+			<formeditor:FormEditorToolBar id="formEditorToolbar" width="30" height="111" formEditorBase="{this}"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

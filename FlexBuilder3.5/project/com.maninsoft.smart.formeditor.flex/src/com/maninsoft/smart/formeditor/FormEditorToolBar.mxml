@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * 
+ *  Package: 		com.maninsoft.smart.formeditor
+ *  Class: 			FormEditorToolBar
+ * 					extends VBox 
+ * 					implements None
+ *  Author:			Maninsoft, Inc.
+ *  Description:	Form Editor의 ToolBar를 정의하는  클래스
+ * 				
+ *  History:		Created by Maninsoft, Inc.
+ * 					2010.2.26 Modified by Y.S. Jung for SWV20003: 폼에디터에 이미지를 보여주는 항목 추가
+ * 					2010.2.26 Modified by Y.S. Jung for SWV20004: 폼에디터에 이메일아이디를 입력하는 항목 추가
+ * 
+ *  Copyright (C) 2007-2010 Maninsoft, Inc. All Rights Reserved.
+ *  
+-->
+
+<mx:VBox 
+	visible="true" backgroundColor="#FFFFFF" borderStyle="solid" borderColor="#8B8B8B" borderThickness="2"
+	verticalAlign="top" verticalGap="0" cornerRadius="3" paddingLeft="3" paddingRight="3"  paddingTop="3" paddingBottom="10"
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:formeditor="com.maninsoft.smart.formeditor.*" 
+	xmlns:tools="com.maninsoft.smart.formeditor.tools.*" xmlns:util="com.maninsoft.smart.formeditor.util.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.DragSource;
+			import mx.managers.DragManager;
+			import com.maninsoft.smart.formeditor.util.FormEditorPopup;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			import com.maninsoft.smart.workbench.common.preloader.CustomPreloadEvent;
+			import com.maninsoft.smart.formeditor.FormEditorBase;
+			import com.flexspy.FlexSpy;
+			
+			[Bindable]
+			public var formEditorBase:FormEditorBase;
+			
+			private function save():void {
+				this.formEditorBase.dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.SAVE_PROGRESS_IMG));
+				trace("[Event]FormEditorToolBar loadResult dispatch event : " + CustomPreloadEvent.SAVE_PROGRESS_IMG);
+				this.formEditorBase.saveForm();
+			}
+
+			public function refreshToolbox():void{
+				if(this.visible)
+					if(this.y+this.height>parent.height)
+						this.y = parent.height-this.height-4;
+			}
+
+			private function expandToolBoxBtnClick():void{
+				this.width=53;
+				this.height=350;
+				defaultToolBox.visible=false;
+				defaultToolBox.height=0;
+				expandedToolBox.visible=true;
+				expandedToolBox.height=10;
+				formToolBar1Sub.visible=true;
+				formToolBar1Sub.percentHeight=100;
+				formToolBar2.visible=true;
+				formToolBar2.width=20;
+				formToolBar2.percentHeight=100;
+				refreshToolbox();
+			}		
+
+			private function collapseToolBoxBtnClick():void{
+				this.width=30;
+				this.height=111;
+				defaultToolBox.visible=true;
+				defaultToolBox.height=10;
+				expandedToolBox.visible=false;
+				expandedToolBox.height=0;
+				formToolBar1Sub.visible=false;
+				formToolBar1Sub.height=0;
+				formToolBar2.visible=false;
+				formToolBar2.width=0;
+				formToolBar2.height=0;
+				refreshToolbox();
+			}
+			
+			private function doToolBoxDragging(event: MouseEvent):void{
+				var ds:DragSource = new DragSource();
+				ds.addData(this, "toolBox");
+				DragManager.doDrag(this, ds, event);
+			}
+
+		]]>
+	</mx:Script>
+	 
+	<mx:HBox id="defaultToolBox" height="10" visible="true" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" horizontalGap="1" verticalAlign="middle">
+		<mx:LinkButton paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="1" icon="{FormEditorAssets.expandToolBoxIcon}" click="{expandToolBoxBtnClick()}" toolTip="{resourceManager.getString('WorkbenchETC', 'expandToolBoxTTip')}"/>
+		<mx:Image id="defaultToolBoxDragger" source="{FormEditorAssets.defaultDragerIcon}" mouseDown="{doToolBoxDragging(event)}" />
+	</mx:HBox>
+	<mx:HBox id="expandedToolBox" visible="false" height="0" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" horizontalGap="1" verticalAlign="middle"> 
+		<mx:LinkButton paddingLeft="1" paddingRight="1" icon="{FormEditorAssets.collapseToolBoxIcon}" click="{collapseToolBoxBtnClick()}" toolTip="{resourceManager.getString('WorkbenchETC', 'collapseToolBoxTTip')}" />
+		<mx:Image id="expandedToolBoxDragger" source="{FormEditorAssets.expandedDragerIcon}" mouseDown="{doToolBoxDragging(event)}"/>
+	</mx:HBox>
+	<mx:Box width="100%" height="10"/>
+	<mx:HBox width="100%" height="100%" horizontalGap="2">
+		<mx:VBox id="formToolBar1" width="20" height="100%" horizontalAlign="middle" verticalAlign="top" paddingLeft="1" paddingRight="1" paddingTop="2" paddingBottom="0" verticalGap="8">			
+			<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.saveIcon}" click="{save()}" toolTip="{resourceManager.getString('WorkbenchETC', 'saveTTip')}" />
+			<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.undoIcon}" click="{this.formEditorBase.editDomain.getCommandStack().undo()}" toolTip="{resourceManager.getString('WorkbenchETC', 'undoTTip')}"/>
+			<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.redoIcon}" click="{this.formEditorBase.editDomain.getCommandStack().redo()}" toolTip="{resourceManager.getString('WorkbenchETC', 'redoTTip')}"/>
+			<mx:VBox id="formToolBar1Sub" visible="false" width="20" height="0" horizontalAlign="middle" verticalAlign="top" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" verticalGap="8" borderThickness="0">
+				<mx:Image width="100%" source="{FormEditorAssets.dividerIcon}"/>
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.textInputIcon}" formatType="textInput" toolTip="{resourceManager.getString('FormEditorETC', 'textInputText')}" />
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.numberInputIcon}" formatType="numberInput"  toolTip="{resourceManager.getString('FormEditorETC', 'numberInputText')}"/>
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.currencyInputIcon}" formatType="currencyInput"  toolTip="{resourceManager.getString('FormEditorETC', 'currencyInputText')}"/>
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.percentInputIcon}" formatType="percentInput" toolTip="{resourceManager.getString('FormEditorETC', 'percentInputText')}" />
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.autoIndexIcon}" formatType="autoIndex" toolTip="{resourceManager.getString('FormEditorETC', 'autoIndexText')}" />
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.fileListIcon}" formatType="fileField"  toolTip="{resourceManager.getString('FormEditorETC', 'fileFieldText')}"/>
+				<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.departmentFieldIcon}" formatType="departmentField"  toolTip="{resourceManager.getString('FormEditorETC', 'departmentFieldText')}"/>
+			</mx:VBox>
+		</mx:VBox>
+		<mx:VBox id="formToolBar2" visible="false" width="0" height="0" horizontalAlign="middle" verticalAlign="top" paddingLeft="1" paddingRight="1" paddingTop="2" paddingBottom="0" verticalGap="8">			
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.comboBoxIcon}" formatType="comboBox"  toolTip="{resourceManager.getString('FormEditorETC', 'comboBoxText')}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.checkBoxIcon}" formatType="checkBox"  toolTip="{resourceManager.getString('FormEditorETC', 'checkBoxText')}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.radioButtonIcon}" formatType="radioButton"  toolTip="{resourceManager.getString('FormEditorETC', 'radioButtonText')}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.tableIcon}" formatType="dataGrid" toolTip="{resourceManager.getString('FormEditorETC', 'dataGridText')}" />
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.richTextEditorIcon}" formatType="richEditor" toolTip="{resourceManager.getString('FormEditorETC', 'richEditorText')}" />
+			<mx:Image width="100%" source="{FormEditorAssets.dividerIcon}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.dateChooserIcon}" formatType="dateChooser" toolTip="{resourceManager.getString('FormEditorETC', 'dateChooserText')}" />
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.dateTimeChooserIcon}" formatType="dateTimeChooser" toolTip="{resourceManager.getString('FormEditorETC', 'dateTimeChooserText')}" />
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.timeComboBoxIcon}" formatType="timeField"  toolTip="{resourceManager.getString('FormEditorETC', 'timeFieldText')}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.emailIDInputIcon}" formatType="emailIDInput"  toolTip="{resourceManager.getString('FormEditorETC', 'emailIDInputText')}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.imageBoxIcon}" formatType="imageBox"  toolTip="{resourceManager.getString('FormEditorETC', 'imageBoxText')}"/>
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.userRefIcon}" formatType="userField" toolTip="{resourceManager.getString('FormEditorETC', 'userFieldText')}" />
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.formRefIcon}" formatType="refFormField" toolTip="{resourceManager.getString('FormEditorETC', 'refFormFieldText')}" />
+			<util:FormatButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{FormEditorAssets.labelIcon}" formatType="label"  toolTip="{resourceManager.getString('FormEditorETC', 'labelText')}"/>
+		</mx:VBox>
+	</mx:HBox>
+</mx:VBox>

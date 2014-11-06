@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="395" height="330" layout="absolute" 
+	title="폼 선택" fontFamily="Arial" fontSize="12" showCloseButton="true" close="cancel()" borderStyle="solid">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.simple.navigator.FormItemProxy;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain;
+			import com.maninsoft.smart.workbench.common.editor.EditDomain;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import mx.messaging.config.ServerConfig;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.refactor.service.impl.ServerFormPersistenceService;
+			import com.maninsoft.smart.formeditor.refactor.service.IFormPersistenceService;
+			import com.maninsoft.smart.workbench.common.util.ResultWindow;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			/**
+			 * 전체 폼 리스트를 보여주고 참조할 폼을 선택하고 사용하게 해줌  
+			 **/
+			 
+			import mx.managers.PopUpManager;
+			
+//			private var _editDomain:FormEditDomain;
+			
+			// 초기화 
+			// 1. 폼 리스트를 로드
+			public function start():void{
+				errorTxt.text = "";
+				loadFormList();
+			}
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+            // 퍼시스턴스를 위한 폼 서비스
+			[Bindable]
+			public var formService:IFormPersistenceService;
+			
+			// 전체 폼 리스트 정보
+			[Bindable]
+			private var formListXML:XML;
+				
+			[Bindable]
+			public var selectFormId:String;		
+			
+			[Bindable]
+			public var selectFormVersion:int;		
+
+			[Bindable]
+			public var selectFormName:String;		
+						
+			[Bindable]
+			public var selectSWForm:SWForm;				
+			
+			[Bindable]
+			public var selectFormModel:FormDocument;
+
+			// 폼 리스트 로드
+			protected function loadFormList():void{
+				formService.loadAllSingleList(loadFormListResult, serviceFault);			
+			}
+			// 폼 로드
+			protected function loadSelectForm():void{
+				formService.load(this.selectFormId, this.selectFormVersion, loadSelectFormResult, serviceFault);				
+			}
+			// 폼 로드 결과
+			protected function loadSelectFormResult(event:FormPersistenceEvent):void{
+				this.selectFormModel = event.formModel;		
+			}
+			// 폼 리스트 로드 결과
+			protected function loadFormListResult(event:FormPersistenceEvent):void{
+				this.formListXML = event.formListXML;	
+			}
+			// 폼  서비스 실패
+			public function serviceFault(event:FormPersistenceEvent):void{
+				errorTxt.text = event.msg;
+			}
+			// 폼 선택 취소
+			// 1. 폼 선택정보 제거	
+			// 2. 취소 이벤트
+			private function cancel():void{
+				this.selectFormId = null;
+				this.selectFormModel = null;
+				
+				dispatchEvent(new Event(Event.CANCEL));
+				close();	
+			}
+			
+			// 폼 선택
+			// 1. 완료 이벤트
+			private function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();	
+			}
+			
+			// 리스트에서 선택된 항목의 참조폼을 로드
+			protected function clickForm():void{
+				this.selectFormId = this.formList.selectedItem.formId.toString();
+				this.selectFormVersion = new int(this.formList.selectedItem.version.toString());	
+				this.selectFormName = this.formList.selectedItem.name.toString();
+				
+				this.selectSWForm = SWForm.parseXML(XML(this.formList.selectedItem));			
+				loadSelectForm();	
+			}
+			
+			protected function getFieldList(model:FormDocument):ArrayCollection{
+				var fieldList:ArrayCollection = new ArrayCollection();
+				for each(var fieldModel:FormEntity in model.children){
+					if(!(fieldModel is FormItemProxy)){
+						fieldList.addItem(fieldModel);
+					}
+				}
+				return fieldList;
+			}
+		]]>
+	</mx:Script>
+	<mx:List id="formList" x="10" y="26" width="162" height="183" dataProvider="{this.formListXML.Form}" labelField="name" itemClick="clickForm()"></mx:List>
+	<mx:Label x="10" y="0" text="참조 폼 : " fontSize="12"/>
+	<mx:Button x="293" y="259" label="취소" click="cancel()"/>
+	<mx:Button x="237" y="259" label="확인" click="complete()"/>
+	<mx:List id="formFieldList" x="180" y="26" height="183" width="162" dataProvider="{getFieldList(this.selectFormModel)}" labelField="name" selectable="false"></mx:List>
+	<mx:Label x="180" y="2" text="필드" fontSize="12"/>
+	<mx:Text x="10" y="217" text="* 추가하려는 폼을 선택 후에 확인 버튼을 누르세요." fontFamily="Arial" color="#FFA800"/>
+	<mx:Text id="errorTxt" x="10" y="235" fontFamily="Arial" color="#FF0000"/>
+</mx:TitleWindow>

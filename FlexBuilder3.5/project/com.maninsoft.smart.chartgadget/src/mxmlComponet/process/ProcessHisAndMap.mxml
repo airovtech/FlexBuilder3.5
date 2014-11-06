@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:page="com.maninsoft.smart.common.page.*" 
+	xmlns:smart="com.maninsoft.smart.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import portalAs.Properties;
+			import mx.rpc.http.mxml.HTTPService;
+			
+			[Bindable]
+			private var prcInstId:String;
+			private var dataRequest:HTTPService;
+			
+			public function retrieveProcessInstanceDetail(_prcInstId:String):void {
+				prcInstId = _prcInstId;
+				var params:Object = new Object();
+				params.method = "getPrcInstDetail";
+				params.userId = Properties.userId;
+				params.prcInstId = prcInstId;
+				params.pageCount = naviPg2.pageCount;
+				params.recordCount = naviPg2.pageSize;
+				
+				monitorDiagramCreate(prcInstId);
+				
+		    	dataRequest = new HTTPService();
+		    	dataRequest.resultFormat = "e4x";
+		    	dataRequest.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp"
+		    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandlerForProcessInstanceDetail);
+		    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest.useProxy = false;
+				dataRequest.send(params);
+				
+			}
+			
+			private function resultHandlerForProcessInstanceDetail(event:ResultEvent):void {
+    			taskList.dataProvider = event.result.WorkItemList.WorkItemInfo;
+    			naviPg2.totalCount = Number(String(event.result.WorkItemList.@totalCount));
+    		}
+    		
+    		private function monitorDiagramCreate(processId:String): void {
+				viewMain.serviceUrl = Properties.basePath + "smartserver/services/runtime/searchingService.jsp";
+				viewMain.userId = Properties.userId;
+				viewMain.prcInstId = prcInstId; 
+				viewMain.load();
+			}	
+    		
+    		private function faultHandler(event:FaultEvent):void {
+    			Alert.show("Exception occured during read data.\n"+event.fault.message);
+    		}
+    		
+    		private function openTaskDetailPopUp():void {
+				var pop:processtInstanceDetail = processtInstanceDetail(PopUpManager.createPopUp(this, processtInstanceDetail, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.workId = taskList.selectedItem.id; 
+				pop.x = 5;
+				pop.y = 20;
+				//PopUpManager.centerPopUp(pop);
+			}
+		]]>
+	</mx:Script>
+	<mx:TabNavigator width="100%" height="500" creationPolicy="all" tabStyleName="normalLabel" selectedTabTextStyleName="normalLabel" 
+    	paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0">
+        <mx:Canvas label="업무이력보기" width="100%" height="100%">
+			<mx:DataGrid width="100%" height="246" id="taskList" itemDoubleClick="openTaskDetailPopUp()" doubleClickEnabled="true" rowHeight="22">
+				<mx:columns> 
+					<mx:DataGridColumn headerText="제목" 	dataField="title" 			textAlign="center"/>                    
+					<mx:DataGridColumn headerText="업무타입"	dataField="workTypeName" 	textAlign="center"/>
+					<mx:DataGridColumn headerText="처리상태"	dataField="statusName" 		textAlign="center"/>                  
+					<mx:DataGridColumn headerText="이전수행자" dataField="assignerName" 	textAlign="center"/>       
+					<mx:DataGridColumn headerText="업무수행자" dataField="assigneeName" 	textAlign="center"/>      
+					<mx:DataGridColumn headerText="업무생성시간"	dataField="createdTime" textAlign="center"/>         
+					<mx:DataGridColumn headerText="업무완료시간 "	dataField="completedTime" textAlign="center"/>        
+					<mx:DataGridColumn headerText="지연"		dataField="isOverDue" 		textAlign="center"/>
+
+					<mx:DataGridColumn headerText="workTypeId" dataField="workTypeId" textAlign="center" width="0"/>           
+					<mx:DataGridColumn headerText="workTypeType" dataField="workTypeType" textAlign="center" width="0"/>      
+					<mx:DataGridColumn headerText="workTypeStepCount" dataField="workTypeStepCount" textAlign="center" width="0"/>
+					<mx:DataGridColumn headerText="id" dataField="id" textAlign="center" width="0"/>                       
+					<mx:DataGridColumn headerText="status" dataField="status" textAlign="center" width="0"/>                  
+					<mx:DataGridColumn headerText="step" dataField="step" textAlign="center" width="0"/>
+					<mx:DataGridColumn headerText="type" dataField="type" textAlign="center" width="0"/>                   
+					<mx:DataGridColumn headerText="assignerId" dataField="assignerId" textAlign="center" width="0"/>            
+					<mx:DataGridColumn headerText="assigneeType" dataField="assigneeType" textAlign="center" width="0"/>        
+					<mx:DataGridColumn headerText="assigneeId" dataField="assigneeId" textAlign="center" width="0"/>            
+					<mx:DataGridColumn headerText="importance" dataField="importance" textAlign="center" width="0"/>          
+					<mx:DataGridColumn headerText="priority" dataField="priority" textAlign="center" width="0"/>                
+					<mx:DataGridColumn headerText="refType" dataField="refType" textAlign="center" width="0"/>
+					<mx:DataGridColumn headerText="groupId" dataField="groupId" textAlign="center" width="0"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<page:PageNavigate width="100%" height="16" clickPageItem="retrieveProcessInstanceDetail(prcInstId)" id="naviPg2"/>
+        </mx:Canvas>
+        <mx:Canvas label="프로세스 보기" width="100%" height="100%">
+        	<smart:InstanceViewer id="viewMain" width="100%" height="100%"/>
+        </mx:Canvas>
+    </mx:TabNavigator>	
+</mx:Canvas>

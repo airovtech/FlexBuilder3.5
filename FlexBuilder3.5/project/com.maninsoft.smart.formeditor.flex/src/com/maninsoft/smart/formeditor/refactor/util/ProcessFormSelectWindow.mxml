@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FormSelectWindow xmlns="com.maninsoft.smart.formeditor.refactor.util.*" xmlns:mx="http://www.adobe.com/2006/mxml" >
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorkTypeEvent;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWWorkType;
+			
+			private var processId:String;
+			private var processVersion:int;
+			
+			public var serviceClient:ServiceClient;
+//			public var swWorkType:SWWorkType;
+			
+			public function loadFormListByProcess(processId:String, processVersion:int):void{
+				this.processId = processId;
+				this.processVersion = processVersion;
+				
+				this.loadFormList();
+			}
+			// 폼 리스트 로드
+			protected override function loadFormList():void{
+				serviceClient.formService.loadListByProcess(this.processId, this.processVersion, loadFormListResult, serviceFault);			
+			}
+			
+			// 리스트에서 선택된 항목의 참조폼을 로드
+			protected override function clickForm():void{
+				this.selectFormId = this.formList.selectedItem.formId.toString();
+				this.selectFormVersion = new int(this.formList.selectedItem.version.toString());
+				
+				this.selectSWForm = SWForm.parseXML(XML(this.formList.selectedItem));			
+								
+				loadSelectForm();
+			}
+		]]>
+	</mx:Script>
+</FormSelectWindow>

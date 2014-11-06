@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas implements="com.maninsoft.smart.formeditor.view.IFormContainerView" styleName="formDocumentView"
+	horizontalScrollPolicy="off" verticalScrollPolicy="off"	creationComplete="init()" click="mouseClick(event)" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Metadata>
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.Box;
+			import com.maninsoft.smart.formeditor.FormEditorBase;
+			import com.maninsoft.smart.workbench.common.event.LoadCallbackEvent;
+			import com.maninsoft.smart.formeditor.layout.grid.model.FormGridRow;
+			import com.maninsoft.smart.formeditor.layout.grid.model.FormGridLayout;
+			import com.maninsoft.smart.formeditor.layout.grid.view.FormGridCanvas;
+			import com.maninsoft.smart.formeditor.util.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.controller.GraphicalController;
+			import com.maninsoft.smart.formeditor.layout.grid.util.FormGridItemToolBox;
+			import com.maninsoft.smart.formeditor.view.ISelectableView;
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import com.maninsoft.smart.formeditor.layout.grid.util.FormGridItemSelectionBox;
+			import com.maninsoft.smart.formeditor.util.FormSelectionBox;
+			import com.maninsoft.smart.formeditor.layout.FormLayoutFactory;
+			import com.maninsoft.smart.formeditor.util.FormSelectionPointBox;
+			import com.maninsoft.smart.formeditor.layout.grid.view.FormGridItemView;
+			import com.maninsoft.smart.formeditor.layout.IFormContainerLayoutView;
+			import com.maninsoft.smart.formeditor.view.util.FieldToolBox;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.formeditor.model.IFormContainer;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain;
+			
+			public var mode:String = Constants.MODE_DESIGN;
+						
+			public var editDomain:FormEditDomain;
+			
+	        private var _formModel:FormDocument;
+	        
+	        public function set formModel(formModel:FormDocument):void{
+	        	if (formModel != null) {
+		        	this._formModel = formModel;
+		        	registerViewer();
+		        	
+		        	if (this.layoutView != null && this.contains(this.layoutView as DisplayObject)) {
+	        			this.removeChild(this.layoutView as DisplayObject);
+	        			this.layoutView = null;
+	        		}
+	        		
+		        	refreshVisual();        		
+	        	}
+	        }
+	        
+	        public function get formModel():FormDocument{
+	        	return this._formModel;	        	
+	        }
+	        
+	        private var _selection:Boolean = false;
+
+			public function set selection(selection:Boolean):void{
+			    this._selection = selection;
+			    
+			   	if(this._selection){
+			   		this.selectionViewer = this;
+			   	}
+			}
+			public function get selection():Boolean{
+			    return this._selection;
+			}
+			
+			public function get selectableModel():ISelectableModel{
+			    return this.formModel;
+			}
+			
+	        
+	        /************************************초기화**********************************************/
+   	        protected function init():void{
+	        	registerContextMenu();
+	        	registerViewer();
+	        	
+	        }
+	        
+	        private var controller:GraphicalController;
+	        protected function registerViewer():void{
+	        	if(controller == null)
+	        		controller = new GraphicalController();
+	        	controller.model = this.formModel;
+	        	controller.view = this;
+	        }
+
+			protected function registerLayoutListener():void{
+				if (layoutView != null)
+					this.layoutView.addEventListener(FormEditorEvent.SELECTVIEW, selectListener);
+			}
+	        	        
+	        public function selectListener(e:FormEditorEvent):void{
+	        	this.selectionViewer = e.view;
+	        }
+	        
+	        private var myContextMenu:ContextMenu;
+	        
+	        protected function registerContextMenu():void{
+	        	if(myContextMenu == null)
+	        		myContextMenu = new ContextMenu();
+	        		
+				//addCustomMenuItems();
+
+				this.contextMenu = myContextMenu;
+	        }
+            
+            private function isExistInParent(interObj:InteractiveObject):Boolean
+            {
+            	if(interObj == null){
+            		return false;
+            	}
+            	
+            	if(interObj == this){
+            		return true;
+            	}
+            	
+            	if(interObj.parent != null){
+            		return isExistInParent(interObj.parent);
+            	}else{
+            		return false;
+            	}
+            }
+
+	        /*****************************화면********************************************/
+	        
+	        public function refreshVisual():void{
+	        	try{
+					//기본 정보 업데이트
+		        	//refreshBasicVisual();
+		        	
+	        		refreshLayout();
+	        		
+	        		refreshSelection();
+	        	}catch(e:Error){
+	        	}
+	        }	 
+	        
+	        private var _layoutView:IFormContainerLayoutView;
+
+			public function set layoutView(layoutView:IFormContainerLayoutView):void{
+			    this._layoutView = layoutView;
+			    
+			    registerLayoutListener();
+			}
+			public function get layoutView():IFormContainerLayoutView{
+			    return this._layoutView;
+			}
+	        
+	        public function refreshLayout():void{
+				if (this.layoutView == null) {
+	        		this.layoutView = FormLayoutFactory.getLayoutContainer(this.formModel, this.editDomain, this);
+				} else {
+		        	this.layoutView.container = this.formModel;
+		        	this.layoutView.editDomain = this.editDomain;
+		        	this.layoutView.formView = this;
+				}
+	        	this.layoutView.x = this.formModel.leftSpace;
+	        	this.layoutView.y = this.formModel.topSpace;
+				this.layoutView.width = this.formModel.width;
+
+				this.layoutView.height = this.formModel.height - this.formModel.bottomSpace; 
+
+	        	this.layoutView.refreshVisual();
+	        	
+	        	this.layoutView.addEventListener(FormEditorEvent.SELECTVIEW, this.selectChildHandler);
+	        	this.layoutView.addEventListener(FormEditorEvent.UNSELECTVIEW, this.unSelectChildHandler);
+	        	
+	        	if (!this.contains(this.layoutView as DisplayObject))
+	        		this.addChild(this.layoutView as DisplayObject);
+	        	
+				if(this.height != this.formModel.height && this.smartWorkbench && this.formStage.visible ){
+					var formEditor:FormEditorBase = this.parentDocument as FormEditorBase;
+					var contentHeight:Number = formEditor.formEditorHeaderToolBar.height+this.formModel.height;
+					var lcEvent:LoadCallbackEvent = new LoadCallbackEvent(LoadCallbackEvent.LOAD_CALLBACK, LoadCallbackEvent.STAGENAME_FORM, contentHeight);
+					this.smartWorkbench.dispatchEvent(lcEvent);
+					trace("[Event]FieldDocumentView refreshLayout dispatch event : " + lcEvent);
+					this.height = this.formModel.height; 
+				}
+	        }
+	        
+	        public function selectChildHandler(e:FormEditorEvent):void{
+	        	var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.SELECTVIEW);
+	        	event.view = e.view;
+	        	
+	        	event.x = this.layoutView.x + e.x;
+	        	event.y = this.layoutView.y + e.y;
+	        	
+	        	this._selectionViewer = e.view;
+	        	this.selectionX = event.x; //  + this.formModel.leftSpace
+	        	this.selectionY = event.y; //  + this.formModel.topSpace
+	        	
+	        	refreshSelection();
+	        	
+	        	this.dispatchEvent(event);
+				trace("[Event]FieldDocumentView selectChildHandler dispatch event : " + event);
+	        }
+	        
+	         public function unSelectChildHandler(e:FormEditorEvent):void{
+	        	var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.UNSELECTVIEW);
+	        	event.view = e.view;
+	        	
+	        	event.x = this.layoutView.x + e.x;
+	        	event.y = this.layoutView.y + e.y;
+	        	
+	        	this._selectionViewer = null;
+	        	this.selectionX = event.x; //  + this.formModel.leftSpace
+	        	this.selectionY = event.y; //  + this.formModel.topSpace
+	        	
+	        	refreshSelection();
+	        	
+	        	this.dispatchEvent(event);
+				trace("[Event]FieldDocumentView unSelectChildHandler dispatch event : " + event);
+	        }
+	        
+	        public function initVisual():void{
+	        	// 선택박스 숨기기
+	        	this.selectionViewer = null;
+	        }
+	        
+	        private var selectionX:Number = 0;
+	        private var selectionY:Number = 0;
+	         
+			private var _selectionViewer:ISelectableView;
+			
+			public function set selectionViewer(selectionViewer:ISelectableView):void{
+				this._selectionViewer = selectionViewer;
+			}
+			
+			public function get selectionViewer():ISelectableView{
+				return this._selectionViewer;
+			}	
+			
+			public var selectBoxLTop:FormSelectionPointBox;
+			public var selectBoxCTop:FormSelectionPointBox;
+			public var selectBoxRTop:FormSelectionPointBox;
+			public var selectBoxLMid:FormSelectionPointBox;
+			public var selectBoxRMid:FormSelectionPointBox;
+			public var selectBoxLBottom:FormSelectionPointBox;
+			public var selectBoxCBottom:FormSelectionPointBox;
+			public var selectBoxRBottom:FormSelectionPointBox;
+			
+	        // 포커스 활성화
+	        public function refreshSelection():void{
+	        	if(this.selectBoxLTop == null){
+	        		this.selectBoxLTop 		= new FormSelectionPointBox();
+	        		this.selectBoxCTop 		= new FormSelectionPointBox();
+	        		this.selectBoxRTop 		= new FormSelectionPointBox();
+	        		this.selectBoxLMid 		= new FormSelectionPointBox();
+	        		this.selectBoxRMid 		= new FormSelectionPointBox();
+	        		this.selectBoxLBottom 	= new FormSelectionPointBox();
+	        		this.selectBoxCBottom 	= new FormSelectionPointBox();
+	        		this.selectBoxRBottom 	= new FormSelectionPointBox();
+	        	}else{
+	        		this.removeChild(this.selectBoxLTop);
+	        		this.removeChild(this.selectBoxCTop);
+	        		this.removeChild(this.selectBoxRTop);
+	        		this.removeChild(this.selectBoxLMid);
+	        		this.removeChild(this.selectBoxRMid);
+	        		this.removeChild(this.selectBoxLBottom);
+	        		this.removeChild(this.selectBoxCBottom);
+	        		this.removeChild(this.selectBoxRBottom);
+
+	        		this.selectBoxLTop=null;
+	        		this.selectBoxCTop=null;
+	        		this.selectBoxRTop=null;
+	        		this.selectBoxLMid=null;
+	        		this.selectBoxRMid=null;
+	        		this.selectBoxLBottom=null;
+	        		this.selectBoxCBottom=null;
+	        		this.selectBoxRBottom=null;
+	        		this.selectBoxLTop 		= new FormSelectionPointBox();
+	        		this.selectBoxCTop 		= new FormSelectionPointBox();
+	        		this.selectBoxRTop 		= new FormSelectionPointBox();
+	        		this.selectBoxLMid 		= new FormSelectionPointBox();
+	        		this.selectBoxRMid 		= new FormSelectionPointBox();
+	        		this.selectBoxLBottom 	= new FormSelectionPointBox();
+	        		this.selectBoxCBottom 	= new FormSelectionPointBox();
+	        		this.selectBoxRBottom 	= new FormSelectionPointBox();
+	        	}
+        		this.addChild(this.selectBoxLTop);
+        		this.addChild(this.selectBoxCTop);
+        		this.addChild(this.selectBoxRTop);
+        		this.addChild(this.selectBoxLMid);
+        		this.addChild(this.selectBoxRMid);
+        		this.addChild(this.selectBoxLBottom);
+        		this.addChild(this.selectBoxCBottom);
+        		this.addChild(this.selectBoxRBottom);
+	        	
+	        	if(this._selectionViewer != null){
+	        		drawSelection(this._selectionViewer, this._selectionViewer.width, this._selectionViewer.height);
+					this.selectBoxLTop.visible = false;
+					this.selectBoxCTop.visible = false;
+					this.selectBoxRTop.visible = true;
+					this.selectBoxLMid.visible = false;
+					this.selectBoxRMid.visible = true;
+					this.selectBoxLBottom.visible = true;
+					this.selectBoxCBottom.visible = true;
+					this.selectBoxRBottom.visible = true;
+					
+					if(this.selectionViewer is FormGridItemView){
+						FormGridItemSelectionBox.registerSelectionHandler(this, this.selectionViewer);
+					}else{
+						FormSelectionBox.registerSelectionHandler(this, this.selectionViewer);
+					}
+					if(this.selectionViewer is FormGridItemView){
+						FormGridItemView(this._selectionViewer).setStyle("borderColor", 0xda0000);
+					}
+					
+					// 폼 필드 도구 보이기 
+					if(this.selectionViewer is FormGridItemView && (this.selectionViewer as FormGridItemView).fieldView != null){
+						var globalPoint:Point = (this.selectionViewer as FormGridItemView).fieldView.localToGlobal(new Point());
+						var localPoint:Point = this.globalToLocal(globalPoint);
+						FieldToolBox.show(this, this.selectionViewer as FormGridItemView, localPoint.x, localPoint.y);
+					}else{
+						FieldToolBox.hide();
+					}
+	        	}else{
+	        		this.selectBoxLTop.visible = false;
+					this.selectBoxCTop.visible = false;
+					this.selectBoxRTop.visible = false;
+					this.selectBoxLMid.visible = false;
+					this.selectBoxRMid.visible = false;
+					this.selectBoxLBottom.visible = false;
+					this.selectBoxCBottom.visible = false;
+					this.selectBoxRBottom.visible = false;
+					// 폼 필드 도구 보이기 삭제
+					FieldToolBox.hide();
+					FormGridItemToolBox.removeToolBox();
+	        	}
+	        }
+	        
+			public function containThis(target:DisplayObject):Boolean{
+				if(target == null){
+					return false;
+				}else if(target == this){
+					return true;
+				}else{
+					return containThis(target.parent);
+				}			
+			}
+			
+			private function serviceFault(e:WorklistServiceEvent):void{
+				MsgUtil.showError(e.msg);
+			}
+            
+            public function get formContainer():IFormContainer{
+            	return this.formModel;
+            }
+			
+			public function drawSelection(resizeViewer:ISelectableView, width:Number, height:Number):void{
+	        		var selPos:Point = this.globalToLocal(resizeViewer.localToGlobal(new Point()));
+	        		
+					this.selectBoxLTop.x = selPos.x - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxLTop.y = selPos.y - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					
+					this.selectBoxCTop.x= selPos.x + (width/2) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxCTop.y= selPos.y - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5)); 
+					
+					this.selectBoxRTop.x= selPos.x + (width) -  (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxRTop.y= selPos.y - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					
+					this.selectBoxLMid.x= selPos.x - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxLMid.y= selPos.y + (height/2) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					
+					this.selectBoxRMid.x = selPos.x + (width) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxRMid.y = selPos.y + (height/2) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));  
+					
+					this.selectBoxLBottom.x = selPos.x - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxLBottom.y = selPos.y + (height) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					
+					this.selectBoxCBottom.x = selPos.x + (width/2) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxCBottom.y = selPos.y + (height) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5)); 
+					
+					this.selectBoxRBottom.x = selPos.x + (width) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));
+					this.selectBoxRBottom.y = selPos.y + (height) - (FormSelectionPointBox.SELECTION_POINT_SIZE * (1.5));		
+			}
+			
+			
+			public function mouseClick(event:MouseEvent):void{
+				if(event.target == this){
+					if(event.localX < this.formModel.leftSpace || event.localX > (this.formModel.width - this.formModel.rightSpace)){
+						if(event.localY < this.formModel.topSpace || event.localY  > (this.formModel.height - this.formModel.bottomSpace)){
+							this.select();
+						}
+					}
+				}
+			}
+			
+			public function select():void{
+				var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.SELECTVIEW);
+	        	event.view = this;
+	        	this.dispatchEvent(event);
+				trace("[Event]FieldDocumentView select dispatch event : " + event);
+			}
+			
+			private function get smartWorkbench():Canvas{
+				if(this.parentDocument){
+					return Canvas(this.parentDocument).parentDocument as Canvas;
+				}
+				return null;
+			}
+
+			private function get formStage():Canvas{
+				if(this.smartWorkbench)
+					return this.smartWorkbench["formStage"] as Canvas;
+				return null;
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

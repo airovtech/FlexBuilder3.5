@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="180" height="100%" xmlns:schema="com.maninsoft.smart.formeditor.refactor.view.schema.*" xmlns:schema1="com.maninsoft.smart.formeditor.refactor.simple.view.schema.*" xmlns:mapping="com.maninsoft.smart.formeditor.refactor.simple.view.mapping.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.MappingIconLibrary;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+	        [Bindable]
+	        public var formDocument:FormDocument;	   
+	        
+	        [Bindable]
+	        public var swForm:SWForm;	
+	        
+	        public function closeView():void {
+				dispatchEvent(new Event(Event.CLOSE));
+			}	
+	        
+		]]>
+	</mx:Script>	
+	<mx:Metadata>
+        [Event(name="close", type="flash.events.Event")]
+    </mx:Metadata>
+	<!--<mx:Box width="100%" height="100%" styleName="fseControlBar" />
+	<mx:Box width="100%" height="100%" backgroundAlpha="1" styleName="fseControlBar">
+		<mx:filters>
+  			<flash.filters:BevelFilter xmlns:flash.filters="flash.filters.*" angle="90" blurX="1" blurY="1"
+  				 distance="1" highlightAlpha=".4" shadowAlpha=".4" highlightColor="0x000000" shadowColor="0xFFFFFF" knockout="true" />
+  		</mx:filters>
+	</mx:Box>-->
+	<!--<mx:Image source="@Embed(source='assets/play_back.PNG')" useHandCursor="true" buttonMode="true" 
+		mouseChildren="false" click="{closeView()}" id="closeSchemaBtnRight" right="5" top="5" />-->
+	<!--schema1:SimpleSchemaTreeEditor id="treeNav" 
+		editDomain="{this.editDomain}" formDocument="{this.formDocument}" 
+		/-->
+<!-- left="5" top="10" bottom="10" right="5"-->
+
+	<!--
+	<mx:ToggleButtonBar right="5" top="5" id="viewToggle" styleName="fseToggleButtons"
+		 itemClick="viewStack.selectedIndex = viewToggle.selectedIndex">
+		 <mx:dataProvider>
+			<mx:Array>
+				<mx:Object icon="{IconLibrary.tree}"  toolTip="스키마"/>                   
+				<mx:Object icon="{MappingIconLibrary.mapping}" toolTip="맵핑"/>					
+			</mx:Array>
+		</mx:dataProvider>
+	</mx:ToggleButtonBar>
+	
+	<mx:ViewStack left="5" top="30" bottom="30" right="5" id="viewStack" selectedIndex="0">				
+		<schema1:SimpleSchemaTreeEditor id="treeNav" editDomain="{this.editDomain}" formDocument="{this.formDocument}" width="{this.width - 10}" height="{this.height - 60}"/>
+		<mapping:FormMappingEditor id="mappingEditor" editDomain="{this.editDomain}" formDocument="{this.formDocument}" width="{this.width - 10}" height="{this.height - 60}" swForm="{this.swForm}"/>
+		<mx:Canvas id="miniNav" width="20"/>
+	</mx:ViewStack>
+	-->
+	<!--<mx:ToggleButtonBar left="5" bottom="5" id="viewToggle" styleName="fseToggleButtons"
+		 itemClick="viewStack.selectedIndex = viewToggle.selectedIndex">
+		 <mx:dataProvider>
+			<mx:Array>
+				<mx:Object icon="{IconLibrary.tree}"  toolTip="트리"/>                   
+				<mx:Object icon="{IconLibrary.dataGrid}" toolTip="그리드"/>					
+			</mx:Array>
+		</mx:dataProvider>
+	</mx:ToggleButtonBar>-->
+
+</mx:Canvas>

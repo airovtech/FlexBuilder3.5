@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:view="com.maninsoft.smart.formeditor.refactor.view.*" xmlns:view1="com.maninsoft.smart.formeditor.refactor.simple.view.*"
+	creationComplete="init()" xmlns:form="com.maninsoft.smart.formeditor.refactor.simple.view.form.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.messaging.config.ServerConfig;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.util.ProcessExetWin;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.refactor.util.ProcessStartWin;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import mx.core.Application;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			
+			public static const TYPE_WORKITEM:String="workitem";
+			public static const TYPE_INITIATE:String="initiate";
+			public static const TYPE_RECORD:String="record";
+			public static const TYPE_RECORD_DATA:String="recordData";
+			
+			[Bindable]
+			public var type:String = TYPE_WORKITEM;
+			
+			/**************데이타 업무용(단위업무용)***********/
+			[Bindable]
+			private var recordId:String;
+			
+			/**************일반 업무용***********************/
+			[Bindable]
+			private var workId:String;
+			
+			[Bindable]
+			private var workItemXML:XML;
+			
+			/*************시작업무용********************/
+			[Bindable]
+			private var formId:String;
+			
+			[Bindable]
+			private var processId:String;
+						
+			[Bindable]
+			private var version:int;
+			
+//			[Bindable]
+			private var _formModel:FormDocument;
+			
+			[Bindable]
+			private function set formModel(formModel:FormDocument):void{
+				this._formModel = formModel;
+				
+				formViewer.formModel = this._formModel;
+			}
+			
+			private function get formModel():FormDocument{
+				return this._formModel;
+			}
+			
+			private var _basePath:String;
+			
+			[Bindable]
+			public function set basePath(basePath:String):void{
+				this._basePath = basePath;
+				FormEditorConfig.baseUrl = basePath;
+			}
+			public function get basePath():String{
+				return this._basePath;
+			}
+
+			private var _userId:String;
+			
+			[Bindable]
+			public function set userId(userId:String):void{
+				this._userId = userId;
+				FormEditorConfig.userId = userId;
+			}
+			public function get userId():String{
+				return this._userId;
+			}
+			
+			//워크아이템 로드
+			public function loadWorkItem(workId:String):void{				
+				if(workId != null && workId != "" ){
+					this.workId = workId;
+					type = TYPE_WORKITEM;
+					
+		        	editDomain.serviceClient.worklistService.loadFormByWorkItemId(workId, 
+		        		function (e:WorklistServiceEvent):void{
+		        			formModel = e.formModel;
+		        			loadWorkType(true);
+		        		},
+		        		serviceFault	
+		        	);
+				}
+			}
+
+			//폼 로드
+			public function loadForm(formId:String, processId:String, version:int):void{				
+				if(formId != null && formId != ""){
+					this.formId = formId;
+					this.processId = processId;
+					this.version = version;
+					
+					type = TYPE_INITIATE;
+		        	
+		        	editDomain.serviceClient.worklistService.loadForm(formId, version,
+		        		function (e:WorklistServiceEvent):void{
+		        			formModel = e.formModel;
+		        			loadWorkType();
+		        		},
+		        		serviceFault
+		        	);
+				}
+			}
+			
+			//단위 업무 폼 로드
+			public function loadRecord(formId:String, version:int):void{				
+				if(formId != null && formId != ""){
+					this.formId = formId;
+					this.version = version;
+					
+					type = TYPE_RECORD;
+		        	
+		        	editDomain.serviceClient.worklistService.loadForm(formId, version,
+		        		function (e:WorklistServiceEvent):void{
+		        			formModel = e.formModel;
+		        			loadWorkType();
+		        		},
+		        		function (e:WorklistServiceEvent):void{
+		        			MsgUtil.showPopupMsg(Application.application.document, e.msg);
+		        		}	
+		        	);
+				}
+			}
+
+			//단위 업무 데이타 로드
+			public function loadRecordData(recordId:String, formId:String, version:int):void{				
+				if(recordId != null && recordId != "" && formId != null && formId != ""){
+					this.recordId = recordId;
+					
+					this.formId = formId;
+					this.version = version;
+					
+					type = TYPE_RECORD_DATA;
+		        	
+		        	editDomain.serviceClient.worklistService.loadForm(formId, version,
+		        		function (e:WorklistServiceEvent):void{
+		        			formModel = e.formModel;
+		        			loadDataRecord();
+		        		},
+		        		function (e:WorklistServiceEvent):void{
+		        			MsgUtil.showPopupMsg(Application.application.document, e.msg);
+		        		}	
+		        	);
+				}
+			}
+						
+			private function loadWork():void{
+				if(this.workItemXML != null && this.formModel != null){
+					formViewer.valueXml = workItemXML;
+				}
+			}
+			
+			private function loadWorkType(workLoad:Boolean  = false):void{
+				if(this.formModel != null){
+					formViewer.formModel = formModel;
+					if(workLoad){
+						editDomain.serviceClient.worklistService.load(workId, 
+			        		function (e:WorklistServiceEvent):void{
+			        			workItemXML = e.workitemXML;
+			        			loadWork();
+			        		},
+			        		serviceFault
+		        		)
+					} 
+				}
+			}
+			
+			private function loadDataRecord():void{
+				if(this.formModel != null){
+					formViewer.formModel = formModel;
+					editDomain.serviceClient.worklistService.loadRecord(recordId, formId, 
+		        		function (e:WorklistServiceEvent):void{
+		        			workItemXML = e.workitemXML;
+		        			loadWork();
+		        		},
+		        		serviceFault
+	        		)
+				}
+			}
+			
+			private var processStartWin:ProcessStartWin;
+
+						// 작업을 완료			
+			public function executeForm():void{
+				if(type == TYPE_INITIATE){
+					processStartWin = ProcessStartWin(PopUpManager.createPopUp(this,ProcessStartWin,true));
+					processStartWin.addEventListener(Event.COMPLETE, 
+						function(e:Event):void{						
+							execute();						
+						}
+					);
+					processStartWin.initName = this.formModel.name;
+					processStartWin.formDataXml = this.formViewer.valueXml;
+					processStartWin.formDoc = this.formModel;
+					processStartWin.formViewer = this.formViewer;
+					PopUpManager.centerPopUp(processStartWin);
+				}else if(type == TYPE_WORKITEM){
+					execute();
+				}else 
+					execute();		
+
+			}
+			
+			
+			private function execute():void{
+				if(valid())
+					if(type == TYPE_WORKITEM){
+						var workitemXml:XML = getWorkItemXML();	
+						var nextPerformer:String = workitemXml.DataField.(@id==this.formModel.nextPerformer).toString();			
+						editDomain.serviceClient.worklistService.execute(this.workId, getWorkItemXML(), "", 
+								nextPerformer,complete, serviceFault);
+					}else  if(type == TYPE_INITIATE){
+						var dataXml:XML = this.formViewer.valueXml;
+						var _nextPerformer:String = dataXml.DataField.(@id==this.formModel._nextPerformer).toString();
+						editDomain.serviceClient.worklistService.executeStart(this.formId, this.processId, this.version, 
+								processStartWin.processTitleInput.text, processStartWin.processKeywordInput.text, 
+								processStartWin.processDescriptionInput.text, _nextPerformer, this.formViewer.valueXml,
+								complete, 
+								serviceFault);
+					}else
+						editDomain.serviceClient.worklistService.creteRecord(this.formViewer.valueXml,
+								complete, 
+								serviceFault);
+			}
+			
+			private function getWorkItemXML():XML{
+				var workitemXML:XML = getDataXML();
+				workitemXML.@workItemId = this.workId;
+				return workitemXML;
+			}
+			
+			public function getDataXML():XML{
+				var dataXML:XML =  this.formViewer.valueXml;
+				if(this.recordId != null)
+					dataXML.@recordId = this.recordId;
+				return dataXML;
+			}
+			
+			private function complete(e:WorklistServiceEvent):void{
+				MsgUtil.showPopupMsg(this, e.msg);
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent("sucessWorkitemExecute");
+				dispatchEvent(eventObj);
+			}
+			
+			private function assignComplete(e:WorklistServiceEvent):void{
+				MsgUtil.showPopupMsg(this, e.msg);
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent(WorklistServiceEvent.SUCESS_ASSIGN);
+				dispatchEvent(eventObj);
+			}
+			
+			private function saveComplete(e:WorklistServiceEvent):void{
+				MsgUtil.showPopupMsg(this, e.msg);
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent("sucessWorkitemSave");
+				dispatchEvent(eventObj);
+			}
+			
+			private function serviceFault(e:WorklistServiceEvent):void{
+				MsgUtil.showPopupMsg(this, e.msg);
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent("failWorkitemExecute");
+				dispatchEvent(eventObj);
+			}
+
+			private var _editDomain:FormEditDomain;
+			
+			private function get editDomain():FormEditDomain{
+				if(_editDomain == null)
+					_editDomain = new FormEditDomain(FormEditorConfig.serviceUrl);
+					
+				return _editDomain;
+			}
+			
+			private function init():void{
+				formViewer.editDomain = editDomain;
+			}
+			
+			
+			//작업을저장한다.
+			public function saveForm():void{
+				editDomain.serviceClient.worklistService.saveWork(this.workId, getWorkItemXML(), saveComplete, serviceFault);
+			}
+			
+
+			
+			//작업을위임한다.
+			public function entrustForm(entruster:String):void{
+				editDomain.serviceClient.worklistService.entrustWork(this.workId, getWorkItemXML(), entruster, complete, serviceFault);
+			}
+			
+			//작업을반려한다.
+			public function returnForm():void{
+				if(valid())
+					editDomain.serviceClient.worklistService.returnWork(this.workId, getWorkItemXML(), complete, serviceFault);
+			}
+			
+			//작업을중단한다.
+			public function terminateForm():void{
+				editDomain.serviceClient.worklistService.terminateWork(this.workId, getWorkItemXML(), complete, serviceFault);
+			}
+
+			//작업을할당한다.
+			public function assignForm(title:String, relatedWorkitemId:String, assignee:String, nextDuration:String):void{
+				if(valid())
+					editDomain.serviceClient.worklistService.assign(this.formId, this.version, title, assignee, relatedWorkitemId, getDataXML(), nextDuration, assignComplete, serviceFault);
+			}
+			
+			[Bindable]
+			public var runTime:Boolean = true;
+			
+			private function getTopSize(screenHeight:int, formHeight:int, scalePercent:int):int{
+//				if((screenHeight - (formHeight * (scalePercent / 100))) < 0){
+//					return 10;
+//				}else{
+//					return (screenHeight - (formHeight * (scalePercent / 100))) / 2;
+//				}
+				return 10;
+			}
+			
+			private function getSideSize(screenWidth:int, formWidth:int, scalePercent:int):int{
+				if((screenWidth - (formWidth* (scalePercent / 100))) < 0){
+					return 0;
+				}else{
+					return (screenWidth - (formWidth * (scalePercent / 100))) / 2;
+				}
+			}
+			
+			public function valid():Boolean{
+				if(!(formViewer.isValid())){
+					Alert.show("필요한 항목이 처리되지 않았습니다.\n 주의가 표시된 항목을 확인해주세요.");
+					return false;
+				}
+				return true;
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="sucessWorkitemExecute", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+        [Event(name="sucessWorkitemSave", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+        [Event(name="sucessWorkitemAssign", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+        [Event(name="failWorkitemExecute", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+        [Event(name="fail", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+    </mx:Metadata>
+	<!--<mx:Canvas id="formScreen" label="화면편집"
+		top="10" left="8" right="5" bottom="8" 
+		>
+		<form:FormDocumentRootViewer id="formViewer"
+			x="{getSideSize(formScreen.width - 15, this.formModel.width, this.formModel.scalePercent)}" 
+			y="{getTopSize(formScreen.height, this.formModel.height, this.formModel.scalePercent)}"  				
+			editDomain="{this.editDomain}" formModel="{this.formModel}"
+			scaleX="{this.formModel.scalePercent / 100}" scaleY="{this.formModel.scalePercent / 100}" 
+			> 
+		</form:FormDocumentRootViewer>
+	</mx:Canvas>	-->
+	<mx:Canvas id="formScreen" x="0" y="0" width="100%">
+		<form:FormDocumentRootViewer id="formViewer"
+			x="{getSideSize(formScreen.width - 15, this.formModel.width, 100)}" 
+			y="{getTopSize(formScreen.height, this.formModel.height, 100)}"  				
+			editDomain="{this.editDomain}" formModel="{this.formModel}"
+			mode="{runTime?Constants.MODE_RUNTIME:Constants.MODE_DESIGN}"
+			> 
+		</form:FormDocumentRootViewer>
+		<!--scaleX="{this.width / formViewer.formModel.width}" scaleY="{this.width / formViewer.formModel.width}"
+		<mx:Canvas width="100%" backgroundColor="#FFFFFF">
+			<mx:Button label="완료" right="5" click="{executeForm()}" fontSize="12" fontFamily="Arial"/>
+		</mx:Canvas>
+		-->
+	</mx:Canvas>
+</mx:Canvas>

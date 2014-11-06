@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PopCategoryTree xmlns="com.maninsoft.smart.common.category.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Tree;
+			
+			public override function treeInit(tree:Tree, url:String):void
+			{	
+				this._tree = tree;
+				this.xmlURL = url;
+				dataCall(this.xmlURL + "?method=retrieveCodeRootCategoryForTree");
+			}
+		]]>
+	</mx:Script>
+</PopCategoryTree>

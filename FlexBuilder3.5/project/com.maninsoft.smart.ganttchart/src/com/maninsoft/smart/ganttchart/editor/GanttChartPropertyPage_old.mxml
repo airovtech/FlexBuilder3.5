@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:page="com.maninsoft.smart.ganttchart.editor.property.*" creationComplete="init()">
+	<mx:Style>
+		.textInputStyle{
+			backgroundAlpha: 0;
+		}
+		.normalLabel {
+			fontFamily: MALGUN;
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Label;
+			import com.maninsoft.smart.workbench.common.property.page.PropertyPageItem;
+			import com.maninsoft.smart.modeler.model.events.NodeChangeEvent;
+			import mx.core.UIComponent;
+			
+			private function init():void{
+				//vBox1.addChild(PDEPropertyPage1);
+				//vBox2.addChild(PDEPropertyPage2);
+			}
+			
+			private function sourceChangedHanlder(event:Event):void{
+				dispatchEvent(event);
+			}
+			
+			private function selectionChangedHandler(event:Event):void{
+				dispatchEvent(event);
+			}
+			
+			private function sourcevalueChangedHandler(event:Event):void{
+				dispatchEvent(event);
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="sourceChanged", type="flash.events.Event")]
+		[Event(name="selectionChanged", type="flash.events.Event")] 
+		[Event(name="change", type="com.maninsoft.smart.modeler.model.events.NodeChangeEvent")]
+    </mx:Metadata>
+	<page:GanttPropertyPage visible="true" width="100%" height="100%" id="ganttPropertyPage" verticalScrollPolicy="auto" horizontalScrollPolicy="off" 
+		sourceChanged="{sourceChangedHanlder(event)}" selectionChanged="selectionChangedHandler(event);" propertyChanged="sourcevalueChangedHandler(event)"
+		viewName="general"/>
+</mx:Canvas>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()" >
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.controls.Button;
+			import mx.controls.Label;
+			import mx.collections.XMLListCollection;
+			import mx.collections.ArrayList;
+			import mx.core.Container;
+			import mx.controls.DataGrid;
+			
+			private var dg:DataGrid;
+			public var addRowCount:int = 5;
+			private var clickCount:int = 0;
+			private var arrCan:ArrayList = new ArrayList();
+			public var componentName:String;
+			
+			private function init():void{
+				dg = DataGrid(this.getChildAt(0));
+				dg.addEventListener(ListEvent.ITEM_CLICK, itemClickHandler);
+			}
+			
+			private function itemClickHandler(event:ListEvent):void{
+				clickCount = dg.selectedIndex;
+				var obj:Object;
+				try{
+					obj = XMLListCollection(dg.dataProvider).getItemAt(clickCount + 1)
+				}catch(err:Error){}
+				if(dg.selectedItem!=obj){
+					for(var i:int=0; i<addRowCount; i++){
+						XMLListCollection(dg.dataProvider).addItemAt(dg.selectedItem, dg.selectedIndex);
+					}
+					var accoCan:AccordionEmbedCanvas = new AccordionEmbedCanvas();
+					accoCan.componentName = this.componentName;
+					accoCan.closeBtn.addEventListener(MouseEvent.CLICK, unitemClickHandler);
+					accoCan.selXml = XMLList(dg.selectedItem);
+					accoCan.id = clickCount+"";
+					accoCan.width = dg.width;
+					accoCan.height = dg.rowHeight * addRowCount;
+					accoCan.x = dg.x;
+					accoCan.y = dg.y + dg.headerHeight + (dg.rowHeight*(clickCount+1));
+					accoCan.setStyle("backgroundColor", "#629EF8");
+					accoCan.visible = true;
+					this.addChild(accoCan);
+					
+					reControl(accoCan, true);
+					arrCan.addItem(accoCan);
+				}
+			}
+			
+			private function reControl(can:Canvas, add:Boolean):void{
+				for(var i:int=0; i<arrCan.length; i++){
+					var oldCan:Object = arrCan.getItemAt(i);
+					if(oldCan.y > can.y){
+						if(add){
+							oldCan.y += dg.rowHeight * addRowCount;
+							oldCan.id = (Number(oldCan.id) + addRowCount) + "";
+						}else{
+							oldCan.y -= dg.rowHeight * addRowCount;
+							oldCan.id = (Number(oldCan.id) - addRowCount) + "";
+						}
+					}
+				}
+			}
+			
+			private function unitemClickHandler(event:MouseEvent):void{
+				var can:Canvas = Canvas(Button(event.target).parent);
+				for(var i:int=0; i<addRowCount; i++){
+					XMLListCollection(dg.dataProvider).removeItemAt((Number(can.id)+1));
+				}
+				reControl(can, false);
+				this.removeChild(can);
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

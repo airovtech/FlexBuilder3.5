@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="300" height="300" 
+	titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" 
+	title="부서 추가/삭제" creationComplete="init()" close="PopUpManager.removePopUp(this)" alpha="3">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.mxml.HTTPService;
+			import portalAs.Properties;
+			
+			private var dataRequest:HTTPService;
+
+			[Bindable]
+			public var _deptId:String;
+			[Bindable]
+			public var _buttonType:String;
+					
+			private function init():void {
+		    	if(_buttonType == "create"){
+		    		deptId.editable = false;
+		    		parentId.text = _deptId;
+		    	}else if(_buttonType == "delete"){
+		    		deptId.editable = false;
+					deptId.text = _deptId;
+					parentIdItem.visible = false;
+					deptTypeItem.visible = false;
+					deptNameItem.visible = false;
+					descriptionItem.visible = false;
+		    	}
+			}
+			
+		    private function createDept():void {
+				var params:Object = new Object();
+				params.method = "createDept";
+				params.parentId = !rootCheck.selected ? parentId.text : '';
+				params.deptName = deptName.text;
+				params.type = deptType.text;	
+				params.description = description.text;	
+				
+				dataRequest = new HTTPService();
+		    	dataRequest.resultFormat = "e4x";
+		    	//dataRequest.url = Properties.basePath + "smartserver/services/common/organizationService.jsp"
+		    	dataRequest.url = Properties.basePath + "smartserver/services/common/organizationService.jsp";
+		    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandler);
+		    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest.useProxy = false;
+		    	dataRequest.method = "post"
+				dataRequest.send(params);
+		    }
+		    
+		    private function deleteDept():void {
+				var params:Object = new Object();
+				params.method = "deleteDept";
+				params.id = deptId.text;
+		
+				dataRequest = new HTTPService();
+		    	dataRequest.resultFormat = "e4x";
+		    	//dataRequest.url = Properties.basePath + "smartserver/services/common/organizationService.jsp"
+		    	dataRequest.url = Properties.basePath + "smartserver/services/common/organizationService.jsp"
+		    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandler);
+		    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest.useProxy = false;
+		    	dataRequest.method = "post"
+				dataRequest.send(params);
+		    }
+		    
+    		private function resultHandler(event:ResultEvent):void {
+    			DeptTree(this.owner).treeDataRefresh();
+    			PopUpManager.removePopUp(this);
+    			
+    		}
+    		private function faultHandler(event:FaultEvent):void {
+    			Alert.show("Exception occured during read data.\n"+event.fault.message);
+    		}		    
+		]]>
+	</mx:Script>
+	<mx:Label x="0" y="10" text="신규부서 추가" width="92"/>
+	<mx:Form x="0" y="36" width="100%">
+		<mx:FormItem label="아이디" id="deptIdItem">
+			<mx:TextInput id="deptId"/>
+		</mx:FormItem>
+		<mx:FormItem label="상위부서 아아디" id="parentIdItem">
+			<mx:TextInput id="parentId" />
+			<mx:FormItem label="Root에 추가">
+				<mx:CheckBox id="rootCheck"/>
+			</mx:FormItem>
+		</mx:FormItem>
+		<mx:FormItem label="타입" id="deptTypeItem"> 
+			<mx:TextInput id="deptType"/>
+		</mx:FormItem>
+		<mx:FormItem label="부서명" id="deptNameItem">
+			<mx:TextInput id="deptName"/>
+		</mx:FormItem>
+		<mx:FormItem label="설명" id="descriptionItem">
+			<mx:TextInput id="description"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Button x="110" y="210" label="저장" click="createDept()"/>
+	<mx:Button x="166" y="210" label="삭제" click="deleteDept()"/>
+	
+</mx:TitleWindow>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"  xmlns:ns1="com.maninsoft.smart.formeditor.refactor.view.*" xmlns:runTime="mxmlComponet.runTime.*" xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.binding.utils.BindingUtils;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import mx.controls.Alert;
+			
+			
+			[Bindable]
+			public var creator:String;			
+			[Bindable]
+			public var createdTime:String;		
+			[Bindable]
+			public var basePath:String;
+			[Bindable]
+			public var userId:String;
+			
+			public var _formIdVer:String;
+			[Bindable]
+			public var _recordId:String;
+			
+			[Bindable]
+			public var showBtn:Boolean = true; //버튼바 대한 보여줄지 상태
+			
+			[Bindable]
+			public var tagVisible:Boolean = false;  //tag바를 보여주냐 안보주냐 상태
+			
+			[Bindable]
+			public var formId:String;
+			[Bindable]
+			public var formVer:String;
+			
+			[Bindable]
+			public function set formIdVer(_formIdVer:String):void{
+				this._formIdVer = _formIdVer;
+				var param:Array =  _formIdVer.split("|");
+				runtimeForm.loadRecord(param[0], int(param[1]));
+				formId = param[0];
+				formVer = param[1];
+			}
+			
+			public function get formIdVer():String{
+				return this._formIdVer;
+			}
+			
+			[Bindable]
+			public function set recordId(_recordId:String):void{
+				/* if(creator == "" || creator == null){
+					meta.height = 0;
+				}else{
+					meta.height = 20;
+				} */
+				this._recordId = _recordId;				
+				var param:Array =  _formIdVer.split("|");
+				runtimeForm.loadRecordData(_recordId, param[0], int(param[1]));
+			}
+			
+			public function get recordId():String{
+				return this._recordId;
+			}
+			
+			private function workExe(mode:String):void{
+				if(mode == "save"){
+					runtimeForm.saveForm();
+				}else if(mode == "execute"){
+					runtimeForm.executeForm();
+				}else if(mode == "return"){
+					runtimeForm.returnForm();
+				}else if(mode == "terminate"){
+					runtimeForm.terminateForm();
+				}else if(mode == "entrust"){
+					//runtimeForm.entrustForm(entruster.text);
+				}
+				buttonDisble(false);
+			}
+			
+			private function buttonDisble(btnMode:Boolean):void{
+				btn2.enabled = btnMode;
+				btn6.enabled = btnMode;
+			}
+			
+			private function sucess():void{
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent("sucessWorkitemExecute");
+				dispatchEvent(eventObj);
+			}
+			
+			private function fail():void{	 
+				buttonDisble(true);
+			}
+			
+			private function cancel():void{	
+				sucess();
+			}
+			
+			private function tagView(bo:Boolean):void{
+				tagVisible = bo;
+				if(bo){
+					tagBox.height = 24;
+				}else{
+					tagBox.height = 0;
+				}
+				tagText.text = "";
+				if(bo){
+					getTag.url = basePath + "smartworksV3/services/portal/tagService.jsp?method=getTagNameByRecordId";
+					getTag.send();
+				}
+			}
+			
+			private function tagSaveExe():void{
+				saveTag.url = basePath + "smartworksV3/services/portal/tagService.jsp?method=createSingleWorkTagPost";
+				saveTag.send();
+				tagView(false);
+				tagBox.height = 0;
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="sucessWorkitemExecute", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+    </mx:Metadata>
+    <mx:HTTPService id="getTag"  resultFormat="e4x" useProxy="false" method="post">
+		<mx:request>
+			<userId>{userId}</userId>
+			<formId>{formId}</formId>
+		</mx:request>
+	</mx:HTTPService>
+	
+	<mx:HTTPService id="saveTag"  resultFormat="e4x" useProxy="false" method="post">
+		<mx:request>
+			<userId>{userId}</userId>
+			<tagName>{tagText.text}</tagName>
+			<formId>{formId}</formId>
+			<recordId>{_recordId}</recordId>
+		</mx:request>
+	</mx:HTTPService>
+	
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:VBox id="meta" width="100%" height="{creator == '' || creator == null ? 0 : 20}" verticalAlign="middle" horizontalAlign="center" backgroundColor="#ECE9D8" verticalGap="0" paddingBottom="0" paddingLeft="5" paddingRight="5" paddingTop="0">
+			<mx:VBox height="60" width="100%" verticalGap="0">
+				<mx:HBox width="100%" height="20">
+					<mx:Label height="20" width="100%" text="작성자: {creator == null ? '' : creator}" fontSize="11" styleName="normalLabel"/>								
+					<mx:Label height="20" width="100%" text="작성일: {createdTime == null ? '' : createdTime}" fontSize="11" styleName="normalLabel"/>
+				</mx:HBox>
+			</mx:VBox>	
+		</mx:VBox>	
+		<ns1:RuntimeForm id="runtimeForm" width="100%" height="100%" basePath="{basePath}" userId="{userId}" 
+			sucessWorkitemExecute="sucess()" failWorkitemExecute="fail()" horizontalScrollPolicy="off" verticalScrollPolicy="auto"/>
+		<mx:HBox horizontalAlign="center" verticalAlign="middle" width="100%" height="0" backgroundColor="#8CF7DD" id="tagBox" visible="{tagVisible}">
+			<mx:Label text="태그달기" width="60" styleName="nomalLabel" fontSize="11" height="20"/>
+			<mx:TextInput id="tagText" width="100%" text="{getTag.lastResult}" height="20"/>
+			<mx:Button id="tagSave" label="저장" toolTip="tag Save" width="50" fontSize="11" styleName="normalLabel" click="tagSaveExe()" height="20"/>
+			<mx:Button id="tagClose" label="닫기" toolTip="tag view Close" width="50" fontSize="11" styleName="normalLabel" click="{tagView(false)}" height="20"/>
+		</mx:HBox>	
+		<controls:GradientBox width="100%" height="{showBtn ? 24 : 0}" cornerRadius="0" verticalAlign="middle" gradientFrom="#CCCCCC" gradientTo="#999999">
+			<mx:HBox width="100%" height="100%">
+				<mx:HBox width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" horizontalGap="3" id="hbTag">
+					<mx:Button id="tagBtn" label="태그" height="20" fontSize="11" styleName="normalLabel" click="{tagView(true)}"/>
+				</mx:HBox>
+				<mx:HBox width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" horizontalGap="3" id="hb">
+					<mx:Button id="btn2" label="저장"  click="workExe('execute')" styleName="normalLabel" fontSize="11" height="20"/>
+					<mx:Button id="btn6" label="취소"  click="cancel()" styleName="normalLabel" fontSize="11" height="20"/>
+				</mx:HBox>
+			</mx:HBox>
+		</controls:GradientBox>
+	</mx:VBox>
+</mx:Canvas>

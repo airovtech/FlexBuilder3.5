@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" styleName="glassPods" xmlns:layout="com.maninsoft.smart.formeditor.refactor.layout.*" xmlns:form="com.maninsoft.smart.formeditor.refactor.view.form.*" xmlns:net="flash.net.*"
+	creationComplete="init()" xmlns:common="com.maninsoft.smart.formeditor.refactor.view.common.*" xmlns:mapping="com.maninsoft.smart.formeditor.refactor.view.mapping.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorkTypeEvent;
+			import com.maninsoft.smart.formeditor.refactor.util.ProcessFormSelectWindow;
+			import com.maninsoft.smart.formeditor.refactor.view.common.FormDocumentSchemaTree;
+			import mx.controls.Text;
+			import com.maninsoft.smart.formeditor.model.AbstractFormResource;
+			import com.maninsoft.smart.formeditor.model.IFormResource;
+			import com.maninsoft.smart.formeditor.refactor.event.service.ServiceEvent;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.refactor.util.FormSelectWindow;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			import com.maninsoft.smart.formeditor.refactor.service.impl.ServerFormPersistenceService;
+			import com.maninsoft.smart.formeditor.refactor.service.IFormPersistenceService;
+			import com.maninsoft.smart.workbench.common.util.ResultWindow;
+			import mx.core.IFlexDisplayObject;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import mx.collections.ArrayCollection;
+			import mx.automation.codec.ArrayPropertyCodec;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import com.maninsoft.smart.formeditor.refactor.view.form.FormEntityModelEditPartViewer;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.events.ItemClickEvent;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormModelCommand;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+	        [Bindable]
+	        public var formModel:FormDocument;
+	        	        
+			[Bindable]
+			private var formEntityModel:FormEntity;
+	        
+			[Bindable]
+			public var miniMode:Boolean;
+			
+			[Bindable]
+			public var buildTimeMode:Boolean = true;
+			
+			[Bindable]
+			private var _swForm:SWForm;
+			
+			// 초기화
+			private function init():void{
+	        	registerEvent();	        	
+			}
+			
+			// 초기화
+			public function load(swForm:SWForm):void{
+				if(this._swForm != swForm){
+		        	this._swForm = swForm;
+		        	
+		        	editDomain = new FormEditDomain(FormEditorConfig.serviceUrl);
+		        	loadForm();	
+		        	loadWorkType();				
+				}
+				formView.selectedIndex = 0;
+			}
+			
+			// 외부에서 현재 로드중인 폼의 메타정보 획득
+			public function get swForm():SWForm{
+	        	return this._swForm;
+			}
+			
+			// 기본 이벤트 등록
+            private function registerEvent():void {
+            	
+//				this.addEventListener(FormEditEvent.SELECT_FORM_ITEM, selectFormHandler, true);
+//				this.addEventListener(FormEditEvent.SELECT_FORM_ITEMS, selectFormHandler, true);
+//				this.addEventListener(FormEditEvent.SELECT_FORM_DOCUMENT, selectFormHandler, true);
+            }
+            
+            // 이름수정
+	        private function updateName(name:String):void{
+				var command:UpdateFormModelCommand = new UpdateFormModelCommand(this.formModel.name);
+				command.formModel = this.formModel;
+				command.newValue = name;
+				command.type = FormDocument.PROP_NAME;
+				
+				this.editDomain.getCommandStack().execute(command);
+			}
+			// 항목  식 수정
+	        private function updateExpression(exprStr:String):void{
+	        	var command:Command;
+				
+				if(formEntityModel != null){
+					command = new UpdateFormEntityCommand(FormEntity.PROP_EXPRESSION);
+					UpdateFormEntityCommand(command).formEntityModel = formEntityModel;
+					UpdateFormEntityCommand(command).newValue = exprStr;
+//					UpdateFormEntityCommand(command).newValue = this.exprInput.selectedItem.@name;
+					UpdateFormEntityCommand(command).type = FormEntity.PROP_EXPRESSION;
+					
+//					if(this.formEntityViewers.length > 1){
+//						var chainCommand:UpdateFormEntityCommand
+//						for(var i:int = 1 ; i < this.formEntityViewers.length ; i++){
+//							chainCommand = new UpdateFormEntityCommand(FormEntityModel.PROP_EXPRESSION);
+//							chainCommand.formEntityModel = FormEntityModelEditPartViewer(this.formEntityViewers.getItemAt(i)).formEntityModel;
+//							chainCommand.newValue = exprStr;
+////							chainCommand.newValue = this.exprInput.selectedItem.@name;							
+//							chainCommand.type = FormEntityModel.PROP_EXPRESSION;
+//							
+//							command = command.chain(chainCommand);
+//						}						
+//					}
+					this.editDomain.getCommandStack().execute(command);					
+				}
+			}
+			
+//			private function selectFormHandler(formEditEvent:FormEditEvent):void {            	
+//				var selectionFormResources:ArrayCollection = new ArrayCollection();
+//					
+//				// 선택 폼 뷰어 처리
+//				if(formEditEvent.type == FormEditEvent.SELECT_FORM_ITEM){
+//					selectionFormResources.addItem(formEditEvent.formItem);	 
+//	        	}else if(formEditEvent.type == FormEditEvent.SELECT_FORM_DOCUMENT){
+//	        		selectionFormResources.addItem(formEditEvent.formDocument);
+//	        	}else{
+//	        		for each(var formResource:FormEntityModel in formEditEvent.formItems){
+//	        			selectionFormResources.addItem(formResource);
+//	        		}	        		
+//	        	}
+//	        	
+//	        	selectFormResource(selectionFormResources);
+//            }
+            
+			private var selectionFormResources:ArrayCollection = new ArrayCollection();
+			
+			public function selectFormResource(formResources:ArrayCollection):void {            	
+				selectionFormResources.removeAll();
+					
+				for each(var formResource:IFormResource in formResources){
+	        			selectionFormResources.addItem(formResource);
+        		}
+	        	
+	        	formModelEditPartViewer.select(selectionFormResources);
+            }
+            
+//            private function selectRefFormField():void{
+//				this.exprInput.text = this.exprInput.text + "{" + this.refFormFieldCombo.selectedItem.@name + "}";
+//				updateExpression(this.exprInput.text);
+//			}
+			
+//			[Bindable]
+//			private var selectRefFormWin:FormSelectWindow;
+			// 참조 폼 선택 처리
+			// 1. 폼 참조를 위한 창을 팝업으로 띄운다
+//			private function selectRefForm():void{
+//				selectRefFormWin = FormSelectWindow(PopUpManager.createPopUp(this,FormSelectWindow,true));
+//				selectRefFormWin.addEventListener(Event.COMPLETE, completeRefForm);
+//				selectRefFormWin.start();
+//				
+//				PopUpManager.centerPopUp(selectRefFormWin);
+//			}   
+//			// 참조 폼 선택이 끝난 후 처리
+//			private function completeRefForm():void{
+//				// 결과값 설정
+//				this.refFormId = selectRefFormWin.formId;
+//				this.refFormModel = selectRefFormWin.formModel;
+//				
+//				// 모델에 반영
+//				var command:UpdateFormModelCommand = new UpdateFormModelCommand(this.formModel.name);
+//				command.formModel = this.formModel;
+//				command.newValue = this.refFormId;
+//				command.type = FormDocument.PROP_REFFORMID;
+//				
+//				this.editDomain.getCommandStack().execute(command);
+//			}        
+			/******************** 서버 통신 **************************/
+            // 폼 저장
+			public function saveForm():void{
+				editDomain.serviceClient.formService.save(this.swForm.id, this.swForm.version, this.formModel.toXML(), saveResult, serviceFault);
+				if(this.swForm.swWorkType != null){
+					editDomain.serviceClient.workTypeService.saveMapping(this.swForm.swWorkType, 
+						function(e:Event):void{
+							loadWorkTypeMapping();
+						},
+						function(e:Event):void{
+							loadWorkTypeMapping();
+						});					
+				}
+				 
+			}
+			// 폼 로드
+			public function loadForm():void{
+				editDomain.serviceClient.formService.load(this.swForm.id, this.swForm.version, loadResult, serviceFault);			
+			}
+			// 작업타입 로드
+			public function loadWorkType():void{
+				editDomain.serviceClient.workTypeService.load(this.swForm.id, this.swForm.version, loadWorkTypeResult, serviceFault);			
+			}
+			// 작업타입 맵핑 로드
+			public function loadWorkTypeMapping():void{
+				if(this.swForm.swWorkType != null)
+					editDomain.serviceClient.workTypeService.loadMapping(this.swForm.swWorkType, loadWorkTypeMappingResult, serviceFault);			
+			}
+			// 폼 저장결과
+			private function saveResult(event:FormPersistenceEvent):void{
+				MsgUtil.showMsg(event.msg);			
+			}
+			// 폼 로드 결과
+			private function loadResult(event:FormPersistenceEvent):void{
+				this.formModel = event.formModel;
+				checkModel();
+				this.formModel.setResourceMetaModel(this.swForm);		
+			}
+			// 워크타입 로드 결과
+			private function loadWorkTypeResult(event:WorkTypeEvent):void{
+				this.swForm.swWorkType = event.swWorkType;
+				loadWorkTypeMapping();	
+			}
+			// 워크타입 맵핑 로드 결과
+			private function loadWorkTypeMappingResult(event:WorkTypeEvent):void{
+				this.swForm.swWorkType = event.swWorkType;
+				if(prcInputMappingCanvas != null)
+					prcInputMappingCanvas.refreshVisual();
+			}
+			// 모델이 존재하는 지를 체크하고 없으면 모델생성
+			private function checkModel():void{
+				if(this.formModel == null){
+					this.formModel = new FormDocument();
+					this.formModel.id = this.swForm.id;
+					this.formModel.name = this.swForm.name;
+				}						
+			}
+			// 폼  서비스 실
+			private function serviceFault(event:ServiceEvent):void{
+				MsgUtil.showPopupMsg(this, event.msg);
+			}
+			/***************************그리기******************************/
+			public function refreshVisual():void{
+				formModelEditPartViewer.refreshVisual();
+			}
+			/************트리****************/
+			
+			public function set valueXML(valueXML:XML):void{
+				formModelEditPartViewer.valueXml = valueXML;
+			}
+			
+			public function get valueXML():XML{
+				return formModelEditPartViewer.valueXml;
+			}
+			]]>
+	</mx:Script>
+	<mx:VBox id="workspace" x="0" y="0" width="100%" height="100%" verticalGap="0"> 
+		<mx:HBox height="{(this.miniMode)?0:20}" width="100%" horizontalGap="0" visible="{!this.miniMode}">
+			<mx:TextInput id="formNameBar" width="100%" height="100%" textAlign="left" fontSize="12" fontFamily="Arial"
+				text="{formModel.name}" change="updateName(this.formNameBar.text)" editable="true" borderStyle="solid" alpha="0.85" backgroundColor="#FFFFFF">		
+			</mx:TextInput>
+			<!--<mx:Canvas height="100%" width="100%">
+				<mx:Image  right="10" source="{IconLibrary.ref}" click="selectRefForm()" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="{(this.refFormModel != null)?'참조 폼 : ' + this.refFormModel.name:'참조중인 폼이 없음.'}">			
+				</mx:Image>			
+			</mx:Canvas>-->
+		</mx:HBox>	
+		<!--<mx:HBox id="exprBox" height="{(this.miniMode)?0:20}" width="100%" horizontalGap="0" visible="{!this.miniMode}">
+			<mx:Text  width="30" height="100%" textAlign="center" fontSize="16" fontFamily="Arial"
+				text="=" fontWeight="bold">		
+			</mx:Text>
+			<mx:TextInput id="exprInput" width="80%" height="100%" textAlign="left" fontSize="12" fontFamily="Arial"
+				text="{this.formEntityModel.expression}" change="updateExpression(this.exprInput.text)" editable="true" borderStyle="outset" alpha="0.85" backgroundColor="#FFFFFF">		
+			</mx:TextInput>
+			<mx:Canvas id="fieldAddImgCanvas" height="100%">
+				<mx:Image id="fieldAddImg" y="{(this.fieldAddImgCanvas.height - this.fieldAddImg.height)/2}" source="{IconLibrary.closeNav}">			
+				</mx:Image>
+			</mx:Canvas>
+			<mx:Text  width="30" height="100%" textAlign="center" fontSize="14" fontFamily="Arial"
+				text="◀" fontWeight="bold">		
+			</mx:Text>
+			<mx:ComboBox id="refFormFieldCombo" width="20%" height="100%" textAlign="left" fontSize="12" fontFamily="Arial"
+				dataProvider="{this.refFormModel.children}" labelField="name" change="selectRefFormField()" toolTip="선택한 필드를 추가할 수 있습니다."/>
+			<mx:Canvas height="100%">
+				<mx:Image id="refFormFieldBtn" source="{IconLibrary.refField}" right="10" click="openRefFormFieldList()" useHandCursor="true" buttonMode="true" mouseChildren="false">			
+				</mx:Image>
+			</mx:Canvas>
+		</mx:HBox>-->
+		<mx:ViewStack id="formView" width="100%" height="100%" selectedIndex="0">
+			<mx:Canvas id="formScreen" label="화면편집" width="100%" height="100%" backgroundColor="#7DAEEB">
+				<mx:Box width="{formModelEditPartViewer.width}" height="{formModelEditPartViewer.height}" 
+					top="{Math.abs(formScreen.height - this.formModel.height) / 2}" bottom="{Math.abs(formScreen.height - this.formModel.height) / 2}"  
+					left="{(formScreen.width - this.formModel.width) / 2}" right="{(formScreen.width - this.formModel.width) / 2}"
+					backgroundColor="#8B8B8B" borderStyle="none">
+					<!--bottom="{(formScreen.height - this.formModel.height) / 2}" 
+					<mx:filters>backgroundAlpha="1"
+			  			<flash.filters:BevelFilter xmlns:flash.filters="flash.filters.*" angle="90" blurX="1" blurY="1"
+			  				 distance="1" highlightAlpha=".4" shadowAlpha=".4" highlightColor="0x000000" shadowColor="0xFFFFFF" knockout="true" />
+			  		</mx:filters>-->
+				</mx:Box>
+				<form:FormModelEditPartViewer id="formModelEditPartViewer"
+					top="{Math.abs((formScreen.height - this.formModel.height)) / 2}" bottom="{Math.abs(formScreen.height - this.formModel.height) / 2}"  
+					left="{(formScreen.width - this.formModel.width) / 2}" right="{(formScreen.width - this.formModel.width) / 2}"
+					width="{this.formModel.width}" height="{this.formModel.height}"
+					editDomain="{this.editDomain}" formModel="{this.formModel}">
+					<!-- -->
+					<!--width="{formScreen.width - 40}" height="{formScreen.height - 40}"-->		 
+				</form:FormModelEditPartViewer>
+		<!--		<mx:Box  width="{formScreen.width - 40}" height="{formScreen.height - 40}" backgroundAlpha="1" styleName="fseControlBar">
+					<mx:filters>
+			  			<flash.filters:BevelFilter xmlns:flash.filters="flash.filters.*" angle="90" blurX="1" blurY="1"
+			  				 distance="1" highlightAlpha=".4" shadowAlpha=".4" highlightColor="0x000000" shadowColor="0x000000" knockout="true" />
+			  		</mx:filters>
+				</mx:Box>-->
+			</mx:Canvas>	
+			<mx:Canvas id="mappingScreen" label="맵핑편집" width="100%" height="100%" backgroundColor="#7DAEEB" visible="{this.swForm.swWorkType != null}">
+				<mx:VDividedBox x="0" y="0" width="100%" height="100%" verticalGap="3">
+					<mx:VBox width="100%" height="50%" backgroundColor="#FFFFFF">
+						<mx:Text text="프로세스" height="18" width="100%" fontSize="12" fontWeight="bold"/>
+						<mapping:ProcessInputFormMappingEditor id="prcInputMappingCanvas" label="시작" width="100%" height="100%"
+								formModel="{this.formModel}" swForm="{this._swForm}"/>					
+					</mx:VBox>
+					<mx:VBox width="100%" height="50%" backgroundColor="#FFFFFF">
+						<mx:Text text="폼" height="18" width="100%" fontSize="12" fontWeight="bold"/>
+						<mx:TabNavigator width="100%" height="100%">
+							<mx:Canvas id="formInputMappingCanvas" label="시작" width="100%" height="100%">
+								
+							</mx:Canvas>
+							<mx:Canvas id="formOutputMappingCanvas" label="종료" width="100%" height="100%">
+								
+							</mx:Canvas>						
+						</mx:TabNavigator>
+					</mx:VBox>
+				</mx:VDividedBox>
+			</mx:Canvas>
+			<mx:Canvas id="workTypeScreen" label="작업편집" width="100%" height="100%" backgroundColor="#7DAEEB" visible="{this.swForm.swWorkType != null}">
+				
+			</mx:Canvas>
+		</mx:ViewStack>
+		<mx:TabBar id="swFormTab" dataProvider="formView" fontSize="12" visible="{buildTimeMode}" width="239" height="{buildTimeMode?25:0}"/>
+	</mx:VBox>
+</mx:Canvas>

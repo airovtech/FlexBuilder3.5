@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GadgetPanel xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Canvas width="100%" height="100%">
+		<mx:DataGrid top="10" bottom="10" left="10" right="10" width="100%" height="100%">
+			<mx:columns>
+				<mx:DataGridColumn headerText="Column 1" dataField="col1"/>
+				<mx:DataGridColumn headerText="Column 2" dataField="col2"/>
+				<mx:DataGridColumn headerText="Column 3" dataField="col3"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:Canvas>
+</GadgetPanel>

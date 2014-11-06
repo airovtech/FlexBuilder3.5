@@ -1,0 +1,886 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+	horizontalScrollPolicy="off" verticalScrollPolicy="off"
+	creationComplete="init()" mouseDown="selectHandler(event)"
+	styleName="formBase" xmlns:menu="com.maninsoft.smart.formeditor.refactor.simple.menu.*">
+	<!--borderStyle="none" borderThickness="3" borderColor="#FF8400"-->
+	<mx:Metadata>
+		[Event(name="formExecute", type="com.maninsoft.smart.formeditor.refactor.event.FormRuntimeEvent")]
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.event.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.refactor.simple.menu.FormQuickMenuConstants;
+			import com.maninsoft.smart.formeditor.refactor.simple.navigator.FormItemProxy;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormModelUtil;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.DataUtil;
+			import com.maninsoft.smart.formeditor.model.mapping.FormMappingFrag;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.MappingQueueExecutor;
+			import com.maninsoft.smart.formeditor.model.condition.FormCondition;
+			import com.maninsoft.smart.formeditor.model.mapping.FormMapping;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormDocumentCommandUtil;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormItemCommandUtil;
+			import com.maninsoft.smart.common.assets.Cursors;
+			import mx.managers.CursorManager;
+			import com.maninsoft.smart.formeditor.refactor.simple.control.FormDocumentController;
+			import mx.containers.HDividedBox;
+			import com.maninsoft.smart.formeditor.refactor.event.FormPropertyEvent;
+			import mx.events.PropertyChangeEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormRuntimeEvent;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.util.Map;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import mx.events.CollectionEvent;
+			import mx.automation.codec.ArrayPropertyCodec;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormModelCommand;
+			import com.maninsoft.smart.formeditor.refactor.edit.part.FormModelEditPart;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			[Bindable]
+			public var mode:String = Constants.MODE_DESIGN;
+						
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+	        [Bindable]
+	        private var _formModel:FormDocument;
+	        
+	        [Bindable]
+	        public function set formModel(formModel:FormDocument):void{
+	        	if(formModel != null){
+		        	this._formModel = formModel;
+		        	registerViewer();
+	//	        	registerModelListener();
+		        	refreshVisual();	        		
+	        	}
+	        }	    
+	        
+	        public function get formModel():FormDocument{
+	        	return this._formModel;	        	
+	        }
+			
+//			[Bindable]
+//			public function set scale(scale:Number):void{
+//				this._scale = scale;
+//				
+//				refreshVisual();
+//			}
+//			public function get scale():Number{
+//				return this._scale;
+//			}
+	        
+	        public var formDocumentController:FormDocumentController;
+	        
+	        /************************************초기화**********************************************/
+   	        protected function init():void{
+	        	registerContextMenu();
+	        	registerViewer();
+	        	registerListener();
+	        }
+	        
+	        protected function registerViewer():void{
+	        	if(formDocumentController == null)
+	        		formDocumentController = new FormDocumentController();
+	        	formDocumentController.editDomain = this.editDomain;
+	        	formDocumentController.formModel = this.formModel;
+	        	formDocumentController.formEditPartViewer = this;
+	        }
+
+			protected function registerListener():void{
+				formModelGrid.addEventListener(MouseEvent.MOUSE_UP, resizeEnd, true);
+				formModelGrid.addEventListener(MouseEvent.MOUSE_OUT, resizeOutEnd, true);
+				
+				formModelGrid.addEventListener(FormRuntimeEvent.CHANGE_FIELD_DATA, changeFieldData, true);
+				
+				formModelGrid.addEventListener(FormEditEvent.SELECT_FORM_ITEM, openQuickmenu, true);
+				
+				this.addEventListener(MouseEvent.MOUSE_OUT, mouseOut);
+			}
+	        protected function registerModelListener():void{
+//	        	this._formModel.addEventListener(FormItemPropertyChangeConstants.UPDATE_FORM_INFO, updateFormInfoHandler);
+	        }
+	        	        
+	        private var myContextMenu:ContextMenu;
+	        
+	        protected function registerContextMenu():void{
+	        	if(myContextMenu == null)
+	        		myContextMenu = new ContextMenu();
+	        		
+				addCustomMenuItems();
+
+				this.contextMenu = myContextMenu;
+	        }
+        	
+	        private function addCustomMenuItems():void {
+//	            var addItem:ContextMenuItem = new ContextMenuItem("단 추가");
+//	            myContextMenu.customItems.push(addItem);
+//	            addItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, addFormModelCellSize);
+//	            
+//	            var removeItem:ContextMenuItem = new ContextMenuItem("단 제거");
+//	            myContextMenu.customItems.push(removeItem);
+//	            removeItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, removeFormModelCellSize);	            
+	        }
+
+			private function mouseOut(e:MouseEvent):void
+            {
+            	if(!(isExistInParent(e.relatedObject))){
+            		closeQuickMenu();
+            	}
+            }
+            
+            private function isExistInParent(interObj:InteractiveObject):Boolean
+            {
+            	if(interObj == null){
+            		return false;
+            	}
+            	
+            	if(interObj == this){
+            		return true;
+            	}
+            	
+            	if(interObj.parent != null){
+            		return isExistInParent(interObj.parent);
+            	}else{
+            		return false;
+            	}
+            }
+            
+            private function openQuickmenu(event:FormEditEvent):void
+            {
+           		closeQuickMenu();
+        		
+        		if(mode == Constants.MODE_DESIGN){
+        			var formItemViewer:FormItemViewer = this.viewerMap.getItem(event.formItem) as FormItemViewer;
+	        		
+	        		if(formItemViewer != null){
+	        			formFieldQuickmenu.x = leftSpace.width + formModelGrid.x + formItemViewer.x + (formItemViewer.width / 3);
+	            		formFieldQuickmenu.y = topSpace.height + formModelGrid.y + formItemViewer.y + formItemViewer.height;
+	            		formFieldQuickmenu.open();
+	        		}
+        		}        		
+            }
+            
+            private function closeQuickMenu():void{
+            	formFieldQuickmenu.close();
+            }
+            
+            private function registerFormFieldQuickMenu():void{
+				formFieldQuickmenu.addEventListener(FormQuickMenuConstants.CHANGEPROP_FORMFIELD, changePropFormField);
+				formFieldQuickmenu.addEventListener(FormQuickMenuConstants.REMOVE_FORMFIELD, removeFormField);
+			}
+						
+			private function changePropFormField(e:Event):void{
+				if(selectionItems.length > 0){
+					var event:FormEditEvent = new FormEditEvent(FormEditEvent.OPEN_PROP_FORM_ITEM);
+					event.formItem = FormEntity(selectionItems[0]);
+					dispatchEvent(event);
+				}
+				formFieldQuickmenu.close();
+			}
+			
+			private function removeFormField(e:Event):void{
+				if(selectionItems.length > 0)
+					FormDocumentCommandUtil.removeSchemaItem(editDomain, FormEntity(selectionItems.getItemAt(0)));
+				formFieldQuickmenu.close();
+			}
+	        /*****************************화면********************************************/
+	        
+	        private var entityViewerMatrix:ArrayCollection = new ArrayCollection();
+	        public var viewerMap:Map = new Map();
+	        
+	        public function refreshBasicVisual():void{
+				// 이름 변경 이벤트
+				var oldTitle:String = this.formHead.text;
+
+	        	this.formHead.text = this.formModel.name;	
+	        	
+	        	if(oldTitle != null && oldTitle != ""
+	        		&& oldTitle != this.formModel.name){
+	        		var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.FORM_RENAME);
+	        		event.formId = this.formModel.id;
+	        		event.newName = this.formModel.name;
+	        		
+	        		dispatchEvent(event);
+	        	}
+	        	
+	        	if(this.formModel.titleTextStyle != null){
+//		        	this.formHead.setStyle("fontFamily", this.formModel.titleTextStyle.font);
+		        	this.formHead.setStyle("fontSize", this.formModel.titleTextStyle.size);
+		        	this.formHead.setStyle("fontStyle", this.formModel.titleTextStyle.italic?"italic":"normal");
+		        	this.formHead.setStyle("fontWeight", this.formModel.titleTextStyle.bold?"bold":"normal");
+		        	this.formHead.setStyle("textDecoration", this.formModel.titleTextStyle.underline?"underline":"normal");
+		        	this.formHead.setStyle("textAlign", this.formModel.titleTextStyle.align);
+					this.formHead.setStyle("color", this.formModel.titleTextStyle.color);
+	        	}       	
+	        	if(this.formModel.contentsTextStyle != null){
+//		        	this.setStyle("fontFamily", this.formModel.contentsTextStyle.font);
+		        	this.setStyle("fontSize", this.formModel.contentsTextStyle.size);
+		        	this.setStyle("fontStyle", this.formModel.contentsTextStyle.italic?"italic":"normal");
+		        	this.setStyle("fontWeight", this.formModel.contentsTextStyle.bold?"bold":"normal");
+		        	this.setStyle("textDecoration", this.formModel.contentsTextStyle.underline?"underline":"normal");
+		        	this.setStyle("textAlign", this.formModel.contentsTextStyle.align);
+					this.setStyle("color", this.formModel.contentsTextStyle.color);
+	        	}  
+	        	this.setStyle("backgroundColor", this.formModel.bgColor);
+	        }
+	        
+	        public function refreshVisual():void{
+//	        	this.lodingMov.visible = true;
+	        	//기본 정보 업데이트
+	        	refreshBasicVisual();
+	        	
+	        	// 모델의 자식이 남아 있는 것과 비교하여 모델에 남아있는 자식에 해당하는 뷰어만 남김
+	        	// 1.기존 뷰어 맵을 제거할 뷰어 맵으로 복사 
+	        	// 2. 차일드가 있는 경우에 제거할 뷰어 맵에서 뷰어 제거
+	        	// 3. 뷰어 맵에 아이템 추가
+	        	// 4. 제거할 뷰어맵 제거
+	        	
+	        	// 1.기존 뷰어 맵을 제거할 뷰어 맵으로 복사 
+	        	// 제거할 뷰어의 맵 생성하고 뷰어 맵은 초기화
+	        	var removeViewerMap:Map = viewerMap;
+	        	viewerMap = new Map();
+	        	
+	        	// 기존 form entity viewer 모두 제거
+	        	this.formModelGrid.removeAllChildren();
+	        	this.entityViewerMatrix.removeAll();
+	        	
+	        	if(this.formModel.children != null && this.formModel.children.length > 0){
+	        		
+	        		
+	        		
+	        		var lastX:int = 0;
+	        		var lastY:int = 0;
+	        		
+	        		var standardWidth:int = this.formModel.width / 1;
+	        		
+	        		var maxHeight:int= 0;
+	        		var colNum:int= 0;
+	        		var rowArray:ArrayCollection = new ArrayCollection();
+	        		var next:Boolean;
+					for(var i:int = 0 ; i < this.formModel.children.length ; i++){
+						var formEntityModel:FormEntity = FormEntity(this.formModel.children.getItemAt(i));
+						if(!(formEntityModel is FormItemProxy)){
+								// 2.차일드가 있는 경우에 제거할 뷰어 맵에서 뷰어 제거
+			        		var formEntityViewer:FormItemViewer;
+			        		if(removeViewerMap.containsKey(formEntityModel)){
+			        			formEntityViewer = FormItemViewer(removeViewerMap.remove(formEntityModel));
+			        		}else{
+				        		formEntityViewer = new FormItemViewer();
+				        		formEntityViewer.editDomain = this.editDomain;
+				        		formEntityViewer.formEntityModel = formEntityModel;
+				        		formEntityViewer.formViewer = this;
+				        		formEntityViewer.mode = this.mode;
+			        		}
+			        		
+			        		var currentX:int = 0;
+		        			var currentY:int = 0;
+		        			
+			        		if(lastX != 0){
+			        			if((lastX + (formEntityModel.contentWidth + formEntityModel.labelWidth)) > this.formModel.width){
+			        				currentX = 0;
+//			        				currentY = (lastY + maxHeight + this.formModel.itemHeightGap);
+			        				currentY = (lastY + maxHeight + 7);
+			        				
+			        				maxHeight = 0;
+				        		}else{
+				        			currentX = lastX;
+			        				currentY = lastY;
+				        		}
+			        		}else{
+			        			currentX = lastX;
+			        			currentY = lastY;
+			        		}
+			        		
+			        		formEntityViewer.x = currentX;	
+			        		formEntityViewer.y = currentY;
+			        		
+				        	if(maxHeight < formEntityModel.height){
+				        		maxHeight = formEntityModel.height;
+				        	}
+				        	
+	//			        	lastX = currentX + formEntityViewer.width;
+				        	lastX = standardWidth * (int((currentX + (formEntityModel.contentWidth + formEntityModel.labelWidth) - 1)  / standardWidth) + 1);
+				        	lastY = currentY;
+	//			        	for(var j:int = (lastX - 1)  / standardWidth ; j < this.formModel.cellSize ; j++){
+	//			        		lastX = standardWidth * (j + 1);
+	//			        	}
+				        	
+			        		// 필드가 첫번째에 있지 않고 전체 너비를 초과할때 다음행으로
+	//		        		if(currentX != 0 && (currentX + formEntityViewer.width) > this.formModel.width){
+	//		        			currentX = 0;
+	//		        			
+	//		        			currentY += maxHeight;
+	//		        			currentY += formModel.itemHeightGap;
+	//		        		}
+			        		
+			        		
+			        		formEntityViewer.refreshVisual();
+				        	
+				        	formModelGrid.addChild(formEntityViewer);
+				        	
+	
+	
+	//			        	rowArray.addItem(formEntityViewer);
+	//			        	
+	//			        	if(colNum == (this.formModel.cellSize -1)){
+	//			        		var maxHeight:int = 0;
+	//			        		for each(var viewer:FormItemViewer in rowArray){
+	//			        			if(maxHeight < viewer.height){
+	//			        				maxHeight = viewer.height;
+	//			        			}
+	//			        		}
+	//			        		currentY += maxHeight;
+	//			        		currentY += formModel.itemHeightGap;
+	//			        		
+	//			        		rowArray.removeAll();
+	//			        		colNum = 0;
+	//			        	}			        	
+	//			        	colNum ++;
+				        	
+				        	// 3. 뷰어 맵에 아이템 추가
+			        		this.viewerMap.putItem(formEntityModel, formEntityViewer);
+						}
+					}
+					
+	        	}
+	        	this.select(this.selectionItems);
+	        }	 
+	        
+	        public function initVisual():void{
+	        	// 선택박스 숨기기
+	        	this.selectionViewer = null;
+	        }
+	        
+	        private var selectionItems:ArrayCollection = new ArrayCollection();
+	        private var selectionViewers:ArrayCollection = new ArrayCollection();
+	         
+			private var _selectionViewer:FormItemViewer;
+			
+			[Bindable]
+			private function set selectionViewer(selectionViewer:FormItemViewer):void{
+				this._selectionViewer = selectionViewer;
+				
+				if(this._selectionViewer != null)
+					drawSelection(this._selectionViewer.x, this._selectionViewer.y, this._selectionViewer.width, this._selectionViewer.height);
+			}
+			private function get selectionViewer():FormItemViewer{
+				return this._selectionViewer;
+			}	
+			
+	        // 포커스 활성화
+	        public function select(formResources:ArrayCollection):void{
+	        	
+	        	this.selectionItems = formResources;
+	        	
+	        	if(formResources.contains(this.formModel)){
+//	        		this.setStyle("borderStyle", "inset");
+	        	}else{
+	        		this.setStyle("borderStyle", "none");
+	        	}
+	        	
+	        	selectionViewers.removeAll();
+	        	this.selectionViewer = null;
+	        	for each(var childViewer:FormItemViewer in this.viewerMap.valuesArray()){
+	        		if(childViewer.select(formResources)){
+	        			this.selectionViewer = childViewer;
+	        			releaseResizeEnd();
+	        			selectionViewers.addItem(childViewer);
+	        		}
+	        	}
+	        }
+
+			/*********************************선택(포커스) 처리****************************************/
+			private function selectHandler(event:MouseEvent):void{
+				if(this.resizeViewer == null && getFormModelViewer(event.target) == this){
+					var formEvent:FormEditEvent = new FormEditEvent(FormEditEvent.SELECT_FORM_DOCUMENT);
+					formEvent.formDocument = this.formModel;
+					dispatchEvent(formEvent);				
+				}
+			}
+			
+			private function getFormModelViewer(target:Object):FormDocumentRootViewer{
+				if(target is FormItemViewer)
+					return null;
+				
+				if(target is FormFieldQuickMenu)
+					return null;
+						
+				if(target is FormDocumentRootViewer)
+					return FormDocumentRootViewer(target);				
+					
+				if(DisplayObject(target).parent != null)
+					return getFormModelViewer(DisplayObject(target).parent);
+					
+				return null;
+			}
+			
+			/**********************************폼 아이템 멀티 실렉션**************************************/
+			/******************모델 수정*************************/
+
+			[Bindable]
+			private var _valueXml:XML = <DataRecord workItemId="" formId="" formVersion="">
+										</DataRecord>;
+	        
+			[Bindable]
+			public function set valueXml(valueXml:XML):void{
+	        	setInternalValueXml(valueXml);
+	        	executeMappings(formModel, valueXml);
+	        }
+	        
+	        private function setInternalValueXml(valueXml:XML):void{
+	        	if(valueXml != null){
+	        		this._valueXml = valueXml;
+	        		for each(var childViewer:FormItemViewer in this.viewerMap.valuesArray()){
+	        			childViewer.valueXml = valueXml;	        			
+	        		}
+	        	}
+	        }
+	        
+	        public function get valueXml():XML{
+	        	if(this.formModel != null){
+	        		var valueXml:XML = <DataRecord></DataRecord>;
+		        	valueXml.@formId = this.formModel.id;
+		        	valueXml.@formVersion = 1;
+		        	
+	        		for each(var childViewer:FormItemViewer in this.viewerMap.valuesArray()){
+	        			for each(var itemXml:XML in childViewer.valueXml.DataField)
+	        				valueXml.appendChild(itemXml);
+	        		}		        	
+		        	return valueXml;  
+	        	}
+ 				return null;
+	        }
+			public function getTitleVisible():Boolean{
+				return (this.mode == Constants.MODE_DESIGN || ((this.formModel != null) && (this.formModel.name != '')));
+			}
+			
+//			public function selectChild(childViewer:FormItemViewer):void{
+//				this.selectionViewer = childViewer;
+//			}
+
+			/****************************리사이즈********************************/
+			public static const H_TYPE:String = "h";
+			public static const V_TYPE:String = "v";
+			public static const LR_TYPE:String = "lr";
+			public static const RL_TYPE:String = "rl";
+			
+			public var locX:int;
+			public var locY:int;
+			
+			public var type:String;
+			public var resizeViewer:FormItemViewer;
+			
+			private function resizeHStart(event:MouseEvent):void{
+				locX = event.stageX;
+				locY = event.stageY;
+				
+				this.type = H_TYPE;
+				this.resizeViewer = this.selectionViewer;
+				CursorManager.setCursor(Cursors.horisontal, 0);
+			}
+			
+			private function resizeVStart(event:MouseEvent):void{
+				locX = event.stageX;
+				locY = event.stageY;
+				
+				this.type = V_TYPE;
+				this.resizeViewer = this.selectionViewer;
+				CursorManager.setCursor(Cursors.vertical, 0);
+			}
+			
+			private function resizeLRStart(event:MouseEvent):void{
+				locX = event.stageX;
+				locY = event.stageY;
+				
+				this.type = LR_TYPE;
+				this.resizeViewer = this.selectionViewer;
+				CursorManager.setCursor(Cursors.leftRight, 0);
+			}
+			
+			private function resizeRLStart(event:MouseEvent):void{
+				locX = event.stageX;
+				locY = event.stageY;
+				
+				this.type = RL_TYPE;
+				this.resizeViewer = this.selectionViewer;
+				CursorManager.setCursor(Cursors.rightLef, 0);
+			}
+			
+			private function resizeHCursor(event:MouseEvent):void{
+				CursorManager.setCursor(Cursors.horisontal, 0);
+			}
+			
+			private function resizeVCursor(event:MouseEvent):void{
+				CursorManager.setCursor(Cursors.vertical, 0);
+			}
+			
+			private function resizeLRCursor(event:MouseEvent):void{
+				CursorManager.setCursor(Cursors.leftRight, 0);
+			}
+			
+			private function resizeRLCursor(event:MouseEvent):void{
+				CursorManager.setCursor(Cursors.rightLef, 0);
+			}
+			
+			private function resizeEnd(event:MouseEvent):void{
+				if(this.type != null && this.resizeViewer != null){
+					
+					var newContentsWidth:Number = box8.x - box1.x - this.resizeViewer.formEntityModel.labelWidth;
+					var newHeight:Number = box8.y - box1.y;
+					
+					FormItemCommandUtil.executeResizeFormItem(this.editDomain, this.resizeViewer.formEntityModel, this.resizeViewer.formEntityModel.labelWidth, newContentsWidth, newHeight);
+					
+					releaseResizeEnd();					
+				}				
+			}
+			
+			private function resizeOver(event:MouseEvent):void{
+				if(this.type != null && this.resizeViewer != null){
+					var newContentsWidth:int = this.resizeViewer.formEntityModel.contentWidth;
+					var newHeight:int = this.resizeViewer.formEntityModel.height;
+					
+					if(type == H_TYPE){
+						newContentsWidth += event.stageX - locX;
+					}else if(type == V_TYPE){
+						newHeight += event.stageY - locY;
+					}else if(type == LR_TYPE){
+						newContentsWidth += event.stageX - locX;
+						newHeight += event.stageY - locY;
+					}
+					
+					drawSelection(this.resizeViewer.x, this.resizeViewer.y, newContentsWidth + this.resizeViewer.formEntityModel.labelWidth, newHeight);
+				}				
+			}
+			
+			private function drawSelection(x:Number, y:Number, width:Number, height:Number):void{
+								
+					box1.x = x - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace ;
+					box1.y = y - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace;
+					
+					box2.x= x + (width/2) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box2.y= y - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace; 
+					
+					box3.x= x + (width) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box3.y= y - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace;
+		
+					box4.x= x - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box4.y= y + (height/2) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace;
+					
+					box5.x = x + (width) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box5.y = y + (height/2) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace;  
+		
+					box6.x = x - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box6.y = y + (height) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace;
+					
+					box7.x = x + (width/2) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box7.y = y + (height) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace; 
+				
+					box8.x = x + (width) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.leftSpace;
+					box8.y = y + (height) - (RESIZE_POINT_SIZE * (1.5)) + this.formModel.topSpace;		
+			}
+			
+			private function resizeOutEnd(event:MouseEvent):void{
+				if(event.target is DisplayObject && !containThis(DisplayObject(event.target))){
+					releaseResizeEnd();
+				}				
+			}
+			
+			public function containThis(target:DisplayObject):Boolean{
+				if(target == null){
+					return false;
+				}else if(target == this){
+					return true;
+				}else{
+					return containThis(target.parent);
+				}			
+			}
+			
+			public function releaseResizeEnd():void{
+				this.type = null;
+				this.resizeViewer = null;		
+				CursorManager.removeAllCursors();	
+			}
+			
+			public function resizeCursorOut(event:MouseEvent):void{
+				if(this.type == null || this.resizeViewer == null){
+					CursorManager.removeAllCursors();	
+				}				
+			}
+			
+			private var _mqExecutor:MappingQueueExecutor;
+			
+			private function get mqExecutor():MappingQueueExecutor{
+				if(_mqExecutor == null)
+					_mqExecutor = new MappingQueueExecutor(editDomain.serviceClient);
+					
+				return _mqExecutor;
+			}
+			
+			private var mappingLock:Boolean = false;
+			
+			private function executeMappings(formDocument:FormDocument, valueXml:XML):void{
+				for each(var mapping:FormMapping in formDocument.mappings){
+					mqExecutor.push(mapping);
+				}
+				if(mqExecutor.canExecute()){
+					mappingLock = true;
+					mqExecutor.execute(valueXml, executeMappingResultHandler, serviceFault);
+				}else{
+					mappingLock = false;
+				}							
+			}
+			
+			private function executeMappingResultHandler(e:WorklistServiceEvent):void{
+				completeExecuteMapping(e.worklistXML);
+				
+				if(mqExecutor.canExecute()){
+					mappingLock = true;
+					mqExecutor.execute(valueXml, executeMappingResultHandler, serviceFault);
+				}else{
+					mappingLock = false;
+				}
+				
+			}
+			
+			private function changeFieldData(e:FormRuntimeEvent):void{
+				if(!mappingLock){
+					for each(var mapping:FormMapping in formModel.mappings){
+						var containImport:Boolean = false;
+						for each(var frag:FormMappingFrag in mapping.frags){
+							if(frag.actionType == FormMappingFrag.IMPORT_ACTION){
+								containImport = true;
+							}
+						}
+						
+						if(containImport){
+							var containCond:Boolean = false;
+							for each(var cond:FormCondition in mapping.conditions){
+								if(cond.firstOperand == e.formFieldId){
+									containCond = true;
+								}
+							}
+							if(containCond){
+								mqExecutor.push(mapping);
+							}
+						}
+						
+							
+					}
+					
+					mqExecutor.execute(valueXml, executeMappingResultHandler, serviceFault);
+				}
+
+			}
+			
+			private function serviceFault(e:WorklistServiceEvent):void{
+				MsgUtil.showError(e.msg);
+			}
+			
+			private function completeExecuteMapping(worklistXML:XML):void{
+				for each(var dataRecord:XML in worklistXML.DataRecord){
+					var tmpValueXml:XML = valueXml;
+					for each(var mappingFrag:FormMappingFrag in mqExecutor.currentMapping.frags){
+						if(mappingFrag.actionType == FormMappingFrag.IMPORT_ACTION){
+							var valueArray:ArrayCollection = new ArrayCollection();
+							DataUtil.searchFieldData(mappingFrag.fromFieldId, dataRecord, valueArray);
+							
+							var formField:FormEntity = FormModelUtil.getFormField(mappingFrag.toFieldId, formModel.children);
+							var fieldXmlArray:ArrayCollection = FormModelUtil.generateFields(valueArray, formField);
+							DataUtil.replaceXml(formField, tmpValueXml, fieldXmlArray);
+						}
+					}
+					setInternalValueXml(tmpValueXml);
+				}
+				
+			}
+			
+//			private function executeMapping(mapping:FormMapping, valueXml:XML):void{
+//				
+//				var mappingParamXml:XML = 
+//					<DataRecord workItemId="" formId="" formVersion=""></DataRecord>;
+//				
+//				var fieldIdArray:ArrayCollection = new ArrayCollection();	
+//				for each(var cond:FormCondition in mapping.conditions){
+//					if(!(fieldIdArray.contains(cond.firstOperand))){
+//						fieldIdArray.addItem(cond.firstOperand);
+//					}
+//				}
+//				
+//				var valueArray:ArrayCollection = new ArrayCollection();
+//				for each(var fieldId:String in fieldIdArray){
+//					searchFieldData(fieldId, valueXml, valueArray);						
+//				}
+//				// 맵핑 서비스 호출
+//				if(valueArray.length > 0){
+//				}
+//			}
+			
+//			private function searchFieldData(fieldId:String, valueXml:XML, valueArray:ArrayCollection):void{
+//				for each(var dataField:XML in valueXml.DataField){
+//					if(dataField.@id == fieldId && dataField.toString() != ""){
+//						valueArray.addItem(dataField);
+//					}
+//					if(dataField.DataField.toString() != ""){
+//						searchFieldData(fieldId, dataField, valueArray);
+//					}
+//				}				
+//			}
+						// 이름 수정
+//			private function createUupdateFormItemProperty(editDomain:FormEditDomain, formItem:FormEntity, value:Object, type:String):Command{
+//				var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(formItem.name);
+//				command.formEntityModel = formItem;
+//				command.newValue = value;
+//				command.type = type;
+//				
+//				return command;
+//			}
+			private const RESIZE_POINT_SIZE:Number = 7;
+			
+			public function isValid():Boolean
+            {
+            	var viewerArray:ArrayCollection = this.viewerMap.valuesArray();
+            	for each(var viewer:FormItemViewer in viewerArray){
+            		if(!(viewer.isValid())){
+            			return false;
+            		}
+            	}
+            	return true;
+            }
+		]]>
+	</mx:Script>
+	<!-- <mx:Canvas id="formViewCanvas" x="0" y="0" width="100%" height="100%" 
+		>updateComplete="{this.lodingMov.visible = false}" -->
+		<mx:Canvas id="leftSpace" x="0" y="0" width="{this.formModel.leftSpace}" height="100%">
+		</mx:Canvas>	<!-- updateComplete="{this.lodingMov.visible = false}" -->
+		<mx:Canvas id="formViewCanvas" 
+			x="{this.formModel.leftSpace}" y="0"  
+			width="{this.formModel.width - this.formModel.leftSpace - this.formModel.rightSpace}" 
+			height="{this.formModel.height}"
+			horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:Canvas x="0" y="0" id="topSpace" width="100%" height="{this.formModel.topSpace}">
+			</mx:Canvas>
+			<mx:Canvas x="0" y="{this.formModel.topSpace}"		
+				width="{this.formModel.width - this.formModel.leftSpace - this.formModel.rightSpace}" 
+				height="{this.formModel.height - this.formModel.topSpace - this.formModel.bottomSpace}">
+				<mx:TextInput id="formHead" borderStyle="none"
+					x="0" y="0" 
+					width="100%" height="30" 
+					text="{formModel.name}" editable="{this.mode == Constants.MODE_DESIGN}" 
+					change="{FormDocumentCommandUtil.rename(this.editDomain, formHead.text, this.formModel)}"
+					styleName="formBaseLabel">		
+					<!-- visible="{getTitleVisible()}" borderStyle="{(this.mode == Constants.MODE_DESIGN)?'solid':'none'}" -->
+				</mx:TextInput>
+				<mx:Canvas id="formModelGrid" 
+					x="0" y="0"
+					width="100%" height="{this.formModel.height - this.formModel.topSpace - this.formModel.bottomSpace}" 
+					mouseUp="{resizeEnd(event)}" mouseOut="{resizeOutEnd(event)}" mouseMove="{resizeOver(event)}"
+					borderColor="#000000" borderStyle="none">
+				</mx:Canvas>			
+			</mx:Canvas>
+			<mx:Canvas id="bottomSpace" x="0" y="{this.formModel.height - this.formModel.bottomSpace}"
+				width="100%" height="{this.formModel.bottomSpace}">
+			</mx:Canvas>
+		</mx:Canvas>
+		<mx:Canvas id="rightSpace" 
+			x="{this.formModel.width - this.formModel.rightSpace}" y="0"  
+			width="{this.formModel.rightSpace}" height="100%" >
+		</mx:Canvas>
+		<mx:Canvas id="box1" 
+			width="{RESIZE_POINT_SIZE * 3}" height="{RESIZE_POINT_SIZE * 3}" 
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+			
+		<mx:Canvas id="box2" 
+			width="{RESIZE_POINT_SIZE * 3}" height="{RESIZE_POINT_SIZE * 3}" 
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		<mx:Canvas id="box3" 
+			width="{RESIZE_POINT_SIZE * 3}" height="{RESIZE_POINT_SIZE * 3}" 
+			mouseDown="{resizeHStart(event)}" mouseOver="{resizeHCursor(event)}" mouseOut="{resizeCursorOut(event)}"
+			mouseUp="{resizeEnd(event)}"
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		<mx:Canvas id="box4" 
+			width="{RESIZE_POINT_SIZE * 2}" height="{RESIZE_POINT_SIZE * 2}" 
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		<mx:Canvas id="box5" 
+			width="{RESIZE_POINT_SIZE * 2}" height="{RESIZE_POINT_SIZE * 2}" 
+			mouseDown="{resizeHStart(event)}" mouseOver="{resizeHCursor(event)}" mouseOut="{resizeCursorOut(event)}"
+			mouseUp="{resizeEnd(event)}"
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		<mx:Canvas id="box6" 
+			width="{RESIZE_POINT_SIZE * 2}" height="{RESIZE_POINT_SIZE * 2}" 
+			mouseDown="{resizeVStart(event)}" mouseOver="{resizeVCursor(event)}" mouseOut="{resizeCursorOut(event)}"
+			mouseUp="{resizeEnd(event)}"
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		<mx:Canvas id="box7" 
+			width="{RESIZE_POINT_SIZE * 2}" height="{RESIZE_POINT_SIZE * 2}" 
+			mouseDown="{resizeVStart(event)}" mouseOver="{resizeVCursor(event)}" mouseOut="{resizeCursorOut(event)}"
+			mouseUp="{resizeEnd(event)}"
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		<mx:Canvas id="box8" 
+			width="{RESIZE_POINT_SIZE * 2}" height="{RESIZE_POINT_SIZE * 2}" 
+			mouseDown="{resizeLRStart(event)}" mouseOver="{resizeLRCursor(event)}" mouseOut="{resizeCursorOut(event)}"
+			mouseUp="{resizeEnd(event)}"
+			visible="{(selectionViewer != null)}">
+			<mx:Box x="{RESIZE_POINT_SIZE}" y="{RESIZE_POINT_SIZE}" width="{RESIZE_POINT_SIZE}" height="{RESIZE_POINT_SIZE}" 
+				borderStyle="solid" borderColor="#000000"   backgroundColor="#FFFFFF" cornerRadius="20">
+				
+			</mx:Box>
+		</mx:Canvas>
+		
+		<menu:FormFieldQuickMenu id="formFieldQuickmenu" visible="false" creationComplete="{registerFormFieldQuickMenu()}"
+			status="{FormFieldQuickMenu.VIEWER_STATUS}">
+			
+		</menu:FormFieldQuickMenu>
+	<!--</mx:Canvas> -->
+	<!--<mx:Box id="lodingMov" x="0" y="0" width="100%" height="100%" verticalAlign="middle" horizontalAlign="center" visible="false">
+		<mx:Image source="@Embed(source='/assets/movie/loading_link.swf', symbol='oval')"/>-->
+		<!--id="lodingMov" visible="false" -->
+	<!--</mx:Box>-->
+</mx:Canvas>

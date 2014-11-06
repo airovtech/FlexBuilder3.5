@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="500" height="400" xmlns:org="mxmlComponet.common.org.*" 
+	creationComplete="init()" close="PopUpManager.removePopUp(this)" title="User" xmlns:org1="com.maninsoft.smart.common.org.*"
+	titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.List;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.managers.PopUpManager;
+			
+			
+			[Bindable]
+			private var _deptId:String;
+			[Bindable]
+			private var userId:String;
+			[Bindable]
+			private var userName:String;
+			[Bindable]
+			private var userPosition:String;
+			
+			[Bindable]
+			public var connUserId:String;
+			[Bindable]
+			public var orgServiceUrl:String;
+			
+			
+			private function init():void {
+				deptTree.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, getEmployeeList);
+				employeeList.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, itemSelect);
+			}
+			
+			private function getEmployeeList(event:CustormEvent):void{
+				_deptId = event.deptId;
+				employeeList.retrieveEmployeeList(event.deptId);
+			}
+			
+			private function itemSelect(event:CustormEvent):void{
+				userId = event.userId;
+				userName = event.userName;
+				userPosition = event.userPosition;
+			}
+			
+			private function userSelect():void{
+				var eventObj:CustormEvent = new CustormEvent("custormItemClick");
+				eventObj.userId = userId;
+				eventObj.userName = userName;
+				eventObj.userPosition = userPosition;
+				dispatchEvent(eventObj);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="custormItemClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:HDividedBox x="0" y="0" width="100%" height="100%" horizontalGap="1">
+		<mx:VBox width="45%" height="100%">
+			<org1:PopDeptTree width="100%" height="100%" id="deptTree" orgServiceUrl="{orgServiceUrl}" connUserId="{connUserId}"/>
+			<mx:Canvas width="100%" height="30"/>
+		</mx:VBox>
+		<mx:VBox width="55%" height="100%">
+			<org1:PopEmployeeList width="100%" height="100%" fontSize="12" id="employeeList" orgServiceUrl="{orgServiceUrl}" connUserId="{connUserId}"/>
+			<mx:HBox width="100%" height="30" horizontalAlign="center" verticalAlign="middle">
+				<mx:Button x="56" y="10" label="선택" fontSize="12" click="userSelect()"/>
+				<mx:Button x="144" y="10" label="취소" fontSize="12" click="{PopUpManager.removePopUp(this)}"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:HDividedBox>
+</mx:TitleWindow>

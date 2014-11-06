@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="450" height="450" close="PopUpManager.removePopUp(this)" 
+	 xmlns:ns1="mxmlComponet.common.*" xmlns:ns2="portalAs.gridComponent.*" horizontalScrollPolicy="off" verticalScrollPolicy="off" 
+	 title="Gadget선택-업무선택" titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	 borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3" 
+	 initialize="init()" creationComplete="crComplete()" xmlns:page="com.maninsoft.smart.common.page.*" xmlns:chartInfo="mxmlComponet.home.chartInfo.info.*" xmlns:formConfig="mxmlComponet.admin.formConfig.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.controls.Alert;
+			import mxmlComponet.home.chartInfo.util.ChartXmlToModel;
+			import mxmlComponet.home.chartInfo.model.ConditionModel;
+			import mxmlComponet.home.chartInfo.util.XmlUtil;
+			import mxmlComponet.home.chartInfo.model.GroupingFilterModel;
+			import mxmlComponet.home.chartInfo.model.ValueFilterModel;
+			import mxmlComponet.home.chartInfo.model.ChartInfoModel;
+			import mxmlComponet.home.chartInfo.info.ChartInfo;
+			import mx.core.Application;
+			import mxmlComponet.home.chartInfo.*;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			import mx.core.UITextField;
+			import mx.core.BitmapAsset;
+			import mxmlComponet.gadget.model.GadgetColumn;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import mxmlComponet.gadget.column.SupperGadgetColumns;
+			import mxmlComponet.gadget.declaration.GadgetDeclaration;
+			import portalAs.gridComponent.FindSelectItem;
+			import mxmlComponet.gadget.model.GadgetContent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.managers.PopUpManager;
+			import portalAs.Properties;
+			
+			[Embed(source="images/resource.gif")] private var dragClass:Class; //Drag시 이동되어지는 이미지
+			private var di:BitmapAsset;
+			
+			public var gadgetContentId:String;
+			private var gadgetDeclaration:GadgetDeclaration = new GadgetDeclaration();
+			[Bindable]
+			public var gadgetContent:GadgetContent;
+			[Bindable]
+			public var gadgetColumns:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var formId:String;
+			[Bindable]
+			public var formName:String;
+			[Bindable]
+			public var gadgetContents:ArrayCollection = gadgetDeclaration.getGadgetContentArray();
+			[Bindable]
+			private var chartXml:String;
+			
+			private function init():void{
+				this.width = this.owner.width/2;
+				this.height = this.owner.height/1.5;
+				di = BitmapAsset(new dragClass());
+	    		di.width = 78;
+	    		di.height = 78;
+			}
+			
+			private function getColumnList():void{
+				
+			}
+			
+			private function crComplete():void{
+			}
+			
+			private function formSelect(event:CustormEvent):void{
+            	formId = event["formId"];
+            	formName = event["label"];
+            }
+			
+			private function nextStep():void{
+				if(formId!=null && formId!="" && formId!="null"){
+					chartName.text = formName + " 현황";
+					seachFormFieldService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=getSingleFormFieldList";
+					seachFormFieldService.send();
+					step1.visible = false;
+					step2.visible = true;
+					
+					var model:ChartInfoModel = ChartXmlToModel.modelToXml(testXml);
+					if(model.chartName!=null && model.chartName!="" && model.chartName!="null"){
+						chartName.text = model.chartName;	
+					}
+					comBoSetting(model.chartType);
+					columnChartInfo.chartInfoModel = model;
+					barChartInfo.chartInfoModel = model;
+					pieChartInfo.chartInfoModel = model;
+					lineChartInfo.chartInfoModel = model;
+					columnChartInfo.chartInfoModel = model;
+					areaChartInfo.chartInfoModel = model;
+					gridInfo.chartInfoModel = model;
+					conditionInfo.conditionContents = model.conditions;
+					conditionInfo.conditionsRel.selectedValue = model.conditionsRelation;	
+				}else{
+					Alert.show("단위업무를 선택하세요");
+				}
+			}
+			
+			private function comBoSetting(chartType:String):void{
+				for(var i:int=0; i<chartTypes.length; i++){
+					if(chartTypes[i].data == chartType){
+						chartTypeCombo.selectedIndex = i;
+						chartTypeChange();
+						break;
+					}
+				}	
+			}
+			
+			private function seachFormFieldResult(event:ResultEvent):void {
+				columnGrid.dataProvider = event.result.FormField;
+			}
+			
+			private function mouseDownExe(event:MouseEvent):void{
+				UITextField(event.target).addEventListener(MouseEvent.MOUSE_MOVE, columneMove);
+			}
+			
+			public function columneMove(event:MouseEvent):void {
+				var di:BitmapAsset = BitmapAsset(new dragClass());
+	    		di.width = 78;
+	    		di.height = 78;
+	    		di.x = UITextField(event.target).mouseX; 
+				di.y = UITextField(event.target).mouseY;
+	            var ds:DragSource=new DragSource();
+	            ds.addData(columnGrid.selectedItem, "columnInfo"); 
+	            DragManager.doDrag(UITextField(event.target) ,ds, event, di); 
+			}
+			
+			[Bindable]
+			public var chartTypes: Array = [ {label:"컬럼차트", data:"COLUMN_CHART"}, {label:"바차트", data:"BAR_CHART"}, {label:"파이차트", data:"PIE_CHART"}
+					, {label:"라인차트", data:"LINE_CHART"}, {label:"영역차트", data:"AREAR_CHART"}, {label:"그리드", data:"GRID"} ];
+			
+			private function set chartType(obj:String):void{
+				for(var i:int; i<chartTypes.length; i++){
+					if(chartTypes[i].data == obj){
+						chartTypeCombo.selectedIndex = i;
+						break;
+					}
+				}
+			}
+			
+			private function chartTypeChange():void{
+				if(chartTypeCombo.selectedItem.data == "COLUMN_CHART"){
+					chartConfStack.selectedChild = columnChartInfo; 
+				}else if(chartTypeCombo.selectedItem.data == "BAR_CHART"){
+					chartConfStack.selectedChild = barChartInfo; 
+				}else if(chartTypeCombo.selectedItem.data == "PIE_CHART"){
+					chartConfStack.selectedChild = pieChartInfo; 
+				}else if(chartTypeCombo.selectedItem.data == "LINE_CHART"){
+					chartConfStack.selectedChild = lineChartInfo; 
+				}else if(chartTypeCombo.selectedItem.data == "AREAR_CHART"){
+					chartConfStack.selectedChild = areaChartInfo; 
+				}else if(chartTypeCombo.selectedItem.data == "GRID"){
+					chartConfStack.selectedChild = gridInfo; 
+				}
+			}
+			
+			private function endStep():void{
+				var chartInfoModel:ChartInfoModel = ChartInfo(chartConfStack.selectedChild).chartInfoModel;
+				chartInfoModel.formId = formId;
+				chartInfoModel.chartName = chartName.text;
+				chartInfoModel.conditions = conditionInfo.conditionContents;
+				chartInfoModel.conditionsRelation = conditionInfo.conditionsRel.selectedValue as String;
+				chartXml = ChartXmlToModel.xmlToModel(chartInfoModel);
+				
+				IndepPrivateHome2(this.owner).createGadget(chartInfoModel.chartName, chartInfoModel.chartType, formId, 
+																chartXml, "mxmlComponet.gadget::ChartGadget");
+				trace(chartXml);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:XML id="testXml">
+<!--
+	  	<Gadget formId="frm_1528486ac97b479789fd1df1bd8f7e24" type="GRID">	
+			<name><![CDATA[테스트차트]]></name>	
+			<remark id="2">		
+				<name><![CDATA[프로젝트명]]></name>	
+			</remark>	
+			<valueInfo id="7">		
+				<name><![CDATA[서비스금액]]></name>		
+				<filter functionType="max" minValue="1000" maxValue="2000" dataType="String"/>	
+			</valueInfo>	
+			<groupInfo id="1">		
+				<name><![CDATA[고객사명]]></name>		
+				<filter inclusion="IN">			
+					<elements><![CDATA[현대,삼성,LG,SK,대우]]></elements>		
+				</filter>	
+			</groupInfo>	
+			<columns>
+				<column id="2">
+					<name><![CDATA[프로젝트명]]></name>
+				</column>
+				<column id="7">
+					<name><![CDATA[서비스금액]]></name>
+				</column>
+				<column id="1">
+					<name><![CDATA[고객사명]]></name>
+				</column>
+			</columns>
+			<conditions>	
+				<condition name="조건1" id="1">		
+					<columnId>6</columnId>		
+					<columnName>PM</columnName>		
+					<conditionValue>닝기리</conditionValue>		
+					<comparison><![CDATA[=]]></comparison>	
+				</condition>	
+				<condition name="조건2" id="2">		
+					<columnId>3</columnId>		
+					<columnName>지역</columnName>		
+					<conditionValue>서울</conditionValue>		
+					<comparison><![CDATA[like]]></comparison>	
+				</condition>	
+				<conditionsRelation>AND</conditionsRelation>	
+			</conditions>
+		</Gadget>
+-->
+	  </mx:XML>
+	<mx:HTTPService id="seachFormFieldService"  resultFormat="e4x" useProxy="false" result="seachFormFieldResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<formId>{formId}</formId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:Canvas width="100%" height="100%" id="step1" visible="true">
+		<mx:VBox width="100%" height="110%" verticalGap="0">
+			<mx:VBox width="100%" height="470" borderThickness="0" borderStyle="none" backgroundColor="#BCBABA">
+				<formConfig:FormTree width="100%" height="100%" custormItemClick="formSelect(event)"/>
+			</mx:VBox>
+			<mx:Spacer height="10"/>
+			<mx:HBox width="100%" height="30" verticalGap="3" horizontalAlign="center" verticalAlign="middle">
+				<mx:Button label="이전" height="20" right="2" styleName="normalLabel"/>
+				<mx:Button label="다음" height="20" left="2" click="nextStep()" styleName="normalLabel"/>
+			</mx:HBox>
+		</mx:VBox>	
+	</mx:Canvas>
+	<mx:Canvas width="100%" height="100%" id="step2" visible="false">
+		<mx:HDividedBox width="100%" height="100%" horizontalGap="10">
+			<mx:Box width="40%" height="100%" id="fieldConfArea">
+				<mx:DataGrid width="100%" height="90%" verticalCenter="0" id="columnGrid" mouseDown="mouseDownExe(event)">
+					<mx:columns>
+						<mx:DataGridColumn headerText="id" dataField="id" width="0" visible="false"/>
+						<mx:DataGridColumn headerText="컬럼명" dataField="name" textAlign="center"/>
+						<mx:DataGridColumn headerText="데이터타입" dataField="type" textAlign="center"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<page:PageNavigate width="100%" height="10%" clickPageItem="getColumnList()" id="columnGridNav" pageSize="10"/>
+			</mx:Box>
+			<mx:VBox width="60%" height="100%">
+				<mx:HBox width="100%" height="7%" horizontalAlign="center" verticalAlign="middle">
+					<mx:Label text="차트명:" styleName="normalLabel"/>
+					<mx:TextInput id="chartName" width="120" focusAlpha="0"/>
+					<mx:Label text="차트유형:" styleName="normalLabel"/>
+					<mx:ComboBox width="120" dataProvider="{chartTypes}" id="chartTypeCombo" change="chartTypeChange()"/>
+				</mx:HBox>
+				<mx:ViewStack width="100%" height="60%" id="chartConfStack">
+					<chartInfo:ColumnChartInfo id="columnChartInfo" width="100%" height="100%" visible="true" app="{Application.application as GadgetApp as GadgetApp}"/>
+					<chartInfo:BarChartInfo id="barChartInfo" width="100%" height="100%" visible="true" app="{Application.application as GadgetApp}"/>
+					<chartInfo:PieChartInfo id="pieChartInfo" width="100%" height="100%" visible="true" app="{Application.application as GadgetApp}"/>
+					<chartInfo:LineChartInfo id="lineChartInfo" width="100%" height="100%" visible="true" app="{Application.application as GadgetApp}"/>
+					<chartInfo:AreaChartInfo id="areaChartInfo" width="100%" height="100%" visible="true" app="{Application.application as GadgetApp}"/>
+					<chartInfo:GridInfo id="gridInfo" width="100%" height="100%" visible="true" app="{Application.application as GadgetApp}"/>
+				</mx:ViewStack>
+				<mx:Box width="100%" height="33%" id="chartCondiArea">
+					<chartInfo:ConditionInfo width="100%" height="100%" app="{Application.application as GadgetApp}" id="conditionInfo"/>
+				</mx:Box>
+				<mx:HBox width="100%" height="25" verticalGap="3" horizontalAlign="center" verticalAlign="middle">
+					<mx:Button label="이전" height="20" right="2" styleName="normalLabel"/>
+					<mx:Button label="완료" height="20" left="2" click="endStep()" styleName="normalLabel"/>
+				</mx:HBox>
+			</mx:VBox>
+		</mx:HDividedBox>
+	</mx:Canvas>
+</mx:TitleWindow>

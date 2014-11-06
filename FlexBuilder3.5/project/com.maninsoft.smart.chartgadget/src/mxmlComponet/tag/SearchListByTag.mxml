@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="mxmlComponet.common.*" xmlns:page="com.maninsoft.smart.common.page.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.mxml.HTTPService;
+			import portalAs.Properties;
+			
+			public var _tagName:String;	
+			private var dataRequest:HTTPService;
+			
+			[Bindable]
+			public function set tagName(_tagName:String):void{
+				this._tagName = _tagName;
+				retrievePostList();
+			}
+			
+			public function get tagName():String{
+				return this._tagName;
+			}
+					
+			private function retrievePostList():void {
+				var params:Object = new Object();
+				params.method = "searchPostByTagName";
+				params.userId = Properties.userId;//Properties.userId;
+				params.tagName = tagName;
+				//params.pageCount = naviPg.pageCount;
+				//params.recordCount = naviPg.pageSize;
+								
+		    	dataRequest = new HTTPService();
+		    	dataRequest.resultFormat = "e4x";
+		    	dataRequest.url = Properties.basePath + "smartserver/services/portal/tagService.jsp";
+		    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandlerForPostList);
+		    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest.useProxy = false;
+				dataRequest.send(params);
+		    }
+		    
+			private function resultHandlerForPostList(event:ResultEvent):void {
+				tagBox.removeAllChildren();
+				//postPanel.title = "> 태그 : " + tagName;
+				//postDataGrid.dataProvider = event.result.Post;
+				//naviPg.totalCount = Number(String(event.result.@totalCount));
+				for(var i:int=0; i<event.result.Post.length(); i++){
+					var se:tagSearchStructure = new tagSearchStructure();
+					se.tagId = event.result.Post[i].tagId;
+					se.refType = event.result.Post[i].refType;
+					se.refId = event.result.Post[i].refId;
+					se.createdTime = event.result.Post[i].createdTime;
+					se.title = event.result.Post[i].title;
+					tagBox.addChild(se);					
+				}				
+			}
+					    
+			private function faultHandler(event:FaultEvent):void {
+				Alert.show("Exception occured during read data.\n"+event.fault.message);
+			}
+			
+			private function clickItem():void {
+			}		
+			
+		]]>
+	</mx:Script>	
+	<mx:HBox x="0" y="0" id="titleBox" width="100%" height="30" backgroundColor="#E9975A" horizontalAlign="left" verticalAlign="top">
+		<mx:HBox width="100%" backgroundColor="#FFFFFF" height="27">
+			<mx:HBox y="0" width="100%" height="25" horizontalAlign="left" verticalAlign="middle" horizontalGap="2">
+				<mx:Image width="20" height="20" source="@Embed('images/portal_main/main_top_tag.png')"/>
+				<mx:Label text="태그 : {tagName}" fontSize="13" styleName="normalLabel"/>
+			</mx:HBox>
+		</mx:HBox>
+	</mx:HBox>		
+	<mx:VBox id="tagBox" x="0" y="33" height="100%" width="100%" verticalGap="3" paddingLeft="5" paddingRight="5">
+	</mx:VBox>
+</mx:Canvas>

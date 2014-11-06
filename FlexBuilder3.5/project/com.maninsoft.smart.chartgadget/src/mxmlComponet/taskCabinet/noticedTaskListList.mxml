@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:common="mxmlComponet.common.*">
+	<mx:HBox y="0" width="100%" height="30" backgroundColor="#8080c0" horizontalAlign="left" verticalAlign="middle">
+		<mx:HBox y="0" width="50%" height="30" horizontalAlign="left" verticalAlign="middle">
+			<mx:Label text="My Task" width="371" height="30"/>
+		</mx:HBox>
+		<mx:HBox y="0" width="50%" height="30" horizontalAlign="right" verticalAlign="middle">
+			<mx:Label text="메뉴얼 | 도움말" width="131" height="30" textAlign="right"/>
+		</mx:HBox>
+	</mx:HBox>
+	<mx:VDividedBox x="0" y="32" width="100%" height="100%" horizontalAlign="center" verticalAlign="top" verticalGap="5">
+		<mx:Panel width="100%" height="35%" layout="absolute" title="지시한 업무 목록" 
+			borderThicknessBottom="5" borderThicknessLeft="5" borderThicknessRight="5" borderThicknessTop="5" headerHeight="22">
+			<mx:Canvas x="0" y="0" width="100%" height="100%">
+				<mx:DataGrid x="0" y="0" width="100%" height="100%">
+					<mx:columns>
+						<mx:DataGridColumn headerText="업무" dataField="col1"/>
+						<mx:DataGridColumn headerText="제목" dataField="col2"/>
+						<mx:DataGridColumn headerText="받은날짜" dataField="col3"/>
+						<mx:DataGridColumn headerText="처리일자" dataField="col3"/>
+						<mx:DataGridColumn headerText="지시자" dataField="col3"/>
+						<mx:DataGridColumn headerText="담당자" dataField="col3"/>
+						<mx:DataGridColumn headerText="진행상태" dataField="col3"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:Canvas>
+		</mx:Panel>
+		<mx:Canvas width="100%" height="20" >
+			<common:PageNavigate   clickPageItem="" id="naviPg"/>
+		</mx:Canvas>		
+	</mx:VDividedBox>
+</mx:Canvas>

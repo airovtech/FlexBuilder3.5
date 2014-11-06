@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractSimpleDialog xmlns="com.maninsoft.smart.common.dialog.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.modeler.xpdl.model.pool.Lane;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.FormEditorBase;
+			import mx.events.DataGridEvent;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.modeler.xpdl.server.Server;
+			import com.maninsoft.smart.modeler.xpdl.dialogs.SelectFormDialog;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskForm;
+			import com.maninsoft.smart.workbench.common.assets.PropertyIconLibrary;
+			import com.maninsoft.smart.modeler.assets.XPDLEditorAssets;
+
+			import flash.display.DisplayObject;
+			import flash.events.FocusEvent;
+			import flash.events.MouseEvent;
+
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.resources.ResourceManager;
+			import mx.controls.TextInput;
+
+			//----------------------------------------------------------------------
+			// Class Variables
+			//----------------------------------------------------------------------
+			private static var _dialog: SelectFormDialog;
+
+			//----------------------------------------------------------------------
+			// Variables
+			//----------------------------------------------------------------------
+			[Bindable]
+			private var _forms: Array;
+
+			private var _server:Server;
+			private var _acceptFunc: Function;
+			private var _current:Object;
+			private var _editMode:Boolean;
+
+			//----------------------------------------------------------------------
+			// Class methods
+			//----------------------------------------------------------------------
+			public static function execute(server:Server, current: Object, acceptFunc: Function, editMode:Boolean=false, position:Point=null, width:Number=0, height:Number=0): void {
+				_dialog = PopUpManager.createPopUp(Application.application as DisplayObject, SelectFormDialog, false) as SelectFormDialog;
+
+				_dialog._server = server;
+				_dialog._acceptFunc = acceptFunc;
+				_dialog._current = current;
+				_dialog._editMode = editMode;
+				if(position){
+					_dialog.x = position.x;
+					_dialog.y = position.y;
+				}else{
+					PopUpManager.centerPopUp(_dialog);	
+				}
+				if(editMode){
+					_dialog.formListToolBar.visible=true;
+					_dialog.formListToolBar.height=21;
+					_dialog.formsDG.doubleClickEnabled=true;
+					_dialog.formAddBtn.toolTip=_dialog.resourceManager.getString("WorkbenchETC", "formAddTTip");
+					_dialog.formDeleteBtn.toolTip=_dialog.resourceManager.getString("WorkbenchETC", "formDeleteTTip");
+					_dialog.formRenameBtn.toolTip=_dialog.resourceManager.getString("WorkbenchETC", "formRenameTTip");
+					_dialog.formCopyBtn.toolTip=_dialog.resourceManager.getString("WorkbenchETC", "formCopyTTip");
+					_dialog.formMoveBtn.toolTip=_dialog.resourceManager.getString("WorkbenchETC", "formMoveTTip");
+				}else{
+					_dialog.formListToolBar.visible=false;
+					_dialog.formListToolBar.height=0;					
+					_dialog.formsDG.doubleClickEnabled=false;
+				}
+				_dialog.load(current, editMode);
+	
+				_dialog.minHeight = _dialog.formsDG.rowHeight;
+	
+				if(width) _dialog.width = width;
+				if(height) _dialog.height = height;
+				else _dialog.formsDG.height = _dialog._forms.length*_dialog.formsDG.rowHeight;
+	
+				_dialog.addEventListener(FocusEvent.MOUSE_FOCUS_CHANGE, _dialog.dialogFocusChange);
+			}			
+
+			//----------------------------------------------------------------------
+			// Internal methods
+			//----------------------------------------------------------------------
+			private function load(current: Object, editMode:Boolean): void {
+				_dialog._forms = new Array();
+				if(editMode){
+					for each (var taskform:TaskForm in _server.taskForms) {
+						_dialog._forms.push(taskform);
+					}
+				}else{
+					var systemForm:TaskForm = new TaskForm();
+					systemForm.id = "SYSTEMFORM";
+					systemForm.formId = "SYSTEMFORM";
+					systemForm.name = ResourceManager.getInstance().getString("ProcessEditorETC", "defaultFormText");
+					systemForm.version = "0";
+					systemForm.type = TaskForm.NONE_FORM;
+					_dialog._forms.push(systemForm);
+					for each (var _taskform:TaskForm in _server.taskForms) {
+						if(_taskform.type == TaskForm.NONE_FORM){
+							_dialog._forms.push(_taskform);
+						}
+					}
+				}
+				if(current){
+					for(var i:int=0; i<_forms.length; i++){
+						if(_forms[i].id == current.id){
+							_forms.splice(i, 1);
+							break;
+						}
+					}
+				}
+				formsDG.setFocus();
+			}
+
+			private function close(accept: Boolean = true): void {		
+				if (accept && (_acceptFunc != null) && formsDG.selectedItem)
+					_acceptFunc(formsDG.selectedItem);
+		
+				PopUpManager.removePopUp(this);
+			}
+
+			//----------------------------------------------------------------------
+			// Event handlers
+			//----------------------------------------------------------------------
+			private function dialogFocusChange(event: FocusEvent): void {
+				if(	(event.relatedObject == _dialog) ||
+					((event.relatedObject is UIComponent) && (UIComponent(event.relatedObject).parentDocument == _dialog)) ||
+					(_dialog.formsDG && _dialog.formsDG.contains(event.relatedObject))){
+					return;
+				}
+				close(false);
+			}
+
+			private function dlg_keyDown(event: KeyboardEvent): void {
+				if (event.keyCode == Keyboard.ESCAPE)
+					close(false);
+			}	
+
+			//------------------------
+			// formsDG
+			//------------------------
+			private function formsDG_itemDoubleClick(event:ListEvent): void {
+				close(true);
+			}
+			
+			private var selectedRow:int=-1;
+			private var selectedColumn:int=-1;
+			private var editingRow:int=-1;
+			private function formsDG_itemClick(event:ListEvent): void {
+				if(_editMode){
+					selectedRow=event.rowIndex;
+					selectedColumn=event.columnIndex;
+				}else{
+					close(true);
+				}
+			}
+
+			private function toolbar_buttonClick(event:MouseEvent):void{
+				switch (event.target){
+					case formAddBtn:
+						Application.application.addForm();
+						close(false);
+						break;						
+					case formRenameBtn:
+						if(formsDG.selectedItem){
+							editingRow = selectedRow;
+							formsDG.editable=true;
+						}
+						break;
+					case formCopyBtn:
+						if(formsDG.selectedItem){
+							editingRow = selectedRow;
+							Application.application.cloneForm(formsDG.selectedItem.formId);
+							close(false);
+						}
+						break;						
+					case formDeleteBtn:
+						if(formsDG.selectedItem){
+							MsgUtil.confirmMsg( resourceManager.getString("WorkbenchMessages", "WBI001"), confirmResult);
+							function confirmResult(result:Boolean):void{
+								if(result){
+									Application.application.removeForm(formsDG.selectedItem.formId);
+									close(false);
+								}
+							}
+						}
+						break;
+					case formMoveBtn:
+						SelectMoveFormDialog.execute(this._server, null, doFormMove, null, 300, Lane.DEF_HEIGHT*3);
+						break;						
+				}
+			}
+
+			private function doFormMove(swForm: SWForm): void {
+				if(swForm){
+					Application.application.cloneForm(swForm.id, swForm);
+					close(false);
+				}
+			}
+			
+            private function itemNameChanged(event:DataGridEvent):void {
+				editingRow=-1;
+				formsDG.editable=false;
+
+            	if(TextInput(event.currentTarget.itemEditorInstance).text == formsDG.selectedItem.name) return;
+				Application.application.renameForm(formsDG.selectedItem.formId,TextInput(event.currentTarget.itemEditorInstance).text);
+            }   
+
+            private function disableEditing(event:DataGridEvent):void {
+                if(editingRow==-1 || event.rowIndex!=editingRow)
+                {  
+                    event.preventDefault();
+                    editingRow=-1;
+                    return;
+                }else if(event.columnIndex!=1){
+                    event.preventDefault();                	
+                }                
+            }   
+
+			private function selectSystemTask():void{
+				var taskForm:TaskForm = new TaskForm();
+				taskForm.formId = "SYSTEMFORM";
+				taskForm.name = resourceManager.getString("ProcessEditorETC", "defaultFormText");
+				taskForm.version = "0";
+				_acceptFunc(taskForm);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+
+	<mx:VBox verticalGap="0" width="100%" borderStyle="none">
+		<mx:HBox id="formListToolBar" styleName="formListToolBar" horizontalAlign="right">			
+			<mx:LinkButton id="formAddBtn" width="11" height="11" icon="{XPDLEditorAssets.formAddIcon}" click="{toolbar_buttonClick(event)}"/>
+			<mx:LinkButton id="formDeleteBtn" width="11" height="11" icon="{XPDLEditorAssets.formDeleteIcon}" click="{toolbar_buttonClick(event)}"/>
+			<mx:LinkButton id="formRenameBtn" width="11" height="11" icon="{XPDLEditorAssets.formRenameIcon}" click="{toolbar_buttonClick(event)}"/>
+			<mx:LinkButton id="formCopyBtn" width="11" height="11" icon="{XPDLEditorAssets.formCopyIcon}" click="{toolbar_buttonClick(event)}"/>
+			<mx:LinkButton id="formMoveBtn" width="11" height="11" icon="{XPDLEditorAssets.formMoveIcon}" click="{toolbar_buttonClick(event)}"/>
+		</mx:HBox>
+		<mx:DataGrid id="formsDG" focusThickness="0" styleName="selectDialogDG" width="100%" doubleClickEnabled="true" dataProvider="{_forms}" itemDoubleClick="formsDG_itemDoubleClick(event)" itemClick="formsDG_itemClick(event)" showHeaders="false"
+			verticalScrollPolicy="auto" horizontalScrollPolicy="off" rowHeight="22" itemEditBeginning="disableEditing(event);" itemEditEnd="itemNameChanged(event);" editable="false">
+			<mx:columns>
+				<mx:DataGridColumn width="18">
+           			<mx:itemRenderer>
+               			<mx:Component>
+               				<mx:Image styleName="selectDialogDGItemImage" y="0" width="18" height="16" source="{data.icon}"/>
+               			</mx:Component>
+           			</mx:itemRenderer>
+           		</mx:DataGridColumn>		                	
+				<mx:DataGridColumn id="formNameCol" dataField="name"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:VBox>
+</AbstractSimpleDialog>

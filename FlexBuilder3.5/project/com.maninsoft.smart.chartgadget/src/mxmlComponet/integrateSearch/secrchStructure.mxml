@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="135" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.core.UITextField;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			import mx.core.BitmapAsset;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.events.CloseEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.mxml.HTTPService;
+			import mx.rpc.events.FaultEvent;
+			import portalAs.Properties;
+			import mx.controls.Alert;
+			import portalAs.event.PackageEvent;
+			[Bindable]
+			public var packageId:String;
+			[Bindable]
+			public var version:String;
+			[Bindable]
+			public var status:String;
+			[Bindable]
+			public var latestDeployedYn:String;
+			[Bindable]
+			public var categoryId:String;
+			[Bindable]
+			public var categoryName:String;
+			[Bindable]
+			public var packageName:String;
+			[Bindable]
+			public var creater:String;
+			[Bindable]
+			public var createrName:String;
+			[Bindable]
+			public var createdTime:String;
+			[Bindable]
+			public var modifier:String;
+			[Bindable]
+			public var modifierName:String;
+			[Bindable]
+			public var modifiedTime:String;
+			[Bindable]
+			public var description:String;
+						
+			[Bindable]
+			public var deployImageSize:int;						
+			[Bindable]
+			public var undeployImageSize:int;						
+			[Bindable]
+			public var titleColor:Number;
+			
+			[Embed(source="images/resource.gif")] private var dragClass:Class; //Drag시 이동되어지는 이미지
+			
+			private function packageClick(event:MouseEvent):void{
+				UITextField(event.target).addEventListener(MouseEvent.MOUSE_MOVE, packageMove);
+			}
+			
+			public function packageMove(event:MouseEvent):void {
+				var di:BitmapAsset = BitmapAsset(new dragClass());
+	    		di.width = 78;
+	    		di.height = 78;
+	    		di.x = UITextField(event.target).mouseX; 
+				di.y = UITextField(event.target).mouseY;
+	            var ds:DragSource=new DragSource();
+	            ds.addData(packageId,"movePackageId");   
+	            DragManager.doDrag(UITextField(event.target) ,ds, event, di); 
+			}
+		
+			private function packageEditor():void{
+				var pe:PackageEvent = new PackageEvent(PackageEvent.LOAD_PACKAGE, packageId, int(version));
+				pe.categoryId = categoryId;
+				pe.categoryName = categoryName;
+				dispatchEvent(pe);
+			}
+			
+			private var dataRequest1:HTTPService;
+			private function deployPackage():void {
+				Alert.show("서비스를 실행 상태로 변경 하시겠습니까?", "", 3, this, deployPackageHandler);
+			}
+			private function deployPackageHandler(event:CloseEvent):void {
+				if (event.detail==Alert.YES){
+					var params:Object = new Object();
+					params.method = "deployPackage";
+					params.userId = Properties.userId;
+					params.packageId = packageId;
+					params.version = version;
+			
+			    	dataRequest1 = new HTTPService();
+			    	dataRequest1.resultFormat = "e4x";
+			    	dataRequest1.url = Properties.basePath + "smartserver/services/builder/builderService.jsp";
+			    	dataRequest1.addEventListener(FaultEvent.FAULT, faultHandler);
+			    	dataRequest1.addEventListener(ResultEvent.RESULT, resultHandler);
+			    	dataRequest1.useProxy = false;
+					dataRequest1.send(params);
+				}
+			}
+			private var dataRequest2:HTTPService;
+			private function undeployPackage():void {
+				Alert.show("서비스를 중지 상태로 변경 하시겠습니까?", "", 3, this, undeployPackageHandler);
+			}
+			private function undeployPackageHandler(event:CloseEvent):void {
+				if (event.detail==Alert.YES){
+					var params:Object = new Object();
+					params.method = "undeployPackage";
+					params.userId = Properties.userId; 
+					params.packageId = packageId;
+					params.version = version;
+			
+			    	dataRequest2 = new HTTPService();
+			    	dataRequest2.resultFormat = "e4x";
+			    	dataRequest2.url = Properties.basePath + "smartserver/services/builder/builderService.jsp";
+			    	dataRequest2.addEventListener(FaultEvent.FAULT, faultHandler);
+			    	dataRequest2.addEventListener(ResultEvent.RESULT, resultHandler);
+			    	dataRequest2.useProxy = false;
+					dataRequest2.send(params);					
+				}
+			}
+			private var dataRequest3:HTTPService;	
+			private function terminatePackage():void {
+				Alert.show("서비스를 종료 상태로 변경 하시겠습니까?", "", 3, this, terminatePackageHandler);
+			}
+			private function terminatePackageHandler(event:CloseEvent):void {
+				if (event.detail==Alert.YES){
+					var params:Object = new Object();
+					params.method = "deletePackage";
+					params.userId = Properties.userId;
+					params.packageId = packageId;
+					params.version = version;
+			
+			    	dataRequest3 = new HTTPService();
+			    	dataRequest3.resultFormat = "e4x";
+			    	dataRequest3.url = Properties.basePath + "smartserver/services/builder/builderService.jsp";
+			    	dataRequest3.addEventListener(FaultEvent.FAULT, faultHandler);
+			    	dataRequest3.addEventListener(ResultEvent.RESULT, resultHandler);
+			    	dataRequest3.useProxy = false;
+					dataRequest3.send(params);
+				}
+			}		
+						
+			private var dataRequest4:HTTPService;	
+			public function getPackage():void {
+				var params:Object = new Object();
+				params.method = "getPackage";
+				params.userId = Properties.userId;
+				params.packageId = packageId;
+				params.version = version;
+		
+		    	dataRequest4 = new HTTPService();
+		    	dataRequest4.resultFormat = "e4x";				
+				dataRequest4.url = Properties.basePath + "smartserver/services/builder/builderService.jsp";
+		    	dataRequest4.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest4.addEventListener(ResultEvent.RESULT, resultHandlerForRefresh);				
+				dataRequest4.send(params);
+			}			
+			private function resultHandlerForRefresh(event:ResultEvent):void {
+					this.packageId = event.result.Package.packageId;
+					this.version = event.result.Package.version;
+					this.status = event.result.Package.status;
+					this.latestDeployedYn = event.result.Package.latestDeployedYn;
+					this.categoryId = event.result.Package.categoryId;
+					this.categoryName = event.result.Package.categoryName;
+					this.packageName = event.result.Package.name;
+					this.creater = event.result.Package.creator;
+					this.createrName = event.result.Package.creatorName;
+					this.createdTime = event.result.Package.createdTime;
+					this.modifier = event.result.Package.modifier;
+					this.modifierName = event.result.Package.modifierName;
+					this.modifiedTime = event.result.Package.modifiedTime;
+					this.description = event.result.Package.description;
+					
+					if(event.result.Package.status == "DEPLOYED"){
+						this.undeployImageSize = 0;
+						this.deployImageSize = 15;
+						this.titleColor = 0xff6600;
+					}else{
+						this.undeployImageSize = 15;
+						this.deployImageSize = 0;
+						this.titleColor = 0x999999;						
+					}
+			}
+			
+			private var dataRequest5:HTTPService;
+			private function versionUp():void{
+    			Alert.show("버전을 올리시겠습니까?", "", 3, this,versionUpHandler);
+    		}
+    		
+    		private function versionUpHandler(event:CloseEvent):void{
+    			if (event.detail==Alert.YES){
+    				var params:Object = new Object();
+					params.method = "versionUpPackage";
+					params.userId = Properties.userId;
+					params.packageId = packageId;
+					params.version = version;
+			
+			    	dataRequest5 = new HTTPService();
+			    	dataRequest5.resultFormat = "e4x";
+			    	dataRequest5.url = Properties.basePath + "smartserver/services/builder/builderService.jsp";
+			    	dataRequest5.addEventListener(FaultEvent.FAULT, faultHandler);
+			    	dataRequest5.addEventListener(ResultEvent.RESULT, resultHandler);
+			    	dataRequest5.useProxy = false;
+					dataRequest5.send(params);
+    			}
+    		}
+    		
+			private function resultHandler(event:ResultEvent):void {
+				if(event.result.@status == "OK"){
+					//getPackage();
+					Alert.show("요청한 작업이 완료되었습니다. ");
+					var eventObj:CustormEvent = new CustormEvent("refresh");
+					dispatchEvent(eventObj);
+				}else{
+					Alert.show("작업 수행중 오류가 발생하였습니다.\n 관리자에게 문의하세요");
+				}
+			}
+    		private function faultHandler(event:FaultEvent):void {
+    			Alert.show("Exception occured during read data.\n"+event.fault.message);
+    		}			
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="refresh", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:VBox x="0" y="0" width="100%" height="135"  verticalGap="0">
+		<mx:HBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingBottom="5" paddingTop="5" paddingLeft="10" paddingRight="10" horizontalGap="4">
+			<mx:VBox width="100%" height="123" horizontalAlign="center" verticalAlign="middle"  horizontalGap="5" verticalGap="0">
+				<mx:HBox width="100%" height="23" verticalAlign="middle" horizontalAlign="left" horizontalGap="3">
+					<mx:Image id="deployed" width="{deployImageSize}" height="15" source="@Embed('images/portal_main/repoSearch/local_repo_deployed.png')"/>
+					<mx:Image id="undeployed" width="{undeployImageSize}" height="15" source="@Embed('images/portal_main/repoSearch/local_repo_unDeployed.png')"/>
+					<mx:Label text="{packageName}" color="{titleColor}" mouseDown="packageClick(event)" fontSize="12" styleName="boldLabel" textAlign="left"/>
+				</mx:HBox>
+				<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+					<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+					<mx:Label text="설명: {description}" fontSize="11" color="#808080"/>
+				</mx:HBox>
+				<mx:HBox width="100%" height="80" horizontalAlign="center" verticalAlign="middle"  horizontalGap="5">
+					<mx:VBox width="100%" height="100%" verticalGap="0" verticalAlign="top">
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="생성자: {createrName}" fontSize="11" color="#808080"/>
+						</mx:HBox>
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="생성일: {createdTime}" fontSize="11" color="#808080"/>
+						</mx:HBox>
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<!--mx:Label text="서비스상태: {status=='DEPLOYED' ? 'START' : 'STOP'}" fontSize="11" color="#808080"/-->
+							<mx:Label text="서비스상태: {status}" fontSize="11" color="#808080"/>					
+						</mx:HBox>
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="버전: v. {version}" fontSize="11" color="#808080"/>
+							<mx:LinkButton label="버전업" color="#0000FF" styleName="normalLabel" click="versionUp()"/>
+						</mx:HBox>
+					</mx:VBox>
+					<mx:VBox width="1" height="100%" verticalGap="0" verticalAlign="bottom">
+						<mx:VBox width="1" height="80%" verticalGap="0" verticalAlign="top">
+							<mx:backgroundImage>@Embed(source='../../images/portal_main/repoSearch/local_repo_line.png')</mx:backgroundImage>
+						</mx:VBox>
+					</mx:VBox> 
+					<mx:VBox width="100%" height="100%" verticalGap="0" verticalAlign="top">
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="최종수정자: {modifierName}" fontSize="11" color="#808080"/>											
+						</mx:HBox>
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="최종수정일: {modifiedTime}" fontSize="11" color="#808080"/>					
+						</mx:HBox>
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="서비스시작일: {status=='DEPLOYED' ? modifiedTime : ''}" fontSize="11" color="#808080"/>											
+						</mx:HBox>
+						<mx:HBox width="100%" height="20" verticalAlign="middle" horizontalAlign="left" horizontalGap="3" paddingLeft="5">
+							<mx:Image width="9" height="9" source="@Embed('images/portal_main/repoSearch/local_repo_point.png')"/>
+							<mx:Label text="서비스: " fontSize="11" color="#808080"/>		
+							<mx:Button toolTip="서비스시작" fontSize="9" styleName="normalLabel" width="34" height="16" paddingLeft="0" paddingRight="0" click="deployPackage()">
+								<mx:icon>@Embed(source='../../images/portal_main/repoSearch/local_repo_run.PNG')</mx:icon>
+							</mx:Button>
+							<mx:Button toolTip="서비스중지" fontSize="9" styleName="normalLabel" width="34" height="16" paddingLeft="0" paddingRight="0" click="undeployPackage()">
+								<mx:icon>@Embed(source='../../images/portal_main/repoSearch/local_repo_pause.PNG')</mx:icon>
+							</mx:Button>
+							<mx:Button toolTip="서비스 종료" fontSize="9" styleName="normalLabel" width="34" height="16" paddingLeft="0" paddingRight="0" click="terminatePackage()">
+								<mx:icon>@Embed(source='../../images/portal_main/repoSearch/local_repo_stop.PNG')</mx:icon>
+							</mx:Button>
+							<mx:Button toolTip="편집하기" fontSize="9" styleName="normalLabel" width="34" height="16" paddingLeft="0" paddingRight="0" click="packageEditor()">
+								<mx:icon>@Embed(source='../../images/portal_main/repoSearch/local_repo_edit.PNG')</mx:icon>
+							</mx:Button>
+						</mx:HBox>
+					</mx:VBox>
+				</mx:HBox>				
+			</mx:VBox>
+			<mx:VBox width="200" height="123" horizontalAlign="center" verticalAlign="middle" verticalGap="0">
+				<mx:HBox width="100%" height="23" verticalAlign="middle" horizontalAlign="left" horizontalGap="3">
+				</mx:HBox>
+				<mx:Image width="200" height="100" source="@Embed('images/portal_main/repoSearch/temp_localRepo.jpg')" click="Alert.show('확대화면 준비중');"/>
+			</mx:VBox>
+			<mx:TextInput id="package_id" text="{packageId}" visible="false" height="0" width="0"/>
+		</mx:HBox>
+	</mx:VBox> 
+	<mx:HBox x="0" y="134" width="100%" height="1" backgroundColor="#999999">
+	</mx:HBox>
+</mx:Canvas>

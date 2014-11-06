@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" horizontalAlign="center">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import mx.rpc.events.ResultEvent;
+			[Bindable]
+			private var _packageId:String;
+			[Bindable]
+			private var _packageVersion:String;
+			[Bindable]
+			private var _categoryName:String;
+			
+			public function set packageId(pkgId:String){
+				this._packageId = pkgId;
+				getPackage();
+			}
+			
+			public function set packageVersion(pkgVer:String){
+				this._packageVersion = pkgVer;
+				getPackage();
+			}
+			
+			public function set categoryName(name:String){
+				this._categoryName = name;
+			}
+			
+			public function getPackage():void{
+				if(_packageId!=null && _packageVersion!="0"){
+					getPackageService.url = WorkbenchConfig.serviceUrl + "?method=getPackage";
+					getPackageService.send();
+				}
+			}
+			
+			private function getPackageResult(event:ResultEvent):void {
+				pkgName.text = XML(event.result.Package.name);
+				creatorName.text = XML(event.result.Package.creatorName);
+				modifierName.text = XML(event.result.Package.modifierName);
+				status.text = XML(event.result.Package.status);
+				createdTime.text = XML(event.result.Package.createdTime);
+				modifiedTime.text = XML(event.result.Package.modifiedTime);
+				description.text = XML(event.result.Package.description);
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="getPackageService"  resultFormat="e4x" useProxy="false" result="getPackageResult(event)" method="post">
+		<mx:request>
+			<userId>{WorkbenchConfig.userId}</userId>
+			<packageId>{_packageId}</packageId>
+			<version>{_packageVersion}</version>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:VBox width="95%" height="95%" cornerRadius="10" borderColor="#FFFFFF">
+		<mx:HBox width="100%" height="7%" verticalAlign="middle">
+			<mx:Image source="assets/pde/images/icon/packageInfoBig.png" />
+			<mx:Label text="패키지정보"/>
+		</mx:HBox>
+		<mx:VBox width="100%" height="80%" borderColor="#1AC2B8" borderStyle="outset"> 
+			<mx:HBox width="100%" height="100%">
+				<mx:VBox width="50%" height="100%" cornerRadius="10" verticalGap="0">
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="패키지이름" width="70"/>
+						<mx:TextInput id="pkgName" width="80%"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="패키지버전" width="70"/>
+						<mx:TextInput id="pkgVer" width="80%" text="{_packageVersion}"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="생성자" width="70"/>
+						<mx:TextInput id="creatorName" width="80%"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="변경자" width="70"/>
+						<mx:TextInput id="modifierName" width="80%"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="상태" width="70"/>
+						<mx:TextInput id="status" width="80%"/>
+					</mx:ControlBar>
+				</mx:VBox>
+				<mx:VBox width="50%" height="100%" cornerRadius="10" verticalGap="0">
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="패키지아이디" width="70"/>
+						<mx:TextInput id="pkgId" width="80%" text="{_packageId}"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="카테고리이름" width="70"/>
+						<mx:TextInput id="category_Name" width="80%" text="{_categoryName}"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="생성시간" width="70"/>
+						<mx:TextInput id="createdTime" width="80%"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="변경시간" width="70"/>
+						<mx:TextInput id="modifiedTime" width="80%"/>
+					</mx:ControlBar>
+					<mx:ControlBar width="100%" height="100%">
+					</mx:ControlBar>
+				</mx:VBox>
+			</mx:HBox>
+			<mx:Canvas width="100%" height="100%">
+				<mx:ControlBar width="100%" height="100%">
+						<mx:Label text="설명" width="70"/>
+						<mx:TextArea id="description" width="80%"/>
+					</mx:ControlBar>
+			</mx:Canvas>
+		</mx:VBox>
+		<mx:Canvas width="100%" height="95%"/>
+	</mx:VBox>
+</mx:VBox>

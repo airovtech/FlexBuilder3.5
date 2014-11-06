@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TypeDetailView 
+	xmlns="com.maninsoft.smart.formeditor.refactor.view.property.detail.type.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="시간">
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.DateBase;
+			import com.maninsoft.smart.formeditor.model.property.FormDateTypes;
+			import com.maninsoft.smart.formeditor.model.property.FormDateType;
+			
+			private function setLocaleTime(formDateType:FormDateType):void{
+				DateBase.dayNamesLong = formDateType.days;
+				DateBase.dayNamesShort = formDateType.dayShorts;
+				DateBase.monthNamesLong = formDateType.months;
+				DateBase.monthNamesShort = formDateType.monthShorts;
+				DateBase.timeOfDay = formDateType.times;
+				
+				timePatternList.dataProvider = formDateType.timeFormatStrings;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox height="100%" width="100%">
+		<mx:Text text="형식 : " fontSize="12"/>
+		<mx:List id="timePatternList" width="100%" 
+			itemRenderer="com.maninsoft.smart.formeditor.refactor.view.property.renderer.DateFormTypeRenderer"
+			dataProvider="{FormDateType(timeLocale.selectedItem).timeFormatStrings}"
+			selectedItem="{formItemType.formatString}"/>
+		<mx:HBox>
+			<mx:Text text="위치:" fontSize="12"/>
+			<mx:ComboBox id="timeLocale" fontSize="12"
+				dataProvider="{FormDateTypes.getFormDateTypes()}" labelField="localeLabel" 
+				creationComplete="{setLocaleTime(FormDateType(timeLocale.selectedItem))}" change="{setLocaleTime(FormDateType(timeLocale.selectedItem))}"
+				selectedIndex="{FormDateTypes.getLocaleTypeIndex(formItemType.locale.type)}"/>	
+		</mx:HBox>
+	</mx:VBox>					
+</TypeDetailView>

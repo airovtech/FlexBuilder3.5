@@ -1,0 +1,224 @@
+/* CSS file */ 
+	@font-face{
+		fontFamily: "윤고딕350";
+		src:url("font/윤고딕350.ttf");
+	}
+
+	@font-face{
+		fontFamily: "윤고딕340";
+		src:url("font/윤고딕340.ttf");
+	}
+		
+	@font-face{
+		fontFamily: "flexDefaultFont";
+		src:url("font/윤고딕350.ttf");
+	}
+
+	@font-face{
+		fontFamily: "flexDefaultFontThin";
+		src:url("font/윤고딕340.ttf");
+	}
+
+	.uiDefaultFont{
+		fontFamily: "Tahoma";
+	}
+		
+	.normalLabel {
+		fontFamily: "Tahoma";
+		fontAntiAliasType: advanced;
+		fontWeight: normal;	
+		fontSize: 11;
+	}
+
+	Label{
+		foneStyleName: "normalLabel";
+	}
+
+    .alertTitle{
+       	backgroundColor: #ffffff;
+        backgroundAlpha: 1;
+		color: #000000;
+        fontFamily: "Tahoma";
+        fontSize: 12; 
+        fontWeight:bold;
+    }
+
+    Alert{
+        fontFamily: "Tahoma";
+        fontSize: 12; 
+        backgroundColor:#ffffff;
+        backgroundAlpha: 1;
+        color: #000000;
+        borderColor: #999999;
+        borderThickness: 1;
+        borderThicknessTop: 1;
+        borderThicknessBottom: 1;
+        borderThicknessLeft: 1;
+        borderThicknessRight: 1;
+        cornerRadius: 0;
+        paddingTop: 5;
+        paddingBottom: 5;
+        paddingLeft: 10;
+        paddingRight: 10;
+        borderAlpha: 1;
+        headerHeight: 10;            
+    }
+
+	ToolTip{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+	}
+		
+	AdvancedDataGrid { 
+		backgroundAlpha: 1;
+		horizontalGridLines: true;
+		letterSpacing: 0;
+		horizontalGridLineColor: #cccccc;
+		rollOverColor: #cccccc;
+		textRollOverColor: #cc3300;
+	
+		selectionColor: #ffffcc;
+		color: #666666;
+		textSelectedColor: #cc3300;
+		textIndent: 0;
+		headerStyleName: "grdiHeaderStyle";
+		fontFamily: "Tahoma";
+		fontSize: 11;
+	}
+	.grdiHeaderStyle{
+		color: #333333;
+		headerHeight: 20; 
+		letterSpacing: 0;
+		textAlign: center;
+		fontFamily: "Tahoma";
+		fontSize: 11;
+	}	  
+
+	.columnBtn {
+		skin: Embed(source="./images/icon_column.png");
+		overSkin: Embed(source="./images/icon_column.png");
+	}
+
+	.lineBtn {
+		skin: Embed(source="./images/icon_line.png");
+		overSkin: Embed(source="./images/icon_line.png");	
+	}
+
+	.pieBtn {
+		skin: Embed(source="./images/icon_pie.png");
+		overSkin: Embed(source="./images/icon_pie.png");
+	}
+
+	.gridBtn {
+		skin: Embed(source="./images/icon_grid.png");
+		overSkin: Embed(source="./images/icon_grid.png");
+	}
+
+	.headerStyle{
+		fontFamily: "Tahoma";
+		fontSize:11;
+    	fontWeight:"normal";
+	}
+	    
+	.measuresStyle{
+		fontFamily: "Tahoma";
+		fontSize:11;
+    	fontWeight:"bold";
+	}
+	    
+	.rowAxisHeaderStyle{
+		fontFamily: "Tahoma";
+		fontSize:11;
+    	fontWeight:"normal";
+    	textAlign:"left";
+	}
+	
+	.columnAxisHeaderStyle{
+		fontFamily: "Tahoma";
+		fontSize:11;
+    	fontWeight:"normal";
+    	textAlign:"left";
+	}
+
+	.sumStyle{
+		rowColor:#FF0000;
+    	fontWeight:"bold";
+    	color:#FF0000;
+	}
+
+	.normalLabel {
+		fontFamily: "Tahoma";
+		fontWeight: normal;	
+	}
+	
+	.columnChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+		paddingLeft: 5;
+		paddingRight: 5;
+		horizontalAxisStyleName:noTickAxisStyle;
+		verticalAxisStyleName:noTickAxisStyle;
+	}
+	.pieChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+	}
+	.lineChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+		horizontalAxisStyleName:noTickAxisStyle;
+		verticalAxisStyleName:noTickAxisStyle;
+	}
+	.barChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+		horizontalAxisStyleName:noTickAxisStyle;
+		verticalAxisStyleName:noTickAxisStyle;
+	}
+	.areaChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+		horizontalAxisStyleName:noTickAxisStyle;
+		verticalAxisStyleName:noTickAxisStyle;
+	}
+	.bubbleChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+		horizontalAxisStyleName:noTickAxisStyle;
+		verticalAxisStyleName:noTickAxisStyle;
+	}
+	.plotChartStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+		horizontalAxisStyleName:noTickAxisStyle;
+		verticalAxisStyleName:noTickAxisStyle;
+	}
+	.noTickAxisStyle{
+		tickPlacement:outside;
+	}
+	
+	.olapGridStyle{
+		alternatingItemColors: #ffffff, #ffffff;
+	}
+	
+	.legendStyle{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontWeight: "normal";
+	}
+	
+	.customTextStyle{
+		fontFamily: "윤고딕340";
+		embedFonts: true;
+		fontSize: 12;
+		fontWeight: "normal";
+		textAlign: "center";
+	}
+		

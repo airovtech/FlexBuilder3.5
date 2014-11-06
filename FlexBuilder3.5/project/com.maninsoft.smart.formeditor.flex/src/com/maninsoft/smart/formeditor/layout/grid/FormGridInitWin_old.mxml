@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="320" height="200" creationComplete="init()" borderStyle="solid" 
+	backgroundColor="#FFFFFF" xmlns:display="flash.display.*">
+	<mx:Metadata>
+		[Event(name="complete", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+		]]>
+	</mx:Script>
+	
+	<mx:Label id="rowLabel" x="10" y="35" text="{resourceManager.getString('FormEditorETC', 'columnCountText')}"/>
+	<mx:Label id="colLabel" x="10" y="61" text="{resourceManager.getString('FormEditorETC', 'rowCountText')}"/>
+	<mx:NumericStepper styleName="formEditorDialogStepper" id="rowInput" x="37" y="33" width="80" value="1" minimum="1" change="drawGrid()"/>
+	<mx:NumericStepper styleName="formEditorDialogStepper" id="colInput" x="37" y="59" width="80" value="1" minimum="1" change="drawGrid()"/>
+	<mx:Canvas id="exampleTable"/>
+	<mx:Canvas id="lineSprite" width="100%" height="100%"/>
+	<mx:Button id="okBtn" x="180" y="168" label="{resourceManager.getString('WorkbenchETC', 'confirmText')}" styleName="formEditorDialogSubmit" click="{dispatchEvent(new Event(Event.COMPLETE));PopUpManager.removePopUp(this);}"/>
+	<mx:Button id="cancelBtn" x="254" y="168" label="{resourceManager.getString('WorkbenchETC', 'cancelText')}" styleName="formEditorDialogSubmit" click="{dispatchEvent(new Event(Event.CANCEL));PopUpManager.removePopUp(this);}"/></mx:Canvas>

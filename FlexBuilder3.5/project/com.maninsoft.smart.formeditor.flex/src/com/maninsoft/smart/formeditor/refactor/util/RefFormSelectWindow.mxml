@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="395" height="364"
+	title="화면 선택" fontFamily="Arial" fontSize="12" showCloseButton="true" close="cancel()" borderStyle="solid">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import mx.messaging.config.ServerConfig;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.refactor.service.impl.ServerFormPersistenceService;
+			import com.maninsoft.smart.formeditor.refactor.service.IFormPersistenceService;
+			import com.maninsoft.smart.workbench.common.util.ResultWindow;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			/**
+			 * 전체 폼 리스트를 보여주고 참조할 폼을 선택하고 사용하게 해줌  
+			 **/
+			 
+			import mx.managers.PopUpManager;
+			
+			// 초기화 
+			// 1. 폼 리스트를 로드
+			public function start():void{
+				errorTxt.text = "";
+				selectFormType();
+			}
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+            // 퍼시스턴스를 위한 폼 서비스
+			private var _serviceClient:ServiceClient;
+
+			public function set serviceClient(serviceClient:ServiceClient):void{
+			    this._serviceClient = serviceClient;
+			    selectFormType();
+			}
+			public function get serviceClient():ServiceClient{
+			    return this._serviceClient;
+			}
+			
+			// 전체 폼 리스트 정보
+			[Bindable]
+			private var formListXML:XML;
+				
+			[Bindable]
+			public var selectFormId:String;		
+			
+			[Bindable]
+			public var selectFormVersion:int;		
+			
+			[Bindable]
+			public var selectSWForm:SWForm;				
+			
+			[Bindable]
+			public var selectFormModel:FormDocument;
+
+			[Bindable]
+			public var swForm:SWForm;
+
+			[Bindable]
+			public var formId:String;
+			[Bindable]
+			public var version:int;
+						
+			// 폼 리스트 로드
+			protected function loadFormList():void{
+				serviceClient.formService.loadAllSingleList(loadFormListResult, serviceFault);			
+			}
+			// 폼 리스트 로드
+			protected function loadProcessFormList():void{
+				if(swForm != null && swForm.getPackage().getProcessResource() != null){
+					serviceClient.formService.loadListByProcess(swForm.getPackage().getProcessResource().id, swForm.getPackage().getProcessResource().version, 
+						loadFormListResult, serviceFault);	
+				}else{
+					serviceClient.formService.loadListByForm(formId, version, 
+						loadFormListResult, serviceFault);					
+				}						
+			}
+			// 폼 로드
+			protected function loadSelectForm():void{
+				serviceClient.formService.load(this.selectFormId, this.selectFormVersion, loadSelectFormResult, serviceFault);				
+			}
+			// 폼 로드 결과
+			protected function loadSelectFormResult(event:FormPersistenceEvent):void{
+				this.selectFormModel = event.formModel;		
+			}
+			// 폼 리스트 로드 결과
+			protected function loadFormListResult(event:FormPersistenceEvent):void{
+				this.formListXML = event.formListXML;	
+			}
+			// 폼  서비스 실패
+			public function serviceFault(event:FormPersistenceEvent):void{
+				errorTxt.text = event.msg;
+			}
+			// 폼 선택 취소
+			// 1. 폼 선택정보 제거	
+			// 2. 취소 이벤트
+			private function cancel():void{
+				this.selectFormId = null;
+				this.selectFormModel = null;
+				
+				dispatchEvent(new Event(Event.CANCEL));
+				close();	
+			}
+			
+			// 폼 선택
+			// 1. 완료 이벤트
+			private function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();	
+			}
+			
+			// 리스트에서 선택된 항목의 참조폼을 로드
+			protected function clickForm():void{
+				this.selectFormId = this.formList.selectedItem.formId.toString();
+				this.selectFormVersion = new int(this.formList.selectedItem.version.toString());	
+				
+				this.selectSWForm = SWForm.parseXML(XML(this.formList.selectedItem));	
+				
+				completeBtn.enabled = true;
+						
+				loadSelectForm();	
+			}
+			
+			public var formType:String = SWForm.FORMTYPE_PROCESS;
+			
+			protected function selectFormType():void{
+				if(this.serviceClient != null){
+					if(formTypeCombo.selectedIndex == 0){
+						loadProcessFormList();
+						formType = SWForm.FORMTYPE_PROCESS;
+					}else{
+						loadFormList();
+						formType = SWForm.FORMTYPE_SINGLE;
+					}
+				}
+			}
+			
+			protected function formListLabelFunc(item:Object):String{
+				if(item is XML){
+					return XML(item).name + "(V" + XML(item).version + ")";
+				}
+				return "";
+			}
+		]]>
+	</mx:Script>
+	<mx:Label id="formTypeText" x="10" y="4" text="종류 : " fontSize="12"/>
+	<mx:ComboBox id="formTypeCombo" x="49" y="1" width="123" creationComplete="{selectFormType()}" change="{selectFormType()}">
+		<mx:dataProvider>
+			<mx:ArrayCollection>
+				<mx:Object label="프로세스" value="{SWForm.FORMTYPE_PROCESS}"></mx:Object>
+				<mx:Object label="업무화면" value="{SWForm.FORMTYPE_SINGLE}"></mx:Object>
+			</mx:ArrayCollection>
+		</mx:dataProvider>
+	</mx:ComboBox>
+	<mx:List id="formList" x="10" y="53" width="162" height="183" dataProvider="{this.formListXML.Form}" labelFunction="formListLabelFunc" itemClick="clickForm()"></mx:List>
+	<!-- labelField="name" -->
+	<mx:Label x="10" y="33" text="참조할 화면 : " fontSize="12"/>
+	<mx:Button x="292" y="290" label="취소" click="cancel()"/>
+	<mx:Button id="completeBtn" x="232" y="290" label="확인" click="complete()" enabled="false"/>
+	<mx:List id="formFieldList" x="180" y="53" height="183" width="162" dataProvider="{this.selectFormModel.children}" labelField="name" selectable="false"></mx:List>
+	<mx:Label x="180" y="33" text="필드" fontSize="12"/>
+	<mx:Text id="tip" x="10" y="244" text="* 추가하려는 폼을 선택 후에 확인 버튼을 누르세요." fontFamily="Arial" color="#FFA800"/>
+	<mx:Text id="errorTxt" x="10" y="263" fontFamily="Arial" color="#FF0000"/>
+</mx:TitleWindow>

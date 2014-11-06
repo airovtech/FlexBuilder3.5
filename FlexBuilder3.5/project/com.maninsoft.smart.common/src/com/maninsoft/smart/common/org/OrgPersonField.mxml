@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="138" height="34" creationComplete="{init()}">
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.Fault;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import com.maninsoft.smart.common.assets.OrgAssets;
+			import flash.events.*;
+			import flash.net.URLLoader;
+			import flash.net.URLRequest;
+			import flash.xml.*;
+			
+			import mx.controls.Tree;
+			import mx.events.TreeEvent;
+			
+
+			private var btnIcon:Class = OrgAssets.userIcon;
+			
+			private var _userId:String = "";
+			
+			private var employeeList:PopEmployeeList = new PopEmployeeList();
+			
+			private function init():void{
+				employeeList.addEventListener(CustormEvent.CUSTORM_ITEM_LOAD, userSelect);
+				employeeList.addEventListener(FaultEvent.FAULT, userSelectFail);
+			}
+			
+			public function set userId(userId:String):void{
+				this._userId = userId;
+				
+				loadUser();
+			}
+			
+			private function loadUser():void{
+				if(connUserId != null && orgServiceUrl != null && userId != null && userId != ""){
+					employeeList.connUserId = connUserId;
+					employeeList.orgServiceUrl = orgServiceUrl;
+					
+					employeeList.retrieveUser(userId);
+				}				
+			}
+			
+			public function get userId():String{
+				return this._userId;
+			}
+			
+			public function get value():String{
+				return this._userId;
+			}
+						
+			
+			private var _connUserId:String;
+			
+			[Bindable]
+			public function set connUserId(connUserId:String):void{
+				this._connUserId = connUserId;
+				loadUser();
+			}
+			
+			public function get connUserId():String{
+				return this._connUserId;
+			}
+			
+			private var _orgServiceUrl:String;
+			
+			[Bindable]
+			public function set orgServiceUrl(orgServiceUrl:String):void{
+				this._orgServiceUrl = orgServiceUrl;
+				loadUser();
+			}
+			
+			public function get orgServiceUrl():String{
+				return this._orgServiceUrl;
+			}
+			
+			private function orgPop():void{
+				var pop:PopDeptSelect = PopDeptSelect(PopUpManager.createPopUp(this, PopDeptSelect, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				
+				pop.width = 400;
+				pop.height= 300;
+				
+				pop.orgServiceUrl = orgServiceUrl;
+				pop.connUserId = connUserId;
+				
+				pop.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, 
+					function(e:CustormEvent):void{						
+						userSelect(e);						
+					}
+				);
+//				PopUpManager.centerPopUp(pop);
+			}
+			
+			private function userSelect(event:CustormEvent):void{
+				this._userId = event.userId;
+				userName.text = event.userPosition + " " + event.userName;
+			}
+			
+			private function userSelectFail(event:FaultEvent):void{
+				userName.text = "???";
+			}
+		]]>
+	</mx:Script>
+	<mx:TextInput id="userName" x="0" y="0" fontSize="11" height="{this.height}" width="{this.width - orgBtn.width - 5}" editable="false" enabled="true"
+		styleName="formOrg"/>
+	<mx:Button id="orgBtn" y="{(this.height - orgBtn.height)/2}" icon="{btnIcon}" click="{orgPop()}" right="0" height="22" width="40"
+		styleName="formOrgButton"/>	
+</mx:Canvas>

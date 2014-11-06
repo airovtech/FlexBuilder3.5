@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties version="1">
+  <includeClasses>
+    <classEntry path="com.maninsoft.smart.workbench.common.IWorkbenchEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.assets.PropertyIconLibrary"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.assets.TreeAssets"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.assets.UtilAssets"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.assets.WorkbenchIconLibrary"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.command.CommandStack"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.command.model.ChainedCompoundCommand"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.command.model.Command"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.command.model.CompoundCommand"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.command.model.UnexecutableCommand"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.editor.EditDomain"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.CommandEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.DateCallbackEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.FormEditorEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.LoadCallbackEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.MoveGanttStepEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.PageViewEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.PagingCallbackEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.event.SelectActivityCallbackEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.AbstractPackageChildResourceMeta"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.AbstractResourceMetaModel"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.IFormMetaModel"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.IMetaModelOwner"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.IPackageChildResourceMeta"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.IPackageMetaModel"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.IProcessMetaModel"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.IResourceMetaModel"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.SmartModelConstant"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.impl.SWForm"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.impl.SWGanttProcess"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.impl.SWPackage"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.impl.SWProcess"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.impl.SWWorkType"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.meta.impl.SWWorkTypeMapping"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.model.WorkCategory"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.model.WorkPackage"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.preloader.CustomPreloadEvent"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.preloader.IProgress"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.preloader.SquaresPreloadingWindow"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.preloader.SquaresSpinnerPreloadingWindow"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.preloader.WheelPreloadingWindow"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ActualParametersPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.BooleanPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.BooleanPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ButtonPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.CheckBoxPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.CheckBoxPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ColorPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ColorPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ComboBoxPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.DomainPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.DomainPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.EllipsisPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FieldIdPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FontSizePropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FontSizePropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FontWeightPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FontWeightPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FormIdPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.FormMappingPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.IPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.IPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.IPropertySource"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.LinkConditionPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ListDataPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ListDataPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.MeanTimePropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.MeanTimePropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.ParameterPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.PropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.SizePropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.SizePropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.TextAlignPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.TextAlignPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.TextPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.TextPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.page.IPropertyPage"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.page.PropertyPage"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.property.page.PropertyPageItem"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.resource.MsgConf"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.DateUtil"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.LocaleUtil"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.MsgUtil"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.PagingView"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.ResultWindow"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.Size"/>
+    <classEntry path="com.maninsoft.smart.workbench.common.util.StringUtils"/>
+  </includeClasses>
+  <includeResources>
+    <resourceEntry destPath="assets/icon/property/btn_mem.png" sourcePath="assets/icon/property/btn_mem.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_up.gif" sourcePath="assets/icon/property/btn_up.gif"/>
+    <resourceEntry destPath="assets/icon/tree/ic_depart.png" sourcePath="assets/icon/tree/ic_depart.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_dwork.png" sourcePath="assets/icon/property/btn_dwork.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_x.gif" sourcePath="assets/icon/property/btn_x.gif"/>
+    <resourceEntry destPath="assets/icon/ico_gray_schedule.gif" sourcePath="assets/icon/ico_gray_schedule.gif"/>
+    <resourceEntry destPath="assets/icon/Util/btn_prev.gif" sourcePath="assets/icon/Util/btn_prev.gif"/>
+    <resourceEntry destPath="assets/icon/tree/dept_user.gif" sourcePath="assets/icon/tree/dept_user.gif"/>
+    <resourceEntry destPath="assets/icon/property/btn_disconwork.png" sourcePath="assets/icon/property/btn_disconwork.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_select_system.png" sourcePath="assets/icon/property/btn_select_system.png"/>
+    <resourceEntry destPath="assets/icon/Util/ic_p_confirm.gif" sourcePath="assets/icon/Util/ic_p_confirm.gif"/>
+    <resourceEntry destPath="assets/css/propertyPage.css" sourcePath="assets/css/propertyPage.css"/>
+    <resourceEntry destPath="assets/icon/property/btn_addlist.png" sourcePath="assets/icon/property/btn_addlist.png"/>
+    <resourceEntry destPath="assets/icon/tree/btn_minus.png" sourcePath="assets/icon/tree/btn_minus.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_down.gif" sourcePath="assets/icon/property/btn_down.gif"/>
+    <resourceEntry destPath="assets/icon/tree/ic_company.png" sourcePath="assets/icon/tree/ic_company.png"/>
+    <resourceEntry destPath="assets/icon/ico_gray_folder.gif" sourcePath="assets/icon/ico_gray_folder.gif"/>
+    <resourceEntry destPath="assets/icon/property/btn_select_sub.png" sourcePath="assets/icon/property/btn_select_sub.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_approv.png" sourcePath="assets/icon/property/btn_approv.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_property.png" sourcePath="assets/icon/property/btn_property.png"/>
+    <resourceEntry destPath="assets/icon/Util/btn_next.gif" sourcePath="assets/icon/Util/btn_next.gif"/>
+    <resourceEntry destPath="assets/icon/ico_gray_info.gif" sourcePath="assets/icon/ico_gray_info.gif"/>
+    <resourceEntry destPath="assets/icon/ico_gray_process.gif" sourcePath="assets/icon/ico_gray_process.gif"/>
+    <resourceEntry destPath="assets/icon/property/btn_search.png" sourcePath="assets/icon/property/btn_search.png"/>
+    <resourceEntry destPath="assets/icon/property/btn_workedit.png" sourcePath="assets/icon/property/btn_workedit.png"/>
+    <resourceEntry destPath="assets/icon/Util/ic_p_inform.gif" sourcePath="assets/icon/Util/ic_p_inform.gif"/>
+    <resourceEntry destPath="assets/icon/tree/ic_member.png" sourcePath="assets/icon/tree/ic_member.png"/>
+    <resourceEntry destPath="assets/icon/tree/btn_plus.png" sourcePath="assets/icon/tree/btn_plus.png"/>
+    <resourceEntry destPath="assets/icon/Util/ic_p_warn.gif" sourcePath="assets/icon/Util/ic_p_warn.gif"/>
+    <resourceEntry destPath="assets/icon/property/btn_worksearch.png" sourcePath="assets/icon/property/btn_worksearch.png"/>
+    <resourceEntry destPath="assets/icon/tree/dept_leader.gif" sourcePath="assets/icon/tree/dept_leader.gif"/>
+  </includeResources>
+  <namespaceManifests/>
+</flexLibProperties>

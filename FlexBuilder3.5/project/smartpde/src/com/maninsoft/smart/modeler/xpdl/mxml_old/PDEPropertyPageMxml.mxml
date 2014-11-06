@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:xpdl="com.maninsoft.smart.modeler.xpdl.*" creationComplete="init()">
+	<mx:Style>
+		.textInputStyle{
+			backgroundAlpha: 0;
+		}
+		.normalLabel {
+			fontFamily: MALGUN;
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Label;
+			import com.maninsoft.smart.workbench.common.property.page.PropertyPageItem;
+			import com.maninsoft.smart.modeler.model.events.NodeChangeEvent;
+			import mx.core.UIComponent;
+			
+			private function init():void{
+				//vBox1.addChild(PDEPropertyPage1);
+				//vBox2.addChild(PDEPropertyPage2);
+			}
+			
+			private function sourceChangedHanlder(event:Event):void{
+				dispatchEvent(event);
+			}
+			
+			private function selectionChangedHandler(event:Event):void{
+				dispatchEvent(event);
+			}
+			
+			private function sourcevalueChangedHandler(event:NodeChangeEvent):void{
+				var ev: NodeChangeEvent = new NodeChangeEvent(event.node, event.prop, event.oldValue);
+				dispatchEvent(NodeChangeEvent(ev));
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="sourceChanged", type="flash.events.Event")]
+		[Event(name="selectionChanged", type="flash.events.Event")] 
+		[Event(name="change", type="com.maninsoft.smart.modeler.model.events.NodeChangeEvent")]
+    </mx:Metadata>
+    <!--
+    <mx:VBox  width="100%" height="100%">
+    	<mx:Box borderThickness="0.5" height="1" width="100%" backgroundColor="#666666" borderColor="#666666"/>
+    	<mx:ViewStack id="propViewStack" width="100%" height="100%" left="0" selectedIndex="0">
+    		<mx:VBox label="일반" verticalGap="3" paddingLeft="10" id="vBox1"/>
+			<mx:VBox label="그래픽" verticalGap="3" paddingLeft="10" id="vBox2"/>
+		</mx:ViewStack>
+	</mx:VBox>
+	-->
+	<xpdl:PDEPropertyPage visible="true" width="100%" height="100%" id="PDEPropertyPage1" verticalScrollPolicy="auto" horizontalScrollPolicy="off" 
+		sourceChanged="{sourceChangedHanlder(event)}" selectionChanged="selectionChangedHandler(event);" change="sourcevalueChangedHandler(event)"
+		viewName="general"/>
+		
+	<!--
+	<xpdl:PDEPropertyPage visible="true" width="100%" height="100%" id="PDEPropertyPage2" verticalScrollPolicy="auto" horizontalScrollPolicy="off" 
+			sourceChanged="{sourceChangedHanlder(event)}" selectionChanged="selectionChangedHandler(event);" viewName="graphic"/>
+	-->	
+	<!--mx:TabBar id="propViewTab" dataProvider="{propViewStack}" height="25" bottom="0" styleName="normalLabel"/-->
+</mx:Canvas>

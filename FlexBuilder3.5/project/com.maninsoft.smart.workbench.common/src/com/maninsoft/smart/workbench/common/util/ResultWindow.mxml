@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="250" height="200" layout="absolute" title="호출결과" fontFamily="Arial" fontSize="12" 
+	showCloseButton="true" close="close()">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			public var resultMsg:String;
+			
+			public function close():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:Text x="10" y="10" width="210" height="105" text="{this.resultMsg}"/>
+	<mx:Button x="168" y="123" label="{resourceManager.getString('WorkbenchMessages', 'WBI005')}" click="{close()}"/>	
+</mx:TitleWindow>

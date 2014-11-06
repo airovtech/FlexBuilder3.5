@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+<!--	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+            private function latestWorkingPackageList(event:ResultEvent):void {
+				list.dataProvider = event.result.name;
+            }			
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="getLatestWorkingPackageList" url="{Properties.basePath + 'smartserver/services/runtime/searchingService.jsp'}" 
+		resultFormat="e4x" useProxy="false" result="latestWorkingPackageList(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<method>getLatestUpdatedPackageList</method>
+			<pageCount>0</pageCount>
+			<recordCount>0</recordCount>
+		</mx:request>
+	</mx:HTTPService>-->
+	<mx:Panel x="0" y="0" width="100%" height="100%" layout="absolute" title="최근작업패키지" 
+		styleName="leftCustomPanel" titleStyleName="leftCustomPanelTitle" horizontalScrollPolicy="off"
+		paddingLeft="10" paddingRight="10"> 
+		<mx:List id="list" width="100%" height="100%" borderStyle="none"></mx:List>
+		
+	</mx:Panel>
+</mx:Canvas> 

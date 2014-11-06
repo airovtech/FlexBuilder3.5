@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:gridComponent="com.maninsoft.smart.common.gridComponent.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.model.GridDataDynamicModel;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.collections.XMLListCollection;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.http.mxml.HTTPService;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;	
+			
+			public var connUserId:String;
+			public var orgServiceUrl:String;
+			
+			private var dataRequest:HTTPService;
+			
+			[Bindable]
+			public var deptId:String;
+			
+			[Bindable]
+			public var contents:ArrayCollection = new ArrayCollection();
+			
+			public function retrieveEmployeeList(_deptId:String):void {
+				if(orgServiceUrl != null && connUserId != null){
+					deptId = _deptId;
+					var params:Object = new Object();
+					params.method = "findUserByDept";
+					params.userId = connUserId;
+					params.deptId = deptId;
+			
+			    	dataRequest = new HTTPService();
+			    	dataRequest.resultFormat = "e4x";
+			    	dataRequest.url = orgServiceUrl;
+			    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandlerForEmployeeList);
+			    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+			    	dataRequest.useProxy = false;
+					dataRequest.send(params);
+				}				
+			}
+			
+			public function retrieveUser(_userId:String):void {
+				if(orgServiceUrl != null && connUserId != null){
+					var params:Object = new Object();
+					params.method = "getUser";
+					params.userId = connUserId;
+					params.id = _userId;
+			
+			    	dataRequest = new HTTPService();
+			    	dataRequest.resultFormat = "e4x";
+			    	dataRequest.url = orgServiceUrl;
+			    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandlerForEmployee);
+			    	dataRequest.useProxy = false;
+					dataRequest.send(params);
+				}				
+			}
+			
+			private function resultHandlerForEmployeeList(event:ResultEvent):void {
+    			var xlc_id:XMLListCollection = new XMLListCollection(event.result.User.id);
+    			var xlc_password:XMLListCollection = new XMLListCollection(event.result.User.passwd);
+    			var xlc_name:XMLListCollection = new XMLListCollection(event.result.User.name);
+    			var xlc_type:XMLListCollection = new XMLListCollection(event.result.User.type);
+    			var xlc_deptId:XMLListCollection = new XMLListCollection(event.result.User.deptId);
+    			var xlc_position:XMLListCollection = new XMLListCollection(event.result.User.position);
+    			var xlc_email:XMLListCollection = new XMLListCollection(event.result.User.email);
+    			contents.removeAll();
+    			for (var i:int; i < xlc_id.length; i++){
+    				var gdd:GridDataDynamicModel = new GridDataDynamicModel();
+    				gdd.id = xlc_id[i];
+    				gdd.password = xlc_password[i];
+    				gdd.name = xlc_name[i];
+    				gdd.type = xlc_type[i];
+    				gdd.deptId = xlc_deptId[i];
+    				gdd.position = xlc_position[i];
+    				gdd.email = xlc_email[i];
+    				gdd.isChecked = false;
+    				contents.addItem(gdd);
+    			}  		
+    			employeeList.dataProvider = contents;	
+    		}
+    		
+    		private function resultHandlerForEmployee(event:ResultEvent):void {
+    			var xlc_id:XMLListCollection = new XMLListCollection(event.result.User.id);
+    			var xlc_password:XMLListCollection = new XMLListCollection(event.result.User.passwd);
+    			var xlc_name:XMLListCollection = new XMLListCollection(event.result.User.name);
+    			var xlc_type:XMLListCollection = new XMLListCollection(event.result.User.type);
+    			var xlc_deptId:XMLListCollection = new XMLListCollection(event.result.User.deptId);
+    			var xlc_position:XMLListCollection = new XMLListCollection(event.result.User.position);
+    			var xlc_email:XMLListCollection = new XMLListCollection(event.result.User.email);
+    			
+    			
+    			if(xlc_id.length > 0){
+    				var eventObj:CustormEvent = new CustormEvent(CustormEvent.CUSTORM_ITEM_LOAD);
+    				eventObj.userId = xlc_id[0].toString();
+					eventObj.userName =xlc_name[0].toString();
+					eventObj.userPosition = xlc_position[0].toString();
+					dispatchEvent(eventObj);
+    			}else{
+    				dispatchEvent(new FaultEvent(FaultEvent.FAULT));
+    			}				
+    		}
+    				    
+    		private function faultHandler(event:FaultEvent):void {
+    			Alert.show("Exception occured during read data.\n"+event.fault.message);
+    		}
+    		
+    		private function userSelect():void{
+    			var eventObj:CustormEvent = new CustormEvent("custormItemClick");
+				eventObj.userId = employeeList.selectedItem.id;
+				eventObj.userName = employeeList.selectedItem.name;
+				eventObj.userPosition = employeeList.selectedItem.position;
+				dispatchEvent(eventObj);
+    		}
+		]]>
+	</mx:Script>
+    <mx:Metadata>
+        [Event(name="custormItemClick", type="portalAs.CustormEvent")]
+    </mx:Metadata>	
+	<mx:DataGrid id="employeeList" x="0" y="0" width="100%" height="100%"
+		dragEnabled="true" dragMoveEnabled="true" itemClick="userSelect()">
+		<mx:columns>
+			<mx:DataGridColumn headerText="ID" dataField="id" width="0" visible="false"/>
+			<mx:DataGridColumn headerText="선택"  textAlign="center">
+				<mx:itemRenderer>
+                    <mx:Component>
+						<gridComponent:EmbedGridRadioButton embedId="{data.id}" embedIsChecked="{data.isChecked}"/>
+					</mx:Component>
+                </mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="이름" dataField="name" />
+			<mx:DataGridColumn headerText="부서" dataField="deptId" />
+			<mx:DataGridColumn headerText="직위" dataField="position" />
+		</mx:columns>
+	</mx:DataGrid>
+</mx:Canvas>

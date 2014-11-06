@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox 
+	width="100%" verticalAlign="middle" horizontalGap="3"
+	xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.util.FormEditorEvent;
+			
+			[Bindable]
+			public var searchWord:String;
+			
+			private function search():void {
+				var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.SEARCH);
+				event.searchWord = searchWordTextInput.text;
+				dispatchEvent(event);
+			}
+		]]>
+	</mx:Script>
+	<mx:Label width="100%"/>
+	<mx:TextInput id="searchWordTextInput" width="200" height="22" text="{searchWord}" enter="search()"/>
+	<mx:Button styleName="searchButton" click="search()"/>
+</mx:HBox>

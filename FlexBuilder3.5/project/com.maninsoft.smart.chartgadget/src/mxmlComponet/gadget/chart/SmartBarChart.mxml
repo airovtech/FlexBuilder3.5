@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SmartChart xmlns="mxmlComponet.gadget.chart.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+		xmlns:axis="mxmlComponet.home.chartInfo.axis.*" borderColor="#ffffff">
+	<mx:Script>
+		<![CDATA[
+			import mx.graphics.GradientEntry;
+			import mx.effects.easing.Exponential;
+			import mx.charts.LinearAxis;
+			import mx.charts.series.BarSeries;
+			import mx.events.ListEvent;
+			import mx.controls.ComboBox;
+			import mx.charts.HitData;
+			import mx.charts.series.items.BarSeriesItem;
+			import mx.graphics.LinearGradient;
+			import mx.collections.XMLListCollection;
+			import mxmlComponet.gadget.ChartGadget2;
+			
+			private var repeatDelay:int = 25;
+			private var repeatCount:int = 40;
+			private var repeat:int = 0;
+			override public function set chartXml(xml:XML):void{
+				_chartXml = xml;
+				tranceResArray = [];
+				ChartXmlUtil.xyMakeTitle(_chartXml, valueInfo.label, grouping.label);
+				ChartXmlUtil.unitTitle(_chartXml, unitInfo);
+				ChartXmlUtil.makeChartXml(chartType, _chartXml, tranceXml, tranceResArray, repeatCount);
+				barchart.dataProvider = new XMLListCollection(tranceResArray[repeat].res);
+				var timerSlide: Timer = new Timer(repeatDelay, repeatCount-1);
+				timerSlide.addEventListener(TimerEvent.TIMER, doTimerSlide);
+				timerSlide.start();
+				var myAC:XMLListCollection = new XMLListCollection(tranceXml.act);
+				var seriesArray:Array = new Array;
+				for (var i:int = 0; i < myAC.length; i++){
+					var col:BarSeries = new BarSeries;
+					col.displayName=myAC.getItemAt(i) + "";
+					col.xField=myAC.getItemAt(i).attribute("name");
+					if(i==0 && this.fillColor!=0 && myAC.length==1){
+						var linearGrad:LinearGradient = new LinearGradient();
+						linearGrad.entries = [ 	new GradientEntry(this.fillColor, 0.00, 1),
+												new GradientEntry(this.fillColor, 0.9, 0.2)];
+						linearGrad.angle = 0;
+						col.setStyle("fill", linearGrad);
+					}
+					seriesArray.push(col);
+				}
+				barchart.series = seriesArray;
+
+				var horAxisMax:Number = 0;
+				var groupingList:XMLListCollection = new XMLListCollection(_chartXml.grouping);
+				if(groupingList){
+					for( i=0; i<groupingList.length; i++){
+						var valueList:XMLList =groupingList[i].remark.value;
+						var colMax:Number = 0;
+						if(valueList){
+							for(var j:int=0; j<valueList.length(); j++){
+								if(barchart.type == "stacked"){
+									colMax += Number(valueList[j]);
+								}else{
+									if(colMax < Number(valueList[j])) colMax = Number(valueList[j]);
+								}
+							}
+							if(horAxisMax < colMax) horAxisMax = colMax;
+						}
+					}
+				}
+				if(horAxisMax>0) horAxis.maximum = horAxisMax;
+				
+				if(_chartXml.@dimension == 2){
+					legendBox.visible = false;
+					legendBox.width = 0;
+				}else if(_chartXml.@dimension == 3){
+					legendBox.visible = true;
+				}					
+				matrixObj.xmlResult = xml;
+				
+				if(xml.@dimension != 3){
+					accumulationArea.visible = false;
+				}
+
+				barchart.dataTipFunction = function displayDataTip(e:HitData):String {
+					var si:BarSeriesItem = e.chartItem as BarSeriesItem;
+					var s:String;
+						s = "<font size='11'>"+ BarSeries(si.element).displayName + "\n" +  numForm.format(si.item[BarSeries(si.element).xField]) + "</font><br/>";
+						//s = "<font size='11'>"+ BarSeries(si.element).displayName + "\n" +  numForm.format(si.xNumber) + "</font><br/>";
+					return s;};
+			}
+
+			private function doTimerSlide(event: TimerEvent):void{
+				barchart.dataProvider = new XMLListCollection(XML(tranceResArray[++repeat]).res);
+				if(repeat+1==repeatCount)
+					barchart.dataProvider = new XMLListCollection(tranceXml.res);
+
+			}			
+
+			public function stackedCheckFun():void{
+			  	if(stackedCheck.selected == true) {              
+			        barchart.type = "stacked";
+			    }else{
+			    	barchart.type = "";
+			    }
+			}
+
+/*			
+			private function goToChartType(event:ListEvent):void{
+				if(ComboBox(event.target).selectedItem)
+					if(ComboBox(event.target).selectedItem != this.chartType)
+						ChartGadget2(parent).goToChart(ComboBox(event.target).selectedItem.data, this.chartXml);
+			}
+*/
+			override public function set displayStackedData(acumData:Boolean): void{
+				if(acumData){
+			        barchart.type = "stacked";
+			    }else{
+			    	barchart.type = "";
+			    }
+			}
+
+			override public function set chartViewType(viewType:String): void{
+				if(viewType == "CHART"){
+					chartBox.visible = true;
+					matrixBox.visible = false;
+					chartBox.percentHeight = 95;
+					matrixBox.height = 0;
+				}else if(viewType=="MATRIX"){
+					matrixBox.visible = true;
+					chartBox.visible = false;
+					matrixBox.percentHeight = 95;
+					chartBox.height = 0;
+				}
+			}
+/*			
+			private function goChartAndMatrix(event:MouseEvent):void{
+				var objId:String = Button(event.target).id;
+				if(objId=="chartMove"){
+					chartBox.visible = true;
+					matrixBox.visible = false;
+					chartBox.percentHeight = 95;
+					matrixBox.height = 0;
+				}else if(objId=="matrixMove"){
+					matrixBox.visible = true;
+					chartBox.visible = false;
+					matrixBox.percentHeight = 95;
+					chartBox.height = 0;
+				}
+			}
+*/
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="2" verticalAlign="middle" borderColor="#ffffff">
+		<mx:HBox width="100%" height="0">
+			<mx:HBox width="50%" height="30">
+				<mx:Label id="unitInfo" width="50%"/>
+			</mx:HBox>
+			<mx:HBox width="50%" height="30" horizontalAlign="right">
+				<mx:Legend id="legendBox" visible="false" width="0" labelPlacement="right" direction="horizontal" dataProvider="{barchart}"/>
+				<mx:Spacer width="20"/>
+<!--
+				<mx:Button id="chartMove" toolTip="{resourceManager.getString('ChartGadgetETC', 'ChartViewTTip')}"  click="goChartAndMatrix(event);" styleName="columnBtn"/>
+				<mx:Button id="matrixMove" toolTip="{resourceManager.getString('ChartGadgetETC', 'MatrixViewTTip')}"  click="goChartAndMatrix(event);" styleName="gridBtn"/>
+				<mx:Spacer width="10"/>
+-->
+			</mx:HBox>
+		</mx:HBox>
+
+		<mx:VBox id="chartBox" width="100%" height="100%" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff">
+			<mx:HBox width="100%" height="100%" horizontalGap="2" horizontalAlign="center" verticalAlign="middle" borderColor="#ffffff">
+				<mx:VBox width="30" height="100%" horizontalAlign="center" verticalAlign="middle" id="YBox">
+					<axis:CustormLabel id="valueInfo" width="{YBox.height}" height="20" angle="270" widthAndHeightChange="true" rotateble="true" />
+				</mx:VBox>					
+				<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" id="chartArea">
+			        <mx:BarChart styleName="barChartStyle" height="100%" width="100%" paddingLeft="5" paddingRight="5" showDataTips="true" id="barchart">                
+			           <mx:verticalAxis>
+							<mx:CategoryAxis id="catAxis" categoryField="@cycle"/>
+						</mx:verticalAxis>
+						<mx:horizontalAxis>
+							<mx:LinearAxis id="horAxis" labelFunction="{defineAxisLabel}"/>
+						</mx:horizontalAxis>
+			        </mx:BarChart>
+		        </mx:VBox>			
+			</mx:HBox>	
+			<mx:HBox width="100%" height="30" horizontalAlign="center" verticalAlign="middle" id="XBox">
+				<axis:CustormLabel id="grouping" width="100%" height="20" rotateble="false" widthAndHeightChange="false"/>
+				<mx:Box width="0" horizontalAlign="left" id="accumulationArea">
+					<mx:CheckBox label="{resourceManager.getString('ChartGadgetETC', 'CumulativeLabelText')}" click="stackedCheckFun()" id="stackedCheck"/>
+				</mx:Box>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox id="matrixBox" width="100%" height="0" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff"
+			 visible="false">
+			 <ChartTranceMatrix width="100%" height="100%" id="matrixObj"/>
+		</mx:VBox>
+	</mx:VBox>
+</SmartChart>

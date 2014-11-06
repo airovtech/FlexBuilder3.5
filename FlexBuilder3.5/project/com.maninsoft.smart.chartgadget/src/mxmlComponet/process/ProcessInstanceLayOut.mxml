@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()"
+	xmlns:ns1="mxmlComponet.process.*" xmlns:taskCabinet="mxmlComponet.taskCabinet.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.binding.utils.BindingUtils;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			
+			[Bindable]
+			private var prcInstId:String;
+			
+			[Bindable]
+			public var processIdVer:String;
+			
+			[Bindable]
+			public var labelTitle:String;
+			
+			private function init():void {
+				instanceList.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, getInstanceDetail);
+				instanceList.addEventListener(CustormEvent.CLICK_NEW_ITEM, createNewInstance);
+				instanceListAreaSelect();
+			}
+			
+			private function getInstanceDetail(event:CustormEvent):void{
+				instanceList.retrieveProcessInstanceDetail(event.prcInstId);
+				/* instanceDetailAreaSelect(); */
+			}
+			
+			private function createNewInstance(event:CustormEvent):void {
+				instanceInitArea.visible = true;
+				instanceInitArea.percentHeight = 100;
+				instanceInit.formIdProcessIdVer = event.formId+"|"+event.processId+"|"+event.version;
+				instanceListArea.visible = false;
+				taskDetailArea.visible = false;
+			}
+			
+			public function instanceListAreaSelect():void {
+				instanceListArea.visible = true;
+				instanceListArea.percentHeight = 100;
+				taskDetailArea.visible = false;
+				instanceInitArea.visible = false;
+			}	
+			
+			public function taskDetailAreaSelect():void {
+				instanceListArea.visible = false;
+				taskDetailArea.visible = true;
+				taskDetailArea.height = 600;
+				instanceInitArea.visible = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="0%" visible="false" id="instanceListArea" verticalGap="0" >
+		<ns1:processtInstanceList height="100%" width="100%" id="instanceList" processIdVer="{this.processIdVer}" labelTitle="{this.labelTitle}"/>
+	</mx:VBox>
+	
+	<mx:VBox width="100%" height="0%" visible="false" id="instanceInitArea" verticalGap="0" >
+		<mx:HBox y="0" width="100%" height="30" backgroundColor="#E9975A" horizontalAlign="left" verticalAlign="top">
+			<mx:HBox width="100%" backgroundColor="#FFFFFF" height="27">
+				<mx:HBox y="0" width="50%" height="25" horizontalAlign="left" verticalAlign="middle" horizontalGap="2">
+					<mx:Image source="@Embed('images/portal_main/processInst_content_title_icon.jpg')" width="20" height="20"/>
+					<mx:Label text="{labelTitle}" fontSize="14" styleName="normalLabel"/>
+				</mx:HBox>
+				<mx:HBox y="0" width="50%" height="25" horizontalAlign="right" verticalAlign="middle" horizontalGap="0">
+					<mx:Image width="23" height="21">
+						<mx:source>@Embed('images/portal_main/processInst_content_new_icon.jpg')</mx:source>
+					</mx:Image>
+					<mx:Label text="목록보기" fontSize="12" styleName="normalLabel" click="instanceListAreaSelect()"/>
+				</mx:HBox>
+			</mx:HBox>
+		</mx:HBox>
+		<taskCabinet:ProcessInitForm height="100%" width="100%" id="instanceInit" sucessWorkitemExecute="instanceListAreaSelect()" labelTitle="{this.labelTitle}"/>
+	</mx:VBox>
+	
+	<mx:VBox width="100%" height="0%" visible="false" id="taskDetailArea" verticalGap="0" >
+	</mx:VBox>
+	
+</mx:Canvas>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="72" height="43">
+<!--	<mx:Style source="/assets/css/formEditor.css"/>
+-->	<mx:Style>
+		.quickmenuStyle{
+		   border-style: solid;
+		   border-thickness: 0;
+		   corner-radius: 30;
+		   drop-shadow-enabled: false;
+		   backgroundColor : #FFFFFF;
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			
+//			public var formField:FormEntity;
+			
+			public static const SCHEMA_STATUS:String = "schemaMenu";
+			public static const VIEWER_STATUS:String = "viewerMenu";
+			
+			private var _status:String = SCHEMA_STATUS;
+			
+			public function set status(status:String):void{
+				this._status = status;
+				
+				if(this._status == VIEWER_STATUS){
+					this.width = 50;
+					menuBox.width = 48;
+					this.rename_formField_btn.visible = false;
+					this.rename_formField_btn.width = 0;
+				}else{
+					this.width = 72;
+					menuBox.width = 70;
+					this.rename_formField_btn.visible = true;
+					this.rename_formField_btn.width = 22;
+				}
+			} 
+			
+			private function clickQuickMenu(e:MouseEvent):void{
+				if(e.target is Button){
+					var actionNm:String = (e.target as Button).name;
+					
+//					var btnName:String = (e.target as Button).name;
+//					var actionNm:String = btnName.substring(0, btnName.length - 4);
+					
+					var event:Event = new Event(actionNm);					
+					dispatchEvent(event);
+				}
+			}
+			
+			public function open():void{
+				this.visible = true;
+			}
+			
+			public function close():void{
+				this.visible = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox id="menuBox" x="0" y="0" width="70" height="27" horizontalGap="2" verticalAlign="top" styleName="quickmenuStyle">
+		<mx:Button id="rename_formField_btn" name="{FormQuickMenuConstants.RENAME_FORMFIELD}" width="22" height="22" styleName="renameBtnQuickMenu" click="clickQuickMenu(event)" useHandCursor="true"  toolTip="이름 바꾸기"/>
+		<mx:Button id="changeProp_formField_btn" name="{FormQuickMenuConstants.CHANGEPROP_FORMFIELD}" width="22" height="22" styleName="propBtnQuickMenu" click="clickQuickMenu(event)" useHandCursor="true"  toolTip="속성설정"/>
+		<mx:Button id="remove_formField_btn" name="{FormQuickMenuConstants.REMOVE_FORMFIELD}" width="22" height="22" styleName="removeBtnQuickMenu" click="clickQuickMenu(event)" useHandCursor="true" toolTip="삭제"/>
+	</mx:HBox>
+	<mx:Box styleName="quickmenuStyle" right="0" y="23" width="18" height="18">
+		<mx:Button id="close_quickmenu_btn" styleName="closeBtnQuickMenu" click="{close()}"/>
+	</mx:Box>
+</mx:Canvas>

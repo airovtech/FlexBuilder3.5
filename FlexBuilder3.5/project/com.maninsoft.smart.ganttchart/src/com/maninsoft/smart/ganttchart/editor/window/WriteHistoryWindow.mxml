@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="400" height="200"
+	creationComplete="init()" close="PopUpManager.removePopUp(this)" title="이력남기기" 
+	titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			import com.maninsoft.smart.ganttchart.editor.GanttChartEditor;
+			
+			private var ganttChartEditor:GanttChartEditor;
+			
+			private function init():void {
+				ganttChartEditor = SmartGanttChartEditor(this.parentDocument).ganttChartBuilder.ganttChartEditor;
+			}
+						
+			private function writeHistorySelect():void{
+				ganttChartEditor.comment = this.commentTextArea.text;
+												
+				ganttChartEditor.commitGanttChartService.url = ganttChartEditor.baseURL + "misadmin/chart/gantt/commitGanttChart.jsp";
+				ganttChartEditor.commitGanttChartService.send();		
+					
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:Label x="10" y="10" text="사유" width="115" height="21"/>
+	<mx:TextArea width="379" id="commentTextArea" height="76" x="7.5" y="36"/>
+	<mx:Button x="140" y="123" label="작성" fontSize="12" click="writeHistorySelect()"/>
+	<mx:Button x="200" y="123" label="취소" fontSize="12" click="{PopUpManager.removePopUp(this)}"/>
+	
+			
+</mx:TitleWindow>

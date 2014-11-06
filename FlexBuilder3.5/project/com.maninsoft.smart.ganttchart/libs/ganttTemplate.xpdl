@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xpdl:Package Id="null" Name="null" xmlns:xpdl="http://www.wfmc.org/2004/XPDL2.0alpha">
+  <xpdl:PackageHeader>
+	<xpdl:XPDLVersion>2.0</xpdl:XPDLVersion>
+    <xpdl:Vendor>ManInSoft</xpdl:Vendor>
+    <xpdl:Created>null</xpdl:Created>
+    <xpdl:Description>null</xpdl:Description>
+  </xpdl:PackageHeader>
+  <xpdl:RedefinableHeader>
+  	<xpdl:Author>null</xpdl:Author>
+    <xpdl:Version>1</xpdl:Version>
+    <xpdl:Codepage>UTF-8</xpdl:Codepage>
+    <xpdl:Countrykey>KR</xpdl:Countrykey>
+  </xpdl:RedefinableHeader>
+  <xpdl:Script Type="null" Version="null" Grammar="null"/>
+  <xpdl:Pools>
+  	<xpdl:Pool Orientation="HORIZONTAL" Process="null" BoundaryVisible="false" Id="0" Name="간트차트" DueDate="null">
+      <xpdl:Lanes>
+        <xpdl:Lane Id="0" Name="주관부서" ParentLane="0">
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Height="1024" Width="1024"/>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Lane>
+	  </xpdl:Lanes>
+      <xpdl:NodeGraphicsInfos>
+        <xpdl:NodeGraphicsInfo/>
+      </xpdl:NodeGraphicsInfos>
+	</xpdl:Pool>
+  </xpdl:Pools>
+  <xpdl:WorkflowProcesses>
+	<xpdl:WorkflowProcess Id="null" Name="null" ParentId="null" AccessLevel="null" Status="null">
+	  <xpdl:ProcessHeader DurationUnit="null">
+        <xpdl:Created>null</xpdl:Created>
+        <xpdl:Description>null</xpdl:Description>
+      </xpdl:ProcessHeader>
+	  <xpdl:RedefinableHeader>
+        <xpdl:Author>null</xpdl:Author>
+        <xpdl:Version>null</xpdl:Version>
+        <xpdl:Codepage>null</xpdl:Codepage>
+        <xpdl:Countrykey>null</xpdl:Countrykey>
+      </xpdl:RedefinableHeader>
+      <xpdl:Activities>
+	  </xpdl:Activities>
+	  <xpdl:Transitions>
+	  </xpdl:Transitions>
+	</xpdl:WorkflowProcess>
+  </xpdl:WorkflowProcesses>
+  <xpdl:Artifacts/>
+</xpdl:Package>

@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HDividedBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	creationComplete="init()" 
+	borderStyle="none"	borderThickness="3"	borderColor="#FF8400"
+	horizontalGap="0"
+	verticalScrollPolicy="off" horizontalScrollPolicy="off"
+	click="{selectHandler(event)}"
+	xmlns:type="com.maninsoft.smart.formeditor.refactor.view.form.type.*">
+	<!--width="{formEntityModel.width}" height="{formEntityModel.height}" 
+	mouseDown="formEntityDown(event)" mouseMove="formEntityMove(event)" mouseOut="resizeUp(event)" height="{this._formEntityModel.height}"-->
+	<mx:Metadata>
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.VDividedBox;
+			import com.maninsoft.smart.formeditor.refactor.view.form.type.FormEntityTypeViewer;
+			import mx.controls.FormItemLabel;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormItemLabelPlacement;
+			import mx.controls.RadioButton;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormListType;
+			import com.maninsoft.smart.formeditor.model.format.FormatTypes;
+			import com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent;
+			import mx.containers.Form;
+			import com.maninsoft.smart.formeditor.model.IFormResource;
+			import mx.events.PropertyChangeEvent;
+			import mx.events.PropertyChangeEventKind;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import mx.managers.CursorManager;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.edit.part.FormEntityModelEditPart;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			
+			[Bindable]
+			public var mode:String 	= Constants.MODE_DESIGN;
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+	        
+	        public var rowNum:int = 0;
+	        public var colNum:int = 0;
+	        
+			[Bindable]
+			public var abstractLabelVisible:Boolean = true;	        
+
+			/*************************폼 구조**************************************/	        
+			[Bindable]
+			public var formViewer:FormModelEditPartViewer;
+	        
+	        [Bindable]
+	        public var parentViewer:FormEntityModelEditPartViewer;
+	        [Bindable]
+	        public var parentValueViewer:FormEntityTypeViewer;
+	        
+	        private var childViewers:ArrayCollection = new ArrayCollection();
+	        
+	        /*************************폼 아이템 모델************************************/
+	        [Bindable]
+	        private var _formEntityModel:FormEntity;
+	        
+	        [Bindable]
+	        public function set formEntityModel(formEntityModel:FormEntity):void{
+	        	this._formEntityModel = formEntityModel;
+	        	
+	        	registerViewer();
+	        	refreshVisual();
+	        }
+	        
+	        public function get formEntityModel():FormEntity{
+	        	return this._formEntityModel;
+	        }
+	        
+			/*******************************초기화********************************************/
+			
+	        protected function init():void{	    
+				refreshVisual();    	
+	        	registerViewer();
+	        	registerContextMenu();	
+	        }
+	        	        
+	        public var formEntityModelEditPart:FormEntityModelEditPart;
+	        
+	        protected function registerViewer():void{
+	        	if(formEntityModelEditPart == null)
+	        		formEntityModelEditPart = new FormEntityModelEditPart();
+	        	formEntityModelEditPart.editDomain = this.editDomain;
+	        	formEntityModelEditPart.formEntityModel = this.formEntityModel;
+	        	formEntityModelEditPart.formEntityEditPartViewer = this;
+	        }	        
+	        private var myContextMenu:ContextMenu;
+	        
+	        protected function registerContextMenu():void{
+	        	if(myContextMenu == null)
+	        		myContextMenu = new ContextMenu();
+
+				addCustomMenuItems();
+
+				this.contextMenu = myContextMenu;
+	        }
+        	
+	        private function addCustomMenuItems():void {
+	            var addItem:ContextMenuItem = new ContextMenuItem("늘이기");
+	            myContextMenu.customItems.push(addItem);
+	            addItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, plusFormEntityModelCellSize);
+	            
+	            var removeItem:ContextMenuItem = new ContextMenuItem("줄이기");
+	            myContextMenu.customItems.push(removeItem);
+	            removeItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, minusFormEntityModelCellSize);	            
+	        }
+
+			/***************************화면************************************************/
+			// 기본 화면 보인는 속성조정
+			public function refreshBasicVisual():void{
+				
+        		// 라벨 그리기
+				refreshLabelVisual();
+			}
+			
+			private function getContentsIndex(formEntity:FormEntity):int{
+				if(this.formEntityModel.children != null)
+					return 0;
+				else if(this.formEntityModel.format.type == FormatTypes.radioButton.type)
+					return 1;	
+				else if(this.formEntityModel.format.type == FormatTypes.comboBox.type)
+					return 2;	
+				else if(this.formEntityModel.format.type == FormatTypes.dateChooser.type)
+					return 3;	
+				else if(this.formEntityModel.format.type == FormatTypes.numericStepper.type)
+					return 4;		
+				else
+					return 5;							
+			}
+			
+			private var box:Box;
+			private var valueViewers:ArrayCollection = new ArrayCollection();
+			
+			private var horisontalBox:HDividedBox;
+			private var verticalBox:VDividedBox;
+			
+	        public function refreshVisual():void{
+	        	if(this.formEntityModel != null 
+	        		&& this.leftFormEntityLabel != null && this.rightFormEntityLabel != null
+	        		&& this.topFormEntityLabel != null && this.bottomFormEntityLabel != null){
+	        		// 자기자신 그리기
+	        		// 1. 크기(모양) 그리기
+	        		this.width = (this.formEntityModel.labelWidth + this.formEntityModel.contentWidth) * (this.formEntityModel.cellSize / 1);
+	        		this.height = this.formEntityModel.height;
+	        		// 2. 내용 (bindable 사용)
+	        		refreshBasicVisual();
+	        		// 자식 그리기
+	        		valueView.removeAllChildren();
+//	        		valueViewers.removeAll();
+//					if(true){
+						if(horisontalBox == null){
+							horisontalBox = new HDividedBox();
+							horisontalBox.setStyle("horizontalGap", 1);
+							horisontalBox.horizontalScrollPolicy = "off";
+							horisontalBox.verticalScrollPolicy = "off";
+						}
+						box = horisontalBox;				
+//					}else{
+//						if(verticalBox == null){
+//							verticalBox = new VDividedBox();
+//							verticalBox.setStyle("verticalGap", 1);
+//							verticalBox.horizontalScrollPolicy = "off";
+//							verticalBox.verticalScrollPolicy = "off";
+//						}
+//						box = verticalBox;
+//					}
+					valueView.addChild(box);
+					
+					box.removeAllChildren();
+					
+//					if(this.formEntityModel.array && formEntityModel.arrayInfo.presentArrayUse){
+//						for(var i:int = 0 ; i < formEntityModel.arrayInfo.presentArraySize ; i++){
+//							
+//							var valueViewer:FormEntityTypeViewer;
+//							if(i < valueViewers.length){
+//								valueViewer = FormEntityTypeViewer(valueViewers.getItemAt(i));
+//								
+//								valueViewer.refreshVisual();
+//								box.addChild(valueViewer);	
+//							}else{
+//								addViewer();				
+//							}
+//						}
+//					}else{
+						var valueViewer:FormEntityTypeViewer;
+						if(valueViewers.length > 0){							
+							valueViewer = FormEntityTypeViewer(valueViewers.getItemAt(0));
+							valueViewer.refreshVisual();
+							box.addChild(valueViewer);		
+						}else{
+							valueViewer = addViewer();
+						}						
+						valueViewer.percentWidth = 100;
+						valueViewer.percentHeight = 100;
+											
+//					}
+					box.percentWidth = 100;
+					box.percentHeight = 100;
+	        	}
+	        }
+	        
+	        private function addViewer():FormEntityTypeViewer{
+				var valueViewer:FormEntityTypeViewer = new FormEntityTypeViewer();
+				valueViewer.formEntityModelEditPartViewer = this;
+				valueViewer.arrayNum = valueViewers.length;			
+				valueViewers.addItem(valueViewer);	
+				
+				valueViewer.refreshVisual();
+				box.addChild(valueViewer);	
+				return valueViewer;
+	        }
+	        
+	        public function refreshFormVisual():void{
+	        	formViewer.refreshVisual();
+	        }
+	        
+	        private function refreshLabelVisual():void{
+				this.leftFormEntityLabel.text = this.formEntityModel.name;
+				this.rightFormEntityLabel.text = this.formEntityModel.name;
+				this.topFormEntityLabel.text = this.formEntityModel.name;
+				this.bottomFormEntityLabel.text = this.formEntityModel.name;
+				
+        		 if(formEntityModel.labelVisible){
+        		 	var currentLabelSize:int = (this.formEntityModel.labelWidth) * (this.formEntityModel.cellSize / 1);
+        			
+        			if(this.abstractLabelVisible){
+	        			this.leftFormEntityLabel.width = currentLabelSize;
+	        			this.leftFormEntityLabel.height = this.formEntityModel.height;	
+        			}else{
+        				this.leftFormEntityLabel.width = 0;
+        			}
+        			
+//        			if(this.abstractLabelVisible && this.formEntityModel.labelLoc == FormItemLabelPlacement.RIGHT){
+//	        			this.rightFormEntityLabel.width = currentLabelSize;
+//	        			this.rightFormEntityLabel.height = this.formEntityModel.height;
+//	        		}else{
+//	        			this.rightFormEntityLabel.width = 0;
+//	        		}
+        			
+//        			if(this.abstractLabelVisible && this.formEntityModel.labelLoc == FormItemLabelPlacement.TOP){
+//	        			this.topFormEntityLabel.width = this.width;
+//	        			this.topFormEntityLabel.height = currentLabelSize;
+//        			}else{
+//        				this.topFormEntityLabel.height = 0;
+//        			}
+//        			
+//        			if(this.abstractLabelVisible && this.formEntityModel.labelLoc == FormItemLabelPlacement.BOTTOM){
+//	        			this.bottomFormEntityLabel.width = this.width;
+//	        			this.bottomFormEntityLabel.height = currentLabelSize;	
+//        			}else{
+//        				this.bottomFormEntityLabel.height = 0;
+//        			}
+        			
+        			if(true){
+        				this.valueView.width = (this.formEntityModel.contentWidth) * (this.formEntityModel.cellSize / 1);
+        				this.valueView.height = this.formEntityModel.height;
+        			}else{
+	        			this.valueView.width = this.width;
+	        			this.valueView.height = (this.formEntityModel.contentsSize);	
+        			}
+        			
+        		}else{
+//					this.formEntityLabel.width = 0;
+//        			this.formEntityLabel.height = this.formEntityModel.height;	
+        			
+        			this.valueView.width = (this.formEntityModel.labelWidth + this.formEntityModel.contentWidth) * (this.formEntityModel.cellSize / 1);
+					this.valueView.height = this.formEntityModel.height;						
+        		}
+	        }
+	        // 포커스 활성화
+	        public function select(formResources:ArrayCollection):void{
+	        	if(formResources.contains(this.formEntityModel)){
+	        		this.setStyle("borderStyle", "inset");
+	        	}else{
+	        		this.setStyle("borderStyle", "none");
+	       	 	}
+	        	
+	        	if(this.childViewers != null)
+		        	for each(var childViewer:FormEntityModelEditPartViewer in this.childViewers){
+		        		childViewer.select(formResources);
+		        	}
+	        }
+
+	        
+	        /******************************포커스*************************************************/
+	        private function selectHandler(event:MouseEvent):void{
+				if(getFormEntityModelViewer(event.target) == this){
+					var formEvent:FormEditEvent = new FormEditEvent(FormEditEvent.SELECT_FORM_ITEM);
+					formEvent.formItem = this.formEntityModel;
+					dispatchEvent(formEvent);				
+				}
+			}
+			
+			private function getFormEntityModelViewer(target:Object):FormEntityModelEditPartViewer{
+				if(target is FormEntityModelEditPartViewer)
+					return FormEntityModelEditPartViewer(target);
+					
+				if(DisplayObject(target).parent != null)
+					return getFormEntityModelViewer(DisplayObject(target).parent);
+					
+				return null;
+			}
+
+	        /*****************************셀 크기************************************/	        
+			public function plusFormEntityModelCellSize(event:ContextMenuEvent):void{
+				if(event.contextMenuOwner == this){
+					var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(this.formEntityModel.name);
+					command.formEntityModel = this.formEntityModel;
+					command.newValue = this.formEntityModel.cellSize + 1;
+					command.type = FormEntity.PROP_CELL_SIZE;
+					
+					this.editDomain.getCommandStack().execute(command);					
+				}
+			}
+			
+			public function minusFormEntityModelCellSize(event:ContextMenuEvent):void{
+				if(event.contextMenuOwner == this){
+					var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(this.formEntityModel.name);
+					command.formEntityModel = this.formEntityModel;
+					command.newValue = this.formEntityModel.cellSize - 1;
+					command.type = FormEntity.PROP_CELL_SIZE;
+					
+					this.editDomain.getCommandStack().execute(command);
+				}
+			}
+	        
+	        /**********************실행 데이터 처리***********************************/
+//			private var _valueXml:XML = <dataField>
+//									  <id></id>
+//									  <name></name>
+//									  <type></type>
+//									  <data></data>
+//									</dataField>;
+//			
+//			public function set valueXmlList(value:XMLList):void{
+//	        	if(value != null){ 
+//	        		if(this.formEntityModel.array){
+//	        			var num:int = value.length() - valueViewers.length;
+//	        			for(var i:int = 0 ; i < num ; i++){
+//	        				addViewer();
+//	        			}
+//	        		}
+//					var i:int = 0;
+//        			for each(var valueXml:XML in value){
+//        				FormEntityTypeViewer(valueViewers.getItemAt(i++)).valueXml = valueXml;
+//        			}    				
+//	        	}else{
+//	        		for each(var valueXml:XML in value){
+//        				FormEntityTypeViewer(valueViewers.getItemAt(0)).valueXml = valueXml;
+//        				break;
+//        			}
+//	        	}
+//	        }
+//	        
+//	        public function get valueXmlList():XMLList{
+//	        	var valueXMLList:XMLList = new XMLList();
+//				for each(var valueViewer:FormEntityTypeViewer in valueViewers){
+//	        		valueXMLList = valueXMLList + valueViewer.valueXml;
+//	        	}      	
+//				return valueXMLList;
+//	        }	
+	        
+			public function set valueXml(valueXml:XML):void{
+	        	if(valueXml != null){ 
+//	        		if(this.formEntityModel.array){
+//	        			var num:int = valueXml.DataField.(@id==this.formEntityModel.id).length() - valueViewers.length;
+//	        			for(var i:int = 0 ; i < num ; i++){
+//	        				addViewer();
+//	        			}
+//	        		}
+					var i:int = 0;
+        			for each(var valueViewer:FormEntityTypeViewer in valueViewers){
+        				valueViewer.valueXml = valueXml;
+        			}    				
+	        	}else{
+	        		for each(var _valueViewer:FormEntityTypeViewer in valueViewers){
+        				_valueViewer.valueXml = valueXml;
+        				break;
+        			}
+	        	}
+	        }
+	        
+	        public function get valueXml():XML{
+	        	var valueXML:XML = <DataRecord></DataRecord>;
+				for each(var valueViewer:FormEntityTypeViewer in valueViewers){
+	        		for each(var itemXml:XML in valueViewer.valueXml.DataField){
+	        			valueXML.appendChild(itemXml);
+	        		}
+	        	}      	
+				return valueXML;
+	        }	
+//	        public var cursorId:int = -1;
+//	        
+//	        [Bindable]
+//	        public var isResize:Boolean = false;
+//	        
+//	        public var resizeX:Number = 0;
+//	        public var labelWidth:Number = 0;
+//	        public var resizeY:Number = 0;
+	        
+//	        public function resizeDown(event:MouseEvent):void{
+//       			isResize = true;
+//       			resizeWidthBar.setStyle("backgroundColor", "#39C7FB");z
+//       			resizeX = event.stageX;
+//       			labelWidth = formEntityLabel.width;
+////       			resizeY = event.stageY;
+//	        }
+//	        
+//	        public function resizeMove(event:MouseEvent):void{
+//	        	if(isResize){
+//	        		var moveWidth:Number = event.stageX - resizeX;
+//	        		formEntityLabel.width = labelWidth + moveWidth;
+//	        	}       				
+//	        }
+//	        
+//	        public function resizeUp(event:MouseEvent):void{
+//	        	if(isResize){
+//	        		var moveWidth:Number = event.stageX - resizeX;
+//	        		formEntityLabel.width = labelWidth + moveWidth;
+//	        		
+//	        		isResize = false;
+//	        		resizeWidthBar.setStyle("backgroundColor", "#FFFFFF");
+//	        		CursorManager.removeAllCursors();
+//	        	}       				
+//	        }	        	
+		]]>
+	</mx:Script>
+	<!-- creationComplete="refreshVisual()" -->
+	<!-- {(this.formEntityModel.labelLoc == FormItemLabelPlacement.LEFT)?this.formEntityModel.labelSize:0}-->
+	<mx:Text id="leftFormEntityLabel" text="{_formEntityModel.name}" width="0" height="100%" fontFamily="Arial" fontSize="14" />
+	<mx:VDividedBox width="100%" height="100%" 
+		verticalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		<!-- {((this.formEntityModel.labelLoc == FormItemLabelPlacement.TOP))?this.formEntityModel.labelSize:0}-->
+		<mx:Text id="topFormEntityLabel" text="{_formEntityModel.name}" width="100%" height="0" fontFamily="Arial" fontSize="14" />
+		<mx:Box id="valueView" width="100%" height="100%" verticalGap="0" horizontalGap="0"/>
+		<!--<mx:ViewStack id="valueView" width="100%" height="100%" creationPolicy="all">
+			<mx:VBox id="childrenContainer" width="100%" height="100%" verticalGap="0"/>	
+			<mx:HBox width="100%" id="valueRadioBox" height="100%" fontSize="12">
+				<mx:RadioButtonGroup id="valueRadio"/>
+			</mx:HBox>
+			<mx:Box width="100%" height="100%">
+				<mx:ComboBox id="valueComboBox" fontSize="12">				
+				</mx:ComboBox>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" fontSize="12">
+				<mx:DateField id="valueDateField">
+					
+				</mx:DateField>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" fontSize="12">
+				<mx:NumericStepper id="valueNumericStepper">
+					
+				</mx:NumericStepper>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:TextArea id="textEntityInput" text="{formEntityModel.expression}" width="100%" height="100%" fontSize="12" fontFamily="Arial"/>
+			</mx:Box>		
+		</mx:ViewStack>-->		
+		<!-- {((this.formEntityModel.labelLoc == FormItemLabelPlacement.BOTTOM))?this.formEntityModel.labelSize:0}-->
+		<mx:Text id="bottomFormEntityLabel" text="{_formEntityModel.name}" width="100%" height="0" fontFamily="Arial" fontSize="14" />
+	</mx:VDividedBox>
+	<!-- {((this.formEntityModel.labelLoc == FormItemLabelPlacement.RIGHT))?this.formEntityModel.labelSize:0}-->
+	<mx:Text id="rightFormEntityLabel" text="{_formEntityModel.name}" width="0"  height="100%" fontFamily="Arial" fontSize="14" />
+</mx:HDividedBox>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GadgetPanel xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" title="처리할업무" 
+	 creationComplete="getWorkList()" xmlns:ns1="mxmlComponet.common.*" xmlns:page="com.maninsoft.smart.common.page.*">
+	<mx:Script>
+		<![CDATA[
+			import mxmlComponet.gadget.util.GadgetUtil;
+			import mxmlComponet.gadget.model.GadgetColumn;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.XMLListCollection;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.rpc.events.ResultEvent;
+			import portalAs.Properties;
+			
+			private var headXml:XML;
+			
+			private function coulmnFilter():void{
+				if(columnsArr!=null){
+					GadgetUtil.coulmnFilter(columnsArr, workListGrid, this);
+				}else{
+					GadgetUtil.formCoulmnFilter(columnsIdArr, workListGrid, this, headXml);
+				}
+			}
+			
+			private function getWorkList():void{
+				getFormService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=getSingleWorkDataList";
+				getFormService.send();
+			}
+			
+			private function getFormResult(event:ResultEvent):void {
+				workListGrid.rowHeight = 22;
+				var searchCount:int;
+				var xmlResult:XML = XML(event.result);    
+				var recordList:XMLListCollection = new XMLListCollection(xmlResult.data.DataRecord);
+				searchCount = recordList.length;
+				naviPg.totalCount = Number(String(xmlResult.@totalCount));
+				workListGrid.height = Number(workListGrid.headerHeight) + Number(workListGrid.rowHeight)*searchCount;
+				headXml = XML(event.result.headerInfo);
+				coulmnFilter();
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="getFormService"  resultFormat="e4x" useProxy="false" result="getFormResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<pageCount>{naviPg.pageCount}</pageCount>
+			<recordCount>{naviPg.pageSize}</recordCount>
+			<formId>{formId}</formId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:DataGrid width="100%" height="100%" id="workListGrid" dataProvider="{getFormService.lastResult.data.DataRecord}" verticalScrollPolicy="off">
+		<mx:columns>
+			<mx:DataGridColumn headerText="id" dataField="id" width="10" visible="false"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<page:PageNavigate   width="0" height="0" clickPageItem="getWorkList()" id="naviPg" pageSize="6" visible="false"/>
+</GadgetPanel>

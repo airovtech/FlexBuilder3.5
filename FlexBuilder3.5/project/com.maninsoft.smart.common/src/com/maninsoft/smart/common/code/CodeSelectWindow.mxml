@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="400" height="300" title="코드 선택" fontSize="11" xmlns:code="com.maninsoft.smart.common.code.*"
+	>
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.TreeEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var _baseUrl:String;
+			private var _connUserId:String;
+			
+			[Bindable]
+			public var categoryId:String;
+			[Bindable]
+			public var categoryName:String;
+			
+			[Bindable]			
+			public function set baseUrl(baseUrl:String):void{
+				this._baseUrl = baseUrl;	
+				start();
+			}
+			public function get baseUrl():String{
+				return this._baseUrl;	
+			}
+			
+			[Bindable]			
+			public function set connUserId(connUserId:String):void{
+				this._connUserId = connUserId;	
+				start();
+			}
+			public function get connUserId():String{
+				return this._connUserId;	
+			}
+			
+			private function start():void{
+				if(this._baseUrl != null && this._connUserId != null){
+					codeSelectCanvas.baseUrl = this.baseUrl;
+					codeSelectCanvas.connUserId = this.connUserId;
+				}
+					
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function cancel():void{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();
+			}
+			
+			private function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();
+			}
+			
+			private function changeCode():void{
+				this.categoryId = codeSelectCanvas.categoryId;
+				this.categoryName = codeSelectCanvas.categoryName;
+			}
+		]]>
+	</mx:Script>
+	<code:CodeSelectCanvas id="codeSelectCanvas" 
+		width="100%" height="{this.height - okBtn.height - 20}"
+		categoryId="{categoryId}" categoryName="{categoryName}" change="{changeCode()}"/>
+	<mx:Button id="okBtn" label="확인" right="68" bottom="10" click="{complete()}"/>
+	<mx:Button label="취소" right="10" bottom="10" click="{cancel()}"/>
+</mx:TitleWindow>

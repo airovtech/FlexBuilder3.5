@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box	xmlns:mx="http://www.adobe.com/2006/mxml"	borderStyle="solid"	borderThickness="0">
+	<mx:Script>		
+		<![CDATA[	
+		 
+		 	import flash.display.*;	    
+		 	import flash.geom.*;	    
+		 	import flash.utils.*;	    	    
+		 	import mx.core.EdgeMetrics;	    
+		 	import mx.utils.ColorUtil;	    
+		 	import mx.utils.GraphicsUtil;
+		 	
+		 	public var _gradientFrom:int;
+		 	public var _gradientTo:int;
+		 	
+		 	public function set gradientFrom(value:int):void	    
+		 	{		
+		 		this._gradientFrom = value;	    
+		 	}	    
+		 	public function set gradientTo(value:int):void	     
+		 	{		
+		 		this._gradientTo = value;	    
+		 	}
+		 	
+		 	override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void            
+		 	{
+		 		super.updateDisplayList(unscaledWidth, unscaledHeight);                
+		 		var g:Graphics = graphics;                
+		 		var b:EdgeMetrics = borderMetrics;                
+		 		var w:Number = unscaledWidth - b.left - b.right;                
+		 		var h:Number = unscaledHeight - b.top - b.bottom;                
+		 		var m:Matrix = verticalGradientMatrix(0, 0, w, h);        
+		 		g.clear();                
+		 		g.beginGradientFill("linear", [_gradientFrom, _gradientTo], [1, 1], [0, 255], m);                            
+		 		
+		 		var cn:uint = this.getStyle("cornerRadius");                
+		 		GraphicsUtil.drawRoundRectComplex(g, b.left, b.top, w, h, cn, cn, cn, cn);                
+		 		g.endFill();                             
+		 	}		
+		 ]]>	
+	</mx:Script>	
+</mx:Box>

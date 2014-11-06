@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TypeDetailView 
+	xmlns="com.maninsoft.smart.formeditor.refactor.view.property.detail.type.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="통화" xmlns:type="com.maninsoft.smart.formeditor.model.property.*" xmlns:type1="com.maninsoft.smart.formeditor.model.type.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			import com.maninsoft.smart.formeditor.model.type.LocaleType;
+			
+			private function change():void{
+				changeFormItemType = FormItemType(patternList.selectedItem).clone();
+				dispatchEvent(new Event(Event.CHANGE));				
+			}
+			
+			private function getPatternListIndex(formItemType:FormItemType):int{
+				for(var i:int = 0 ; i < patternListArray.length ; i++){
+					var example:FormItemType = FormItemType(patternListArray.getItemAt(i));
+					if(equalFormItemType(example, formItemType))
+						return i;						
+				}			
+				return -1;
+			}
+			
+			private function equalFormItemType(one:FormItemType, two:FormItemType):Boolean{
+				if(one == null || two == null)
+					return false;
+				if(one.type != two.type)
+					return false;
+//				if(one.precision != two.precision)
+//					return false;
+//				if(one.thousandsSeparator != two.thousandsSeparator)
+//					return false;
+				if(one.minus != two.minus)
+					return false;
+				if(one.plus != two.plus)
+					return false;
+				if(one.red != two.red)
+					return false;
+				return true;
+			}
+			
+			private function getLocaleArrayIndex(locale:LocaleType):int{
+				for(var i:int = 0 ; i < localeArray.length ; i++){
+					var example:LocaleType = LocaleType(localeArray.getItemAt(i));
+					if(equalLocaleType(example, locale))
+						return i;						
+				}			
+				return -1;
+			}
+			
+			private function equalLocaleType(one:LocaleType, two:LocaleType):Boolean{
+				if(one == null || two == null)
+					return false;
+				if(one.type != two.type)
+					return false;
+				return true;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox height="100%" width="100%">
+		<mx:HBox>
+			<mx:Text text="소수 자릿수:" fontSize="12"/>
+			<mx:NumericStepper id="moneyPrecision" fontSize="10" value="{formItemType.precision}" change="{change()}"/>	
+		</mx:HBox>
+		<mx:HBox>
+			<mx:Text text="기호:" fontSize="12"/>
+			<mx:ComboBox id="moneyMark" fontSize="12" selectedIndex="{localeArray.getItemIndex(formItemType.locale)}"
+				change="{change()}">
+				<mx:dataProvider>
+					<mx:ArrayCollection id="localeArray">
+						<type1:LocaleType currencySymbol="₩" label="₩" type="KR"/>							
+						<type1:LocaleType currencySymbol="$" label="$" type="US"/>
+					</mx:ArrayCollection>	
+				</mx:dataProvider>				
+			</mx:ComboBox>	
+		</mx:HBox>
+		<mx:Text text="음수 : " fontSize="12"/>
+		<mx:List id="patternList" width="100%" itemRenderer="com.maninsoft.smart.formeditor.refactor.view.property.renderer.MoneyFormTypeRenderer"
+			itemClick="{change()}" selectedIndex="{getPatternListIndex(formItemType)}">
+			<mx:dataProvider>
+				<mx:ArrayCollection id="patternListArray">
+					<type:FormItemType type="{FormItemType.MONEY}" locale="{LocaleType(moneyMark.selectedItem)}" data='-1234' minus='false' precision="{moneyPrecision.value}" plus='false' red='false'/>
+					<type:FormItemType type="{FormItemType.MONEY}" locale="{LocaleType(moneyMark.selectedItem)}" data='-1234' minus='false' precision="{moneyPrecision.value}" plus='false' red='true'/>
+					<type:FormItemType type="{FormItemType.MONEY}" locale="{LocaleType(moneyMark.selectedItem)}" data='-1234' minus='false' precision="{moneyPrecision.value}" plus='true' red='true'/>
+					<type:FormItemType type="{FormItemType.MONEY}" locale="{LocaleType(moneyMark.selectedItem)}" data='-1234' minus='true' precision="{moneyPrecision.value}" plus='false' red='true'/>
+					<type:FormItemType type="{FormItemType.MONEY}" locale="{LocaleType(moneyMark.selectedItem)}" data='-1234' minus='true' precision="{moneyPrecision.value}" plus='false' red='false'/>
+				</mx:ArrayCollection>
+			</mx:dataProvider>
+		</mx:List>								
+	</mx:VBox>		
+</TypeDetailView>

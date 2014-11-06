@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SingleWorkLayOut xmlns="com.maninsoft.smart.formeditor.refactor.runtime.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	<mx:Script>
+		<![CDATA[
+			
+			public override function set formIdVer(_formIdVer:String):void{
+				super.formIdVer = _formIdVer;
+				
+				singleWorkList.doubleClickEnabled = false;
+				
+				singleWorkInit.visible = false;
+				singleWorkInit.height = 0;
+			}
+			
+			protected override function moveNewFormPage():void {
+				super.moveNewFormPage();
+				
+				singleWorkInit.visible = true;
+				singleWorkInit.percentHeight = 100;
+			}
+			
+			protected override function moveListPage():void {
+    			super.moveListPage();
+    			
+    			singleWorkInit.visible = false;
+				singleWorkInit.height = 0;
+    		}
+		]]>
+	</mx:Script>
+</SingleWorkLayOut>

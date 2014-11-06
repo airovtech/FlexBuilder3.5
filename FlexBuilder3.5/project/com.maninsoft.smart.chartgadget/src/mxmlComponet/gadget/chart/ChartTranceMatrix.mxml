@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+        <![CDATA[
+        	import mxmlComponet.gadget.chart.ChartXmlUtil;
+        	import mxmlComponet.gadget.chart.MatrixChart;
+            import mx.collections.XMLListCollection;
+                    
+            private var tranceXml:XML =<tranceInfo></tranceInfo>;
+            public var attName:String = '';
+            private var _xmlResult:XML;
+            private var matrix:MatrixChart;
+            
+            public function set xmlResult(xml:XML):void{
+            	_xmlResult = xml;
+            	init();
+            }
+            
+            public function get xmlResult():XML{
+            	return _xmlResult;
+            }
+            
+            private function init():void{   	
+            	matrix = new MatrixChart();
+            	matrix.percentWidth = 100;
+            	matrix.percentHeight = 100;
+            	this.addChild(matrix);
+            	matrix.displayUnit = false;
+            	ChartXmlUtil.makeMatrixXml(_xmlResult, tranceXml);
+            	matrix.chartXml = tranceXml;
+            }
+        ]]>
+    </mx:Script>
+</mx:Box>

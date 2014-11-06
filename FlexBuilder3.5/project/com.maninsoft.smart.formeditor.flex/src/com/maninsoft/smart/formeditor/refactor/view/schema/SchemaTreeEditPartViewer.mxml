@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"  
+	xmlns:ns1="com.maninsoft.smart.formeditor.refactor.view.schema.*"
+	creationComplete="{init()}">
+	<mx:Metadata>
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="updateFormStructure", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+    </mx:Metadata>
+    
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.treeClasses.TreeItemRenderer;
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import com.maninsoft.smart.formeditor.model.format.FormatType;
+			import com.maninsoft.smart.formeditor.model.format.FormatTypes;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormModelCommand;
+			import flash.sampler.NewObjectSample;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import com.maninsoft.smart.formeditor.refactor.view.schema.editor.SchemaItemTextEditor;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.refactor.command.FormEntityCommand;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.refactor.command.ResizeFormEntityCommand;
+			import mx.events.ListEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.model.AbstractFormResource;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.refactor.util.SchemaTreeItemWin;
+			import com.maninsoft.smart.formeditor.refactor.command.CreateFormEntityCommand;
+			import com.maninsoft.smart.formeditor.refactor.command.RemoveFormEntityCommand;
+			import mx.states.RemoveChild;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import mx.events.ItemClickEvent;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+			[Bindable]
+	        public var currentFormEntity:FormEntity;
+	        
+	        private var _formDocument:FormDocument;
+	        
+	        [Bindable]
+	        public function set formDocument(formDocument:FormDocument):void{
+//	        	if(this._formDocument != null){
+//		        	this._formDocument.removeEventListener(FormEditEvent.SELECT_FORM_ITEM, selectForm);
+//		        	this._formDocument.removeEventListener(FormEditEvent.SELECT_FORM_DOCUMENT, selectForm);
+//	        	}
+	        	
+	        	this._formDocument = formDocument;
+	        	this.schemaTree.setFocus();
+	        	this.schemaTree.selectedItem = this._formDocument;
+//	        	this._formDocument.addEventListener(FormEditEvent.SELECT_FORM_ITEM, selectForm);
+//	        	this._formDocument.addEventListener(FormEditEvent.SELECT_FORM_DOCUMENT, selectForm);
+	        }
+	        
+	        public function get formDocument():FormDocument{
+	        	return this._formDocument;
+	        }
+			
+			private function init():void{
+				this.registerTreeConextMenu();
+			} 
+			
+			private function selectForm(event:FormEditEvent):void {
+				if(event.type == FormEditEvent.SELECT_FORM_ITEM){
+					if(event.formItem.parent != null)
+						this.schemaTree.openItems = [event.formItem.parent];
+					else
+						this.schemaTree.openItems = [event.formItem.root];
+					this.schemaTree.selectedItem = event.formItem;
+					this.schemaTree.setFocus();
+				}else if(event.type == FormEditEvent.SELECT_FORM_DOCUMENT){
+					this.schemaTree.selectedItem = event.formDocument;
+				}
+	        }
+			/****************************** 스키마 관리 **************************************/
+			
+			// 스키마 아이템 생성
+			private function createSchemaItem(parent:FormEntity = null, name:String = ""):void{
+				insertSchemaItem(parent);
+			}
+			
+			private function insertSchemaItemUp(current:FormEntity):void{
+				var insertNum:int = -1;
+				if(current.parent != null){
+					insertNum = current.parent.children.getItemIndex(current);
+				}else{
+					insertNum = current.root.children.getItemIndex(current);
+				}
+				insertSchemaItem(current.parent, null, insertNum);
+			}
+			
+			private function insertSchemaItemDown(current:FormEntity):void{
+				var insertNum:int = -1;
+				if(current.parent != null){
+					insertNum = current.parent.children.getItemIndex(current) + 1;
+				}else{
+					insertNum = current.root.children.getItemIndex(current) + 1;
+				}
+				insertSchemaItem(current.parent, null, insertNum);
+			}
+			
+			// 스키마 아이템 추가
+			private function insertSchemaItem(parent:FormEntity = null, insert:FormEntity = null, insertNum:int = -1, name:String = ""):void{
+				var child:FormEntity;
+				if(insert == null){
+					child = new FormEntity(formDocument);
+					if(name == ""){
+						child.name = FormDocument.ITEM_NAME_PREFIX + (this.formDocument.currentEntityNum+1);
+					}else{
+		            	child.name = name;
+					}
+	            	child.root = this.formDocument;
+	
+	            	if(parent != null){
+	            		child.parent = parent;
+	            		child.depth = parent.depth + 1;
+	            		child.contentWidth = child.contentWidth - (child.depth * 80); 
+	            	}					
+				}else{
+					child = insert;
+				}
+            	
+//            	child.labelWidth = (formDocument.itemWidth * (formDocument.itemLabelPercentWidth/100))  / (child.depth + 1);
+            	
+            	var command:Command = new CreateFormEntityCommand(child.root, child, child.parent, insertNum);
+            	
+            	// 부모 폼 엔티티에  높이 처리
+            	command = resizeParent(child, command);
+            	
+            	this.editDomain.getCommandStack().execute(command);
+			}
+			
+			private function resizeParent(formEntityModel:FormEntity, command:Command):Command{
+            	
+            	if(formEntityModel.parent == null)
+            		return command;
+            	
+            	if(formEntityModel.parent.children != null && formEntityModel.parent.children.length != 0){
+	            	var resizeCommand:ResizeFormEntityCommand = new ResizeFormEntityCommand(
+	            		formEntityModel.parent, formEntityModel.parent.labelWidth, 
+	            		formEntityModel.parent.contentWidth, formEntityModel.parent.height + formEntityModel.height);
+	            		
+	            	command = command.chain(resizeCommand);            		
+            	}
+            	
+            	return resizeParent(formEntityModel.parent, command);           	
+			}
+
+			private function renameSchemaItem(name:String, formEntity:FormEntity = null):void{
+				
+				var command:Command;
+				if(formEntity != null){
+					command = new UpdateFormEntityCommand(FormEntity.PROP_NAME);	
+					UpdateFormEntityCommand(command).type = FormEntity.PROP_NAME;
+					UpdateFormEntityCommand(command).formEntityModel = formEntity;
+					UpdateFormEntityCommand(command).newValue = name;
+				}else{
+					command = new UpdateFormModelCommand(FormDocument.PROP_NAME);	
+					UpdateFormModelCommand(command).type = FormDocument.PROP_NAME;
+					UpdateFormModelCommand(command).formModel = this.formDocument;
+					UpdateFormModelCommand(command).newValue = name;
+				}
+				this.editDomain.getCommandStack().execute(command);
+			}
+			
+			private function changeSchemaItemNextType(formEntity:FormEntity):void{				
+				var typeNum:int = 0;
+				for(var i:int = 0 ; i < FormatTypes.formatTypeArray.length ; i++){
+					var formatType:FormatType = FormatType(FormatTypes.formatTypeArray[i]);
+					if(formatType.type == formEntity.format.type){
+						typeNum = (i == (FormatTypes.formatTypeArray.length - 1))?0:i+1;
+					} 
+				}
+				
+				var newFormat:FormFormatInfo = formEntity.format.clone();
+				newFormat.type = FormatType(FormatTypes.formatTypeArray[typeNum]).type;
+				
+				var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(FormEntity.PROP_FORMAT);	
+				command.type = FormEntity.PROP_FORMAT;
+				command.formEntityModel = formEntity;
+				command.newValue = newFormat;				
+				
+				this.editDomain.getCommandStack().execute(command);
+			}
+			
+			private function changeSchemaItemArray(formEntity:FormEntity):void{				
+//				var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(FormEntity.PROP_ARRAY_USE);	
+//				command.type = FormEntity.PROP_ARRAY_USE;
+//				command.formEntityModel = formEntity;
+//				command.newValue = !formEntity.array;				
+//				
+//				this.editDomain.getCommandStack().execute(command);
+			}
+			
+			private function removeSchemaItem(formEntity:FormEntity):void{				
+				var command:RemoveFormEntityCommand = new RemoveFormEntityCommand("Remove Item");
+				command.child = formEntity;	
+				this.editDomain.getCommandStack().execute(command);
+			}
+						
+			/*****************************스키마 아이템 화면제어**********************************/
+			// 스키마 아이템 아이콘
+			private function getIcon(item:Object):Class{
+				return AbstractFormResource(item).icon;
+			}	
+			// 스키마 아이템 선택시
+			private function selectFormItem(mEvent:ListEvent):void{
+				var item:Object = schemaTree.selectedItem;
+				
+				var event:FormEditEvent;
+				if(item is FormDocument){
+					event = new FormEditEvent(FormEditEvent.SELECT_FORM_DOCUMENT);
+					event.formDocument = FormDocument(item);
+				}else{
+					event = new FormEditEvent(FormEditEvent.SELECT_FORM_ITEM);
+					event.formItem = FormEntity(item);
+				}				
+				dispatchEvent(event);	
+			}	
+			// 스키마 아이템 트리용 라벨 함수
+			private function schemaItemLabelFunc(item:Object):String{
+				if(item is FormDocument){
+					return FormDocument(item).name;
+				}else if(item is FormEntity){
+					return FormEntity(item).name;
+				}
+				return "";
+			}
+			
+			private function keyDown(event:KeyboardEvent):void{
+				if(event.ctrlKey && event.keyCode == 188){
+					// 자기 이전에 필드 만들기
+					// Ctrl + <
+					insertPrevious();
+				}else if(event.ctrlKey && event.keyCode == 190){
+					// 자기 다음에 아이템 만들기
+					// Ctrl + >
+					insertNext();
+				}else if(event.keyCode == Keyboard.INSERT){
+					// 자식 만들기
+					// Insert
+					insertSub();
+				}else if(event.keyCode == Keyboard.DELETE){
+					// 아이템 삭제
+					// delete
+					remove();
+				}else if(event.keyCode == Keyboard.F2){
+					// 이름 바꾸기
+					// F2
+					renameEditor();
+//					SchemaItemTextEditor(this.schemaTree.itemEditorInstance).schemaItemName.setFocus();
+				}else if(event.ctrlKey && event.shiftKey && event.keyCode == Keyboard.TAB){
+					// 표시 형식 바꾸기
+					// ctrl + shift + tab
+					changeNextType();
+				}else if(event.ctrlKey && event.keyCode == 65){
+					// 어레이 설정
+					// ctrl + a
+					changeArrayType();
+				}else if(event.ctrlKey && event.shiftKey && event.keyCode == Keyboard.ENTER){
+					// 빠른 속성 편집
+					// ctrl + shoft +enter
+				}
+			}
+			private function insertPrevious():void{
+				if(schemaTree.selectedItem == null || schemaTree.selectedItem is FormDocument){
+					createSchemaItem();
+				}else{
+					insertSchemaItemUp(FormEntity(schemaTree.selectedItem));
+				}
+			}
+			private function insertNext():void{
+				if(schemaTree.selectedItem == null || schemaTree.selectedItem is FormDocument){
+					createSchemaItem();
+				}else{
+					insertSchemaItemDown(FormEntity(schemaTree.selectedItem));
+				}
+			}
+			private function insertSub():void{
+				if(schemaTree.selectedItem == null || schemaTree.selectedItem is FormDocument){
+					createSchemaItem();
+				}else{
+					createSchemaItem(FormEntity(schemaTree.selectedItem));	
+				}	
+			}
+			private function renameEditor():void{
+				schemaTree.editable = true;
+					this.schemaTree.editedItemPosition = {rowIndex: this.schemaTree.selectedIndex, columnIndex: 0};
+			}
+			private function changeNextType():void{
+				if(schemaTree.selectedItem != null && schemaTree.selectedItem is FormEntity)
+					changeSchemaItemNextType(FormEntity(schemaTree.selectedItem));
+			}
+			private function changeArrayType():void{
+				if(schemaTree.selectedItem != null && schemaTree.selectedItem is FormEntity)
+					changeSchemaItemArray(FormEntity(schemaTree.selectedItem));
+			}
+			private function remove():void{
+				if(schemaTree.selectedItem != null && schemaTree.selectedItem is FormEntity)
+					removeSchemaItem(FormEntity(schemaTree.selectedItem));
+			}
+            // 폼 에디터 작업중 트리 처리 막기
+            private function disableEditing(event:ListEvent):void {
+                if(event.rowIndex==0) {  
+                    event.preventDefault(); 
+                }
+            }                                         
+            
+            // 폼 에디터 작업완료시 중 트리 처리 막기
+            private function processData(event:ListEvent):void {       
+                    // Disable copying data back to the control.
+                    event.preventDefault();
+
+					rename();                  
+
+                    // Close the item editor.
+                    schemaTree.destroyItemEditor();
+                    schemaTree.editable = false;
+                    schemaTree.setFocus();    
+            } 
+            
+            private function rename():void{
+				if(schemaTree.selectedItem is FormDocument){
+					renameSchemaItem(SchemaItemTextEditor(schemaTree.itemEditorInstance).schemaItemName.text);	
+				}else{
+					renameSchemaItem(SchemaItemTextEditor(schemaTree.itemEditorInstance).schemaItemName.text, FormEntity(schemaTree.selectedItem));
+				}  
+            }
+            
+            /*******************************마우스 메뉴****************************************/
+            [Bindable]
+            private var treeMenu:ContextMenu = new ContextMenu();
+            
+            private function registerTreeConextMenu():void
+            {
+                treeMenu.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenuTriggered);
+                treeMenu.hideBuiltInItems();
+                buildMenuItem();
+            }
+            
+			private var formContextMenu:Array;
+			private var formItemContextMenu:Array;
+
+			// 컨텍스트 메뉴 생성
+			private function buildMenuItem():void
+            {
+                buildFormMenuItem();
+                buildFormItemMenuItem();
+            }
+            
+            private var formMenu:Array = 
+            	[
+            		{name:"하위 필드 만들기(Insert)", listener:insertSub, useSeperator:false, enabled:true},
+            		{name:"이름 바꾸기 (Ctrl + Enter)", listener:renameEditor, useSeperator:true, enabled:true}
+            	]
+            	
+            private var formItemMenu:Array = 
+            	[
+            		{name:"하위 필드 만들기(Insert)", listener:insertSub, useSeperator:false, enabled:true},
+            		{name:"전에 필드 만들기(Ctrl + <)", listener:insertPrevious, useSeperator:false, enabled:true},
+            		{name:"다음에 필드 만들기(Ctrl + >)", listener:insertNext, useSeperator:false, enabled:true},
+            		{name:"삭제 (Delete)", listener:remove, useSeperator:true, enabled:true},
+            		{name:"이름 바꾸기 (F2)", listener:renameEditor, useSeperator:true, enabled:true},
+            		{name:"표시방식 바꾸기 (Ctrl + Shift + Tab)", listener:changeNextType, useSeperator:false, enabled:true},
+            		{name:"빠른 속성 바꾸기 (Ctrl + Shift + Enter)", listener:changeNextType, useSeperator:false, enabled:false}
+            	]
+            	
+            // 폼 컨텍스트 메뉴
+            private function buildFormMenuItem():void
+            {
+            	formContextMenu = new Array();
+            	
+            	for each(var menuObj:Object in formMenu){
+            		var menu:ContextMenuItem = new ContextMenuItem(menuObj["name"], menuObj["useSeperator"], menuObj["enabled"]);
+					menu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectFormMenu);
+					formContextMenu.push(menu);
+            	}
+            }
+            // 폼 아이템 컨텍스트 메뉴
+            private function buildFormItemMenuItem():void
+            {
+            	formItemContextMenu = new Array();
+            	
+            	for each(var menuObj:Object in formItemMenu){
+            		var menu:ContextMenuItem = new ContextMenuItem(menuObj["name"], menuObj["useSeperator"], menuObj["enabled"]);
+					menu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectFormItemMenu);
+					formItemContextMenu.push(menu);
+            	}
+            }
+            			
+            public function contextMenuTriggered(event:ContextMenuEvent):void
+            {
+                if( this.schemaTree.selectedItem != null )
+                {
+                    if( this.schemaTree.selectedItem is FormDocument){
+                        treeMenu.customItems = formContextMenu;
+                    } else {
+                    	treeMenu.customItems = formItemContextMenu;
+                    }
+                }
+            }
+            
+            public function selectFormMenu(event:ContextMenuEvent):void
+            {
+            	for each(var menu:Object in formMenu){
+            		if(menu.name == ContextMenuItem(event.currentTarget).caption)
+            			menu.listener();
+            	}
+            }
+            
+            public function selectFormItemMenu(event:ContextMenuEvent):void
+            {
+            	for each(var menu:Object in formItemMenu){
+            		if(menu.name == ContextMenuItem(event.currentTarget).caption)
+            			menu.listener();
+            	}
+            }
+		]]>
+	</mx:Script>
+	<mx:Box x="0" y="0" id="schemaBox" width="100%" height="100%" >	
+		 <mx:Tree id="schemaTree" 
+		 	height="100%" width="100%" selectedIndex="0" labelFunction="schemaItemLabelFunc"  
+		 	disclosureClosedIcon="{IconLibrary.arrowSide}"	disclosureOpenIcon="{IconLibrary.arrowDown}" 
+		 	showRoot="true" dataProvider="{formDocument}" iconFunction="getIcon" 
+		 	doubleClickEnabled="true" itemDoubleClick="selectFormItem(event)" fontSize="12" fontFamily="Verdana"
+		 	keyDown="{keyDown(event)}"
+		 	itemEditor="com.maninsoft.smart.formeditor.refactor.view.schema.editor.SchemaItemTextEditor" editable="true"
+		 	itemEditBeginning="{disableEditing(event)}"	itemEditEnd="{processData(event)}"
+		 	contextMenu="{treeMenu}"
+		 	/>
+		 	<!-- editorHeightOffset="10" editorWidthOffset="50" -->
+		 	<!--change="treeChanged(event)"  showRoot="false"  -->	
+	</mx:Box>
+</mx:Canvas>

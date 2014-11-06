@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:general="com.maninsoft.smart.formeditor.model.general.*" 
+	xmlns:unit="com.maninsoft.smart.formeditor.refactor.component.unit.*"
+	fontSize="10">
+	<mx:Metadata>
+        [Event("dataChange")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Text;
+			import com.maninsoft.smart.formeditor.refactor.component.model.TextStyleModel;
+			import mx.controls.Button;
+			
+			protected var _model:TextStyleModel;
+			
+			public function set model(model:TextStyleModel):void{
+				if(model == null)
+					model = new TextStyleModel();
+
+				this._model = model;
+									
+				this.colorPicker.selectedColor = model.color;
+				this.textFont.font = model.font;
+				this.textSize.size = model.size;
+				this.fommationBar.bold = model.bold;
+				this.fommationBar.italic = model.italic;
+				this.fommationBar.underline = model.underline;
+				this.alignBar.align = model.align;
+			}
+			
+			public function get model():TextStyleModel{
+				return _model;
+			}
+			
+			public function getNewModel():TextStyleModel{
+				var model:TextStyleModel = new TextStyleModel();
+								
+				model.color = this.colorPicker.selectedColor;
+				model.font;this.textFont.font;
+				model.size = this.textSize.size;
+				model.bold = this.fommationBar.bold;
+				model.italic = this.fommationBar.italic;
+				model.underline = this.fommationBar.underline;
+				model.align = this.alignBar.align;
+				
+				return model;
+			}
+			
+			private function dispatchDataChangeEvent():void {
+                this.dispatchEvent( new Event("dataChange") );
+            }			
+		]]>
+	</mx:Script>
+	<mx:Label x="10" y="10" text=" 색  : " fontSize="12" fontFamily="Arial"/>
+	<mx:ColorPicker id="colorPicker" x="47" y="6" width="49" close="dispatchDataChangeEvent()"/>
+	<mx:Label x="10" y="36" text="글꼴 : " fontSize="12" fontFamily="Arial"/>
+	<unit:TextFont id="textFont" x="47" y="36" dataChange="dispatchDataChangeEvent()"/>
+	<mx:Label x="10" y="68" text="크기 : " fontSize="12" fontFamily="Arial"/>	
+	<unit:TextSize id="textSize" x="47" y="66" dataChange="dispatchDataChangeEvent()"/>
+	<mx:Label x="10" y="98" text="형식 : " fontSize="12" fontFamily="Arial"/>
+	<unit:TextFommationBar id="fommationBar" x="47" y="96" dataChange="dispatchDataChangeEvent();"/>	
+	<mx:Label x="10" y="126" text="정렬 : " fontSize="12" fontFamily="Arial"/>
+	<unit:TextAlignBar id="alignBar" x="47" y="126" dataChange="dispatchDataChangeEvent()"/>
+</mx:Canvas>

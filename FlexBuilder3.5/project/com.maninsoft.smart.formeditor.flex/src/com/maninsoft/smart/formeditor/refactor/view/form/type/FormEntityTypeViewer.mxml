@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ViewStack xmlns:mx="http://www.adobe.com/2006/mxml" creationPolicy="all"
+	creationComplete="{refreshVisual()}">
+		<mx:Script>
+			<![CDATA[
+				import com.maninsoft.smart.formeditor.refactor.view.form.FormEntityModelEditPartViewer;
+				import mx.collections.ArrayCollection;
+				import mx.controls.RadioButton;
+				import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormListType;
+				import com.maninsoft.smart.formeditor.model.format.FormatTypes;
+				import com.maninsoft.smart.formeditor.model.FormEntity;
+				
+//				[Bindable]
+//				private var _formEntityModel:FormEntity;
+//				
+//				public function set formEntityModel(formEntityModel:FormEntity):void{
+//					this._formEntityModel = formEntityModel;
+//				}
+//				
+//				public function get formEntityModel():FormEntity{
+//					return _formEntityModel;
+//				}
+				
+				[Bindable]
+				public var formEntityModelEditPartViewer:FormEntityModelEditPartViewer;
+				
+				[Bindable]
+				public var arrayNum:int = 0;
+				
+				private var childViewers:ArrayCollection = new ArrayCollection();
+				
+				public function refreshBasicVisual():void{
+					if(this.formEntityModelEditPartViewer != null && this.formEntityModelEditPartViewer.formEntityModel != null ){
+						if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.comboBox.type){
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.listType == FormListType.STATIC){
+								this.valueComboBox.dataProvider = this.formEntityModelEditPartViewer.formEntityModel.format.staticListExamples;	
+							}	
+						}else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.radioButton.type){
+							for each(var childObj:DisplayObject in this.valueRadioBox.getChildren()){
+								if(childObj is RadioButton){
+									this.valueRadioBox.removeChild(childObj);
+								}
+							}
+							for each(var staticExample:String in this.formEntityModelEditPartViewer.formEntityModel.format.staticListExamples){
+								var valueRadioBtn:RadioButton = new RadioButton();
+								valueRadioBtn.label = staticExample;
+								valueRadioBtn.value = staticExample;
+								valueRadioBtn.group = this.valueRadio;
+								this.valueRadioBox.addChild(valueRadioBtn);
+							}	
+						}else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.dateChooser.type){
+							var disableDayArray:Array = new Array();
+							
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.sunNotUse)
+								disableDayArray.push(0);
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.monNotUse)
+								disableDayArray.push(1);
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.tueNotUse)
+								disableDayArray.push(2);
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.wedNotUse)
+								disableDayArray.push(3);
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.thuNotUse)
+								disableDayArray.push(4);
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.friNotUse)
+								disableDayArray.push(5);
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.satNotUse) 
+								disableDayArray.push(6);						
+														
+							this.valueDateField.disabledDays = disableDayArray;
+							
+							this.valueDateField.yearNavigationEnabled = this.formEntityModelEditPartViewer.formEntityModel.format.yearUse;
+						}else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.numericStepper.type){
+							
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.minNumUse)
+								this.valueNumericStepper.minimum = this.formEntityModelEditPartViewer.formEntityModel.format.minNum;
+							if(this.formEntityModelEditPartViewer.formEntityModel.format.maxNumUse)
+								this.valueNumericStepper.maximum = this.formEntityModelEditPartViewer.formEntityModel.format.maxNum; 
+								
+							this.valueNumericStepper.stepSize = this.formEntityModelEditPartViewer.formEntityModel.format.stepSize;						
+						}else{
+							
+						}
+						
+						this.selectedIndex = getContentsIndex(this.formEntityModelEditPartViewer.formEntityModel);
+					}
+				}
+				
+		        public function refreshVisual():void{
+		        	if(this.formEntityModelEditPartViewer != null && this.formEntityModelEditPartViewer.formEntityModel != null ){
+		        		// 자기자신 그리기
+		        		// 2. 내용 (bindable 사용)
+		        		refreshBasicVisual();
+		        		// 자식 그리기
+			        	if(this.childrenContainer != null){
+			        		this.childrenContainer.removeAllChildren();
+			        		this.childViewers.removeAll();
+			        		if(this.formEntityModelEditPartViewer.formEntityModel.children != null){
+					        	for each(var formEntityModel:FormEntity in this.formEntityModelEditPartViewer.formEntityModel.children){
+					        		var formEntityViewer:FormEntityModelEditPartViewer = new FormEntityModelEditPartViewer();
+					        		formEntityViewer.editDomain = this.formEntityModelEditPartViewer.editDomain;
+					        		formEntityViewer.formEntityModel = formEntityModel;
+					        		formEntityViewer.mode = this.formEntityModelEditPartViewer.mode;
+					        					        		
+					        		formEntityViewer.rowNum = this.formEntityModelEditPartViewer.rowNum;
+					        		formEntityViewer.colNum = this.formEntityModelEditPartViewer.colNum;
+					        		
+					        		formEntityViewer.formViewer = this.formEntityModelEditPartViewer.formViewer;
+					        		formEntityViewer.parentViewer = this.formEntityModelEditPartViewer;
+					        		formEntityViewer.parentValueViewer = this;
+					        		
+					        		if(arrayNum > 0)
+					        			formEntityViewer.abstractLabelVisible = false;
+					        		
+					        		this.childrenContainer.addChild(formEntityViewer);
+					        		this.childViewers.addItem(formEntityViewer);
+					        	}
+			        		}							
+			        	}
+		        	}
+		        }			
+		        	
+				private function getContentsIndex(formEntity:FormEntity):int{
+					if(this.formEntityModelEditPartViewer.formEntityModel.children != null)
+						return 0;
+					else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.radioButton.type)
+						return 1;	
+					else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.comboBox.type)
+						return 2;	
+					else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.dateChooser.type)
+						return 3;	
+					else if(this.formEntityModelEditPartViewer.formEntityModel.format.type == FormatTypes.numericStepper.type)
+						return 4;		
+					else
+						return 5;							
+				}
+				
+				private var _valueXml:XML = 
+						<DataField id="" name="">
+						</DataField>;
+			
+				public function set valueXml(valueXML:XML):void{
+					var typeNum:int = getContentsIndex(this.formEntityModelEditPartViewer.formEntityModel);
+					
+					if(typeNum == 0){
+						for each(var childViewer:FormEntityModelEditPartViewer in childViewers){
+							childViewer.valueXml = valueXML;
+						}
+					}else{
+						switch(typeNum){
+							case 1:
+								valueRadio.selectedValue = valueXML.DataField.(@id=this.formEntityModelEditPartViewer.formEntityModel.id).toString();
+								break;
+							case 2:
+								valueComboBox.selectedItem = valueXML.DataField.(@id=this.formEntityModelEditPartViewer.formEntityModel.id).toString();
+								break;
+							case 3:
+								valueDateField.selectedDate = new Date(valueXML.DataField.(@id=this.formEntityModelEditPartViewer.formEntityModel.id).toString());
+								break;
+							case 4:
+								valueNumericStepper.value = new int(valueXML.DataField.(@id=this.formEntityModelEditPartViewer.formEntityModel.id).toString());
+								break;
+							default:
+								textEntityInput.text = valueXML.DataField.(@id=this.formEntityModelEditPartViewer.formEntityModel.id).toString();
+						}
+						
+					}
+		        }
+		        
+		        public function get valueXml():XML{
+		        	var valueXML:XML = <DataRecord></DataRecord>;
+		        	var itemXML:XML;
+		        	
+		        	var typeNum:int = getContentsIndex(this.formEntityModelEditPartViewer.formEntityModel);
+		        	
+		        	if(typeNum == 0){
+						for each(var childViewer:FormEntityModelEditPartViewer in childViewers){
+							for each(var itemXml:XML in childViewer.valueXml.DataField){
+								valueXML.appendChild(itemXml);
+							}
+						}
+					}else{
+						switch(typeNum){
+							case 1:
+								itemXML = <DataField id="" name="">{valueRadio.selectedValue}</DataField>;
+								break;
+							case 2:
+								itemXML = <DataField id="" name="">{valueComboBox.selectedItem}</DataField>;
+								break;
+							case 3:
+								itemXML = <DataField id="" name="">{valueDateField.selectedDate.toString()}</DataField>;
+								break;
+							case 4:
+								itemXML = <DataField id="" name="">{valueNumericStepper.value}</DataField>;
+								break;
+							default:
+								itemXML = <DataField id="" name="">{textEntityInput.text}</DataField>;
+						}
+						itemXML.@id = this.formEntityModelEditPartViewer.formEntityModel.id;
+		       		 	itemXML.@name = this.formEntityModelEditPartViewer.formEntityModel.name;
+		       		 	
+		       		 	valueXML.appendChild(itemXML);
+					}
+					return valueXML;
+		        }
+			]]>
+		</mx:Script>
+		<!--mouseUp="resizeUp(event)" mouseMove="resizeMove(event)"-->		
+		<mx:VBox id="childrenContainer" width="100%" height="100%" verticalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="auto"/>	
+		<!--mouseUp="resizeUp(event)" mouseMove="resizeMove(event)" -->			
+		<mx:HBox width="100%" id="valueRadioBox" height="100%" fontSize="12" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<mx:RadioButtonGroup id="valueRadio"/>
+		</mx:HBox>
+		<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<mx:ComboBox id="valueComboBox" fontSize="12">				
+			</mx:ComboBox>
+		</mx:Box>
+		<mx:Box width="100%" height="100%" fontSize="12" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<mx:DateField id="valueDateField">
+				
+			</mx:DateField>
+		</mx:Box>
+		<mx:Box width="100%" height="100%" fontSize="12" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<mx:NumericStepper id="valueNumericStepper">
+				
+			</mx:NumericStepper>
+		</mx:Box>
+		<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<!-- mouseUp="resizeUp(event)" mouseMove="resizeMove(event)"-->
+			<mx:TextArea id="textEntityInput" text="{this.formEntityModelEditPartViewer.formEntityModel.expression}" width="100%" height="100%" fontSize="12" fontFamily="Arial"/>
+			<!-- mouseUp="resizeUp(event)" mouseMove="resizeMove(event)"-->			
+		</mx:Box>		
+		<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<mx:List width="100%" height="100%">
+				
+			</mx:List>
+		</mx:Box>
+		<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+			<mx:DataGrid>
+				
+			</mx:DataGrid>
+		</mx:Box>
+	</mx:ViewStack>

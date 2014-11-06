@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * 
+ *  Package: 		com.maninsoft.smart.formeditor.view.property
+ *  Class: 			FormGridItemPropEditor
+ * 					extends TabNavigator 
+ * 					implements IFormPropertyEditor
+ *  Author:			Maninsoft, Inc.
+ *  Description:	Form Editor에서  Form에서 선택된 FormGridItem의 property값들을 편집하는 화면 
+ * 				
+ *  History:		Created by Maninsoft, Inc.
+ * 					2010.2.26 Modified by Y.S. Jung for SWV20003: 폼에디터에 이미지를 보여주는 항목 추가
+ * 
+ *  Copyright (C) 2007-2010 Maninsoft, Inc. All Rights Reserved.
+ *  
+-->
+<mx:TabNavigator implements="com.maninsoft.smart.formeditor.property.IFormPropertyEditor" 
+	width="100%" height="100%" fontSize="9" styleName="formFieldPropEditor"
+	creationComplete="{refreshVisual()}" creationPolicy="all" 
+	paddingTop="2" paddingBottom="2" tabStyleName="propTitle" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:detail="com.maninsoft.smart.formeditor.refactor.view.property.detail.*" 
+	xmlns:controls="com.maninsoft.smart.common.controls.*" 
+	xmlns:property="com.maninsoft.smart.formeditor.view.property.*" 
+	xmlns:util="com.maninsoft.smart.formeditor.view.util.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.util.FormEditorAssets;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.formeditor.property.part.FormItemPropController;
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import com.maninsoft.smart.formeditor.property.part.FormCommonPropController;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormModelUtil;
+			import com.maninsoft.smart.formeditor.layout.grid.model.FormGridCell;
+			import flash.utils.describeType;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.code.CodeSelectWindow;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormItemCommandUtil;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import com.maninsoft.smart.formeditor.model.format.FormatType;
+			import com.maninsoft.smart.formeditor.model.format.FormatTypes;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.collections.ArrayCollection;
+			
+			private var _editDomain:FormEditDomain;
+			private var _selectModel:ISelectableModel;
+			
+			public function get editDomain():FormEditDomain {
+				return this._editDomain;
+			}
+			public function set editDomain(editDomain:FormEditDomain):void {
+				this._editDomain = editDomain;
+			}
+			public function get selectModel():ISelectableModel {
+				return this._selectModel;
+			}
+			public function set selectModel(selectModel:ISelectableModel):void {
+				this._selectModel = selectModel;
+				
+				this.formGridItem = this._selectModel as FormGridCell;
+				if (formGridItem.fieldId != null && formGridItem.fieldId != '') {
+					var formEntity:FormEntity = FormModelUtil.getFormFieldById(formGridItem.fieldId, this.formGridItem.gridRow.gridLayout.container.root);
+			   		if (formEntity != null) {
+			   			this.formItem = formEntity;
+			   		} else {
+			   			this.formItem = null;
+			   		}
+				}else{
+			   		this.formItem = null;
+			   	}
+			}
+			
+			private var formGridItem:FormGridCell;
+			private var formItem:FormEntity;
+			private var _formCommonPropController:FormCommonPropController;
+			private var _formItemPropController:FormItemPropController;
+			
+			public function get formCommonPropController():FormCommonPropController {
+				return this._formCommonPropController;
+			}
+			public function set formCommonPropController(formCommonPropController:FormCommonPropController):void {
+				this._formCommonPropController = formCommonPropController;
+			}
+			public function get formItemPropController():FormItemPropController {
+				return this._formItemPropController;
+			}
+			public function set formItemPropController(formItemPropController:FormItemPropController):void {
+				this._formItemPropController = formItemPropController;
+			}
+			
+			public function registerViewer():void{
+				if(formCommonPropController == null){
+					this.formCommonPropController = new FormCommonPropController();
+					this.formCommonPropController.editDomain = this.editDomain;
+				}
+				this.formCommonPropController.formView = this;
+				this.formCommonPropController.selectModel = this.formGridItem;
+				
+				if(formItemPropController == null){
+					this.formItemPropController = new FormItemPropController();
+					this.formItemPropController.editDomain = this.editDomain;
+				}
+				this.formItemPropController.formView = this;
+				this.formItemPropController.formEntityModel = this.formItem;
+				
+			}
+			
+			/***************************화면*****************************/
+			public function refreshVisual():void {
+				if (this.formGridItem != null && this.initialized) {
+					this.registerViewer();
+					
+					if (this.formItem != null) {
+						this.selectedIndex = 0;
+						
+						if (this.formItem != null && this.initialized) {
+							this.registerViewer();
+							
+							this.formatTypeArray = FormatTypes.getEnableFormatTypeArray(this.formItem);
+							this.formatComboBox.dataProvider = this.formatTypeArray;
+							
+							this.nameInput.text = this.formItem.name;
+							this.textAlignComboBox.selectItem(this.formItem.textAlign);
+							this.hiddenUseCheck.selected = this.formItem.hidden;
+							this.readOnlyUseCheck.selected = this.formItem.readOnly;
+							this.requiredUseCheck.selected = this.formItem.required;
+							this.fitWidthCheck.selected = this.formItem.fitWidth;
+							/**
+							 * SWV20003: 폼에디터에 이미지를 보여주는 항목 추가
+							 * 이미지박스에만 필요한 속성인 화면에맞게 이미지를 늘리기에대한 변수를 추가합니다.
+							 * 2010.2.26 Added by Y.S. Jung
+							 */
+							this.fitToScreenCheck.selected = this.formItem.fitToScreen;
+							this.verticalScrollPolicyCheck.selected = SmartUtil.toBoolean(this.formItem.verticalScrollPolicy);
+							
+							this.formatComboBox.selectedIndex = getFormatIndex(this.formItem.format.type); 
+							refreshFormatType(FormatType(formatComboBox.selectedItem));
+							
+							this.radioButtonList.staticItemList = this.formItem.format.staticListExamples;
+							
+							this.comboBoxList.staticItemList = this.formItem.format.staticListExamples;
+							
+							//dataGrid
+							this.dataGridFormatList.setChildren = this.formItem.children;
+							this.dataGridFormatList.formDocument = this.formItem.root;
+							this.dataGridFormatList.formParent = this.formItem;
+							
+							formRefProperty.field = this.formItem;
+							formRefProperty.refresh();
+							
+							this.currencyCodeComboBox.selectedItem = this.formItem.format.currencyCode;
+						}
+						
+					} else {
+						this.selectedIndex = NaN;
+					}
+				}
+			}
+			
+			/********************************표시형식***************************************/
+			
+			private var formatTypeArray:Array;
+			
+			private function setFormatType(event:Event = null):void {
+				var formatType:FormatType = FormatType(formatComboBox.selectedItem);
+				var type:String = formatType.type;
+				
+				if (type == "dataGrid") {
+					formItem.verticalScrollPolicy = "true";
+				} else {
+					formItem.fitWidth = false;
+					formItem.verticalScrollPolicy = "false";
+				}
+					
+				FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, type, 'type');
+				
+				refreshFormatType(formatType);
+			}
+			private function refreshFormatType(formatType:FormatType):void {
+				var type:String = formatType.type;
+				
+				if (type == "dataGrid") {
+					this.requiredUseCheck.selected = false;
+					this.requiredUseCheck.enabled = false;
+					this.fitWidthScope.visible = true;
+					this.verticalScrollPolicyScope.visible = true;
+					if (formItem.fitWidth) {
+						var children:ArrayCollection = formItem.children;
+						if (!SmartUtil.isEmpty(children)) {
+							for each (var child:FormEntity in children) {
+								// TODO
+							}
+						}
+					}
+				} else {
+					this.requiredUseCheck.enabled = true;
+					this.fitWidthScope.visible = false;
+					this.verticalScrollPolicyScope.visible = false;
+				}
+				
+				/**
+				 * SWV20003: 폼에디터에 이미지를 보여주는 항목 추가
+				 * 이미지박스에만 필요한 속성인 화면에맞게 이미지를 늘리기에대한 변수를 추가합니다.
+				 * 2010.2.26 Added by Y.S. Jung
+				 */
+				if(type == "imageBox")
+					this.fitToScreen.visible = true;
+				else
+					this.fitToScreen.visible = false;
+				
+				this.formatPropScope.selectedIndex = getFormatDetailIndex(type);
+			}
+			
+			private function addUniqueItemToList(list:ArrayCollection, item:String):Boolean{
+				if(list.contains(item))
+					return false;
+				list.addItem(item);
+				return true;
+			}
+			
+			private function getFormatDetailIndex(formatType:String):int{
+				switch(formatType){
+						case FormatTypes.textInput.type:
+							return 0;
+						case FormatTypes.radioButton.type:
+							return 1;
+						case FormatTypes.comboBox.type:
+							return 2;	
+						case FormatTypes.dateChooser.type:
+							return 3;		
+						case FormatTypes.numericStepper.type:
+							return 4;	
+						case FormatTypes.dataGrid.type:
+							return 5;	
+						case FormatTypes.refFormField.type:
+							return 6;
+						case FormatTypes.currencyInput.type:
+							return 7;
+						default:
+							return 8;
+				}
+			}
+
+			private function getFormatIndex(formatType:String):int{
+				for(var i:int = 0 ; i < formatTypeArray.length ; i++){
+					if(FormatType(formatTypeArray[i]).type == formatType)
+						return i;
+				}
+				return 0;
+			}
+			
+			private var codeSelWin:CodeSelectWindow;
+			
+			private function codePopup():void{
+				codeSelWin = CodeSelectWindow(PopUpManager.createPopUp(this, CodeSelectWindow));
+				PopUpManager.centerPopUp(codeSelWin);
+				
+				codeSelWin.addEventListener(Event.COMPLETE, codeSelComplete);
+				
+				codeSelWin.connUserId = FormEditorConfig.userId;
+				codeSelWin.baseUrl = FormEditorConfig.baseUrl;
+			}
+			
+			private function codeSelComplete(e:Event):void{
+				var format:FormFormatInfo = this.formItem.format.clone();
+				format["refCodeCategoryId"] = codeSelWin.categoryId;
+				format["refCodeCategoryName"] = codeSelWin.categoryName;
+				
+				var command:Command = FormItemCommandUtil.updateFormItemProperty(this.formItem, format, FormEntity.PROP_FORMAT);
+
+				editDomain.getCommandStack().execute(command);
+			}
+		]]>
+	</mx:Script>
+	<mx:Style>
+		.textInputStyle{
+			backgroundAlpha: 0;
+		}
+		.normalLabel {
+			fontFamily: MALGUN;
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+	</mx:Style>
+	
+	<mx:HBox icon="{FormEditorAssets.propertyIcon}" label="{resourceManager.getString('FormEditorETC', 'itemPropertiesText')}" paddingLeft="5" paddingTop="5" width="100%" height="100%" verticalScrollPolicy="off">
+		
+		<mx:VBox width="50%" styleName="propForm" verticalGap="3">
+			<mx:HBox width="100%" verticalAlign="middle">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'itemNameText')}" width="80"/>
+				<controls:KoreanTextInput id="nameInput" styleName="propTextInputEdit" width="100%" height="22"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, nameInput.text, FormEntity.PROP_NAME)}"/>
+			</mx:HBox>
+			<!-- height와 visible 속성을 지우면 정렬 정의 기능이 동작한다. -->
+			<mx:HBox width="100%" verticalAlign="middle" height="0" visible="false">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'alignText')}" width="80"/>
+				<util:AlignComboBox id="textAlignComboBox" width="100%"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, textAlignComboBox.selectedItem.value, FormEntity.PROP_TEXTALIGN)}"/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:HBox width="50%">
+					<mx:CheckBox id="hiddenUseCheck" styleName="propCheckBoxEdit"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, hiddenUseCheck.selected, FormEntity.PROP_HIDDEN_USE)}"/>
+					<mx:Text text="{resourceManager.getString('FormEditorETC', 'hiddenItemText')}"/>
+				</mx:HBox>
+				<mx:HBox width="50%">
+					<mx:CheckBox id="requiredUseCheck" styleName="propCheckBoxEdit" 
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, requiredUseCheck.selected, FormEntity.PROP_REQUIRED_USE)}"/>
+					<mx:Text text="{resourceManager.getString('FormEditorETC', 'requiredItemText')}"/>
+				</mx:HBox>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:HBox width="50%">
+					<mx:CheckBox id="readOnlyUseCheck" styleName="propCheckBoxEdit"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, readOnlyUseCheck.selected, FormEntity.PROP_READONLY_USE)}"/>
+					<mx:Text text="{resourceManager.getString('FormEditorETC', 'readOnlyItemText')}"/>
+				</mx:HBox>
+				<!--
+				 * SWV20003: 폼에디터에 이미지를 보여주는 항목 추가
+				 * 이미지박스에만 필요한 속성인 화면에맞게 이미지를 늘리기에대한 변수를 추가합니다.
+				 * 테이블 항목에 필요한 속성인 가로사이즈맟춤과 같은 위치에 보여주기 위해 하나의 캔버스에 같이 위치하여,
+			     * visible on/off하여 하나만 보여줌.
+				 * 2010.2.26 Added by Y.S. Jung
+				-->
+				<mx:Canvas width="50%">
+					<mx:HBox id="fitWidthScope" width="100%">
+						<mx:CheckBox id="fitWidthCheck" styleName="propCheckBoxEdit" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, fitWidthCheck.selected, FormEntity.PROP_FITWIDTH)}"/>
+						<mx:Text text="{resourceManager.getString('FormEditorETC', 'fitToWidthText')}"/>
+					</mx:HBox>
+					<mx:HBox id="fitToScreen" width="100%">
+						<mx:CheckBox id="fitToScreenCheck" styleName="propCheckBoxEdit" 
+							change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, fitToScreenCheck.selected, FormEntity.PROP_FIT_TO_SCREEN)}"/>
+						<mx:Text text="{resourceManager.getString('FormEditorETC', 'fitToScreenText')}"/>
+					</mx:HBox>
+				</mx:Canvas>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:HBox id="verticalScrollPolicyScope" width="50%">
+					<mx:CheckBox id="verticalScrollPolicyCheck" styleName="propCheckBoxEdit" 
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, verticalScrollPolicyCheck.selected, FormEntity.PROP_VERTICALSCROLLPOLICY)}"/>
+					<mx:Text text="{resourceManager.getString('FormEditorETC', 'verticalScrollText')}"/>
+				</mx:HBox>
+			</mx:HBox>
+		</mx:VBox>
+		
+		<mx:VBox width="50%" height="100%" styleName="propForm" verticalGap="3">
+			<mx:HBox width="100%">
+				<mx:Label text="{resourceManager.getString('FormEditorETC', 'formatTypeText')}" width="80"/>
+				<mx:ComboBox id="formatComboBox" width="100%" change="setFormatType(event)"/>
+			</mx:HBox>
+			
+			<mx:ViewStack id="formatPropScope" width="100%" height="100%">
+				
+				<mx:Box id="textFormatPropScope" width="100%"/>
+				
+				<mx:HBox id="radioButtonFormatPropScope" width="100%">
+					<mx:Label text="{resourceManager.getString('FormEditorETC', 'optionText')}" width="80"/>
+					<detail:FormatStaticListEditor id="radioButtonList"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, radioButtonList.staticList, 'staticListExamples')}"/>
+				</mx:HBox>
+				
+				<mx:HBox id="comboBoxFormatPropScope" width="100%">
+					<mx:Label text="{resourceManager.getString('FormEditorETC', 'optionText')}" width="80"/>
+					<detail:FormatStaticListEditor id="comboBoxList" width="100%" height="100%"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, comboBoxList.staticList, 'staticListExamples')}"/>	
+				</mx:HBox>
+				
+				<mx:Box id="dateFormatPropScope" width="100%"/>
+				
+				<mx:Box id="numberFormatPropScope" width="100%"/>
+				
+				<mx:HBox id="dataGridFormatPropScope">
+					<mx:Label text="{resourceManager.getString('FormEditorETC', 'itemText')}" width="80"/>
+					<detail:FormatDataGridEditor id="dataGridFormatList" width="100%"
+						change="{FormItemCommandUtil.executeUpdateFormItemProperty(this.editDomain, this.formItem, dataGridFormatList.children, 'children')}"/>
+				</mx:HBox>
+				
+				<mx:Box id="formRefFormatPropScope" width="100%">
+					<property:FormRefPropertyView id="formRefProperty"/>
+				</mx:Box>
+				
+				<mx:HBox id="currencyFormatPropScope" width="100%">
+					<mx:Label text="{resourceManager.getString('FormEditorETC', 'currencyMarkText')}" width="80"/>
+					<util:CurrencyComboBox id="currencyCodeComboBox" styleName="propComboEdit" fontFamily="Arial"
+						change="{FormItemCommandUtil.executeUpdateFormItemFormat(this.editDomain, this.formItem, currencyCodeComboBox.selectedItem, 'currencyCode')}"/>
+				</mx:HBox>
+				
+				<mx:Box id="blankFormatPropScope" width="100%"/>
+				
+			</mx:ViewStack>
+		</mx:VBox>
+		
+	</mx:HBox>
+</mx:TabNavigator>

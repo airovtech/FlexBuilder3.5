@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox 
+	width="100%" horizontalGap="2" verticalAlign="middle" horizontalScrollPolicy="off"
+	xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.FormEditorBase;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			import com.maninsoft.smart.formeditor.util.FormEditorPopup;
+			import com.maninsoft.smart.formeditor.util.FormEditorInvoker;
+			import com.maninsoft.smart.formeditor.util.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.model.FormLink;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.model.FormLinks;
+			
+			private var _form:FormDocument;
+			[Bindable]
+			private var options:ArrayCollection = new ArrayCollection();
+			public var callback:Function;
+			
+			public function get form():FormDocument {
+				return _form;
+			}
+			public function set form(form:FormDocument):void {
+				this._form = form;
+				refresh();
+			}
+			private function refresh():void {
+				options.removeAll();
+				options.addItem({label: "", value: null});
+				if (form != null && form.formLinks != null && !SmartUtil.isEmpty(form.formLinks.formLinks)) {
+					for each (var formLink:FormLink in form.formLinks.formLinks)
+						options.addItem({label: formLink.name, value: formLink.id});
+				}
+			}
+			
+			private function popup(event:MouseEvent):void {
+				var selectedItem:Object = comboBox.selectedItem;
+				var formLink:FormLink = null;
+				if (selectedItem != null && !SmartUtil.isEmpty(selectedItem.value) && 
+					form != null && form.formLinks != null && !SmartUtil.isEmpty(form.formLinks.formLinks)) {
+					var id:String = selectedItem.value as String;
+					for each (var link:FormLink in form.formLinks.formLinks) {
+						if (link.id != id)
+							continue;
+						formLink = link;
+						break;
+					}
+				}
+				FormEditorPopup.popupFormLinkDialog(FormEditorBase.getInstance(), new Point(parentDocument.x, parentDocument.y), form, formLink, popupCallback);
+			}
+			private function popupCallback(event:FormEditorEvent):void {
+				var formLink:FormLink = event.model as FormLink;
+				FormEditorInvoker.setFormLink(form, formLink);
+				refresh();
+				comboBox.selectItem(formLink.id);
+				if (callback != null)
+					callback(event);
+			}
+			
+			public function selectItem(value:String):void {
+				comboBox.selectItem(value);
+			}
+			public function get selectedItem():Object {
+				return comboBox.selectedItem;
+			}
+			
+			public function get text():String {
+				return comboBox.text;
+			}
+			public function set text(text:String):void {
+				comboBox.text = text;
+			}
+		]]>
+	</mx:Script>
+	<controls:SimpleComboBox id="comboBox" dataProvider="{options}"/>
+	<mx:LinkButton icon="{FormEditorAssets.formLinkIcon}" toolTip="{resourceManager.getString('FormEditorETC', 'otherWorkConnectANEText')}" click="popup(event)" paddingLeft="0" paddingTop="0" paddingRight="0" paddingBottom="0"/>
+</mx:HBox>

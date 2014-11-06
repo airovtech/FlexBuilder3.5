@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:smart="com.maninsoft.smart.workbench.ganttchart.*"
+	creationComplete="doCreationComplete(event);" verticalScrollPolicy="off" horizontalScrollPolicy="off" backgroundColor="#ffffff">
+	<mx:Style source="/assets/css/workbenchEditor.css"/>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.ganttchart.server.CalendarInfo;
+			import com.maninsoft.smart.workbench.common.event.SelectActivityCallbackEvent;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.workbench.common.event.DateCallbackEvent;
+			import com.maninsoft.smart.workbench.process.DiagramViewer;
+			import com.maninsoft.smart.workbench.common.event.LoadCallbackEvent;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+	 		import com.maninsoft.smart.workbench.common.util.LocaleUtil;
+	 		
+			private function doCreationComplete(event: Event): void {
+
+/*
+           		Application.application.parameters.serviceUrl = "http://dev.smartworks.net/";
+           		Application.application.parameters.defaultLanguage = "ENG";
+           		Application.application.parameters.compId = "Maninsoft";
+           		Application.application.parameters.userId = "ysjung@maninsoft.co.kr";
+           		Application.application.parameters.processId = "prc_0255696a21474d738bc83ee82b570be5";
+           		Application.application.parameters.version = "1";
+            	Application.application.parameters.contentWidth = "654.0"
+*/
+				for each(var locale:Object in LocaleUtil.locales){
+					if(locale.lang == Application.application.parameters.defaultLanguage){
+						LocaleUtil.locale = locale.loc;
+						resourceManager.localeChain = [LocaleUtil.locale];
+						break;
+					}
+				}
+				diagramViewer.addEventListener(LoadCallbackEvent.LOAD_CALLBACK, loadCallbackHandler);
+				diagramViewer.addEventListener(DateCallbackEvent.DATE_CALLBACK, dateCallbackHandler);
+				diagramViewer.addEventListener(SelectActivityCallbackEvent.SELECT_ACTIVITY_CALLBACK, selectActivityCallbackHandler);
+				diagramViewer.serviceUrl = Application.application.parameters.serviceUrl + "smartworksV3/services/builder/builderService.jsp";
+				diagramViewer.builderServiceUrl = diagramViewer.serviceUrl;
+				diagramViewer.compId = Application.application.parameters.compId;
+				diagramViewer.userId = Application.application.parameters.userId;
+				diagramViewer.processId = Application.application.parameters.processId; 
+				diagramViewer.version = Application.application.parameters.version;
+				diagramViewer.percentWidth = 100;
+				diagramViewer.percentHeight = 100;
+				WorkbenchConfig.readOnly = true;
+				CalendarInfo.locale = LocaleUtil.locale;			
+				diagramViewer.load();
+
+				ExternalInterface.addCallback("moveGanttPage", moveGanttPage);
+				ExternalInterface.addCallback("changeGanttViewScope", changeGanttViewScope);
+			}
+
+			public function moveGanttPage(direction:String):void{
+				diagramViewer.moveGanttPage(direction);
+			}
+			
+			public function changeGanttViewScope(viewScope:String):void{
+				diagramViewer.changeGanttViewScope(viewScope);
+			}
+			
+			public function loadCallbackHandler(event:LoadCallbackEvent):void{
+				/**
+			 	 * 	에디터의 세로사이즈를 가변으로 하기 위하여 에디터가 로드나 리로드 되고 나면 화면의 세로사이즈롤 호출한 웹에 전달하여,
+			 	 * 	웹에서 화면 세로사이즈에 맞게 조정하도록 한다.
+			 	 */
+				this.height = event.contentHeight;
+				WorkbenchConfig.contentHeight = event.contentHeight;
+				ExternalInterface.call(LoadCallbackEvent.LOAD_CALLBACK, "GanttViewer", WorkbenchConfig.contentHeight);
+			}	
+
+			public function dateCallbackHandler(event: DateCallbackEvent):void{
+				/**
+				 * 	간트차트에서, 차트의 시작시간과 끝시간이 변경되면 웹화면에 전달하여 표시하게 한다.
+				 *  파라미터는 startDate, endDate 이다. 
+				 */
+				ExternalInterface.call(DateCallbackEvent.DATE_CALLBACK, event.startDate, event.endDate);
+			}
+
+			public function selectActivityCallbackHandler(event: SelectActivityCallbackEvent):void{
+				/**
+			 	 * 	간트차트에서, 태스크를 선택하면 웹화면에 전달하여 해당 태스크의 상세화면을  표시하게 한다.
+				 *  파라미터는 taskId 이다. 
+			 	*/
+				ExternalInterface.call(SelectActivityCallbackEvent.SELECT_ACTIVITY_CALLBACK, event.taskId);
+			}			
+			
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [ResourceBundle("CommonETC")]
+        [ResourceBundle("WorkbenchMessages")]
+        [ResourceBundle("WorkbenchETC")]
+        [ResourceBundle("ProcessEditorMessages")]
+        [ResourceBundle("ProcessEditorETC")]
+        [ResourceBundle("FormEditorMessages")]
+        [ResourceBundle("FormEditorETC")]
+        [ResourceBundle("GanttChartMessages")]
+        [ResourceBundle("GanttChartETC")]
+    </mx:Metadata>
+
+	<smart:GanttViewer id="diagramViewer" verticalScrollPolicy="off" horizontalScrollPolicy="off"/>
+
+</mx:Application>

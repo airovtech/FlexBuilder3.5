@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties version="1">
+  <includeClasses>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.property.SubFlowViewPropertyEditor"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.components.ProblemHintRenderer"/>
+    <classEntry path="com.maninsoft.smart.modeler.editor.events.CreateNodeRequestEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.utils.XPDLDiagramUtils"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.components.ProblemFixUpRenderer"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.controller.TaskServiceController"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.view.TaskManualView"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.XPDLViewer"/>
+    <classEntry path="com.maninsoft.smart.modeler.editor.events.DiagramChangeEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.server.service.SaveDiagramService"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.server.service.LoadDiagramService"/>
+    <classEntry path="com.maninsoft.smart.modeler.model.events.LinkEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.model.events.NodeChangeEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.dialogs.SelectApprovalLineDialog"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.model.TaskService"/>
+    <classEntry path="com.maninsoft.smart.modeler.palette.PaletteItemEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.parser.XPDLWriter"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.property.SubFlowViewPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.modeler.toolTipMenu.event.ToolTipMenuEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.PackageNavigator"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.server.service.GetSystemServiceDefsService"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.dialogs.SelectUserDialog"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.tool.LaneSelectionEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.toolTipMenu.PackageToolTipMenu"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.view.TaskServiceView"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.XPDLMonitor"/>
+    <classEntry path="com.maninsoft.smart.modeler.toolTipMenu.ProcessToolTipMenu"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.syntax.SyntaxChecker"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.navigator.DiagramTreeLane"/>
+    <classEntry path="com.maninsoft.smart.modeler.assets.smartpdeCSS"/>
+    <classEntry path="com.maninsoft.smart.modeler.editor.events.SelectionEvent"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.dialogs.SelectMoveFormDialog"/>
+    <classEntry path="com.maninsoft.smart.modeler.xpdl.controller.TaskManualController"/>
+  </includeClasses>
+  <includeResources>
+    <resourceEntry destPath="assets/icon/diagramNavigator/task.png" sourcePath="assets/icon/diagramNavigator/task.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/start.png" sourcePath="assets/icon/diagramNavigator/start.png"/>
+    <resourceEntry destPath="assets/css/smartpde.css" sourcePath="assets/css/smartpde.css"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/text.gif" sourcePath="assets/icon/xpdleditor/text.gif"/>
+    <resourceEntry destPath="assets/icon/dialog/icon_form.png" sourcePath="assets/icon/dialog/icon_form.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/unitWork.png" sourcePath="assets/icon/diagramNavigator/unitWork.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/process.png" sourcePath="assets/icon/diagramNavigator/process.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/btn_wdcopy.png" sourcePath="assets/icon/xpdleditor/btn_wdcopy.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/btn_wdadd.png" sourcePath="assets/icon/xpdleditor/btn_wdadd.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/btn_wdchange.png" sourcePath="assets/icon/xpdleditor/btn_wdchange.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/btn_wddel.png" sourcePath="assets/icon/xpdleditor/btn_wddel.png"/>
+    <resourceEntry destPath="assets/cursor/handGridTool/hand_grip.png" sourcePath="assets/cursor/handGridTool/hand_grip.png"/>
+    <resourceEntry destPath="assets/cursor/handGridTool/hand_open.png" sourcePath="assets/cursor/handGridTool/hand_open.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/ic_warning.png" sourcePath="assets/icon/xpdleditor/ic_warning.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/node.png" sourcePath="assets/icon/diagramNavigator/node.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/lane.png" sourcePath="assets/icon/diagramNavigator/lane.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/xor.png" sourcePath="assets/icon/diagramNavigator/xor.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/package.png" sourcePath="assets/icon/diagramNavigator/package.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/string.gif" sourcePath="assets/icon/xpdleditor/string.gif"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/boolean.gif" sourcePath="assets/icon/xpdleditor/boolean.gif"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/date.gif" sourcePath="assets/icon/xpdleditor/date.gif"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/number.gif" sourcePath="assets/icon/xpdleditor/number.gif"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/btn_wdm.png" sourcePath="assets/icon/xpdleditor/btn_wdm.png"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/and.png" sourcePath="assets/icon/diagramNavigator/and.png"/>
+    <resourceEntry destPath="assets/icon/xpdleditor/time.gif" sourcePath="assets/icon/xpdleditor/time.gif"/>
+    <resourceEntry destPath="assets/icon/dialog/icon_user.gif" sourcePath="assets/icon/dialog/icon_user.gif"/>
+    <resourceEntry destPath="assets/icon/diagramNavigator/dataobject.png" sourcePath="assets/icon/diagramNavigator/dataobject.png"/>
+  </includeResources>
+  <namespaceManifests/>
+</flexLibProperties>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	height="100%" width="100%" verticalGap="2" styleName="formTextInputLabel">
+	<mx:Style source="/assets/css/formEditor.css"/>
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.formeditor.refactor.event.FormPropertyEvent;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.collections.ArrayCollection;
+
+			private var _formParent:FormEntity;
+			private var _formDocument:FormDocument;
+
+			[Bindable]
+			public var children:ArrayCollection = new ArrayCollection();
+						
+			public function set setChildren(_childItemList:ArrayCollection):void{
+				children = new ArrayCollection();
+				for each(var childItem:FormEntity in _childItemList){
+					children.addItem(childItem);
+				}
+			}
+			
+			public function set formParent(formParent:FormEntity): void {
+				this._formParent = formParent;
+			}
+			
+			public function set formDocument(formDocument:FormDocument): void {
+				this._formDocument = formDocument;
+			}
+
+			private function isExistChild(childName:String):Boolean{
+				
+				for each(var child:FormEntity in children){
+					if(child.name == childName)
+						return true;
+				}
+				
+				return false;
+			}
+			
+			private function getChildItemIndex(childName:String):int{
+				
+				for(var i:int; i<children.length; i++){
+					var child:FormEntity = FormEntity(children.getItemAt(i));
+					if(child.name == childName)
+						return i;
+				}
+				
+				return -1;
+			}
+
+			private function addUniqueItemToList(childName:String):Boolean{
+				if(isExistChild(childName))
+					return false;
+					
+				if(childName == "")
+					return false;	
+				
+				var child:FormEntity;
+				
+				child = new FormEntity(_formDocument);
+	           	child.name = childName;
+            	child.root = _formDocument;
+            	child.parent = _formParent;
+
+				children.addItem(child);
+				dispatchEvent(new Event(Event.CHANGE));
+				
+				childChoiceItem.text = "";
+				
+				return true;
+			}
+			
+			private function delUniqueItemToList(item:FormEntity):Boolean{
+				if(children.contains(item)){
+					children.removeItemAt(children.getItemIndex(item));
+					dispatchEvent(new Event(Event.CHANGE));
+					return true;
+				}
+				return false;
+			}
+
+
+			private function changeIndex(item:FormEntity, index:int):Boolean{
+				
+				if (children.length == index)
+					return false;
+				
+				if(children.contains(item)){
+					children.removeItemAt(children.getItemIndex(item));
+					children.addItemAt(item, index);
+					
+					dispatchEvent(new Event(Event.CHANGE));
+					
+					selectRow();
+					
+					return true;
+				}
+				return false;
+			}
+			
+			private function selectRow():void {
+				childChoiceList.validateNow();
+				childChoiceList.selectedIndex = getIndexofSelectedObj(selectedObj);
+			
+				selectedRowCount = getIndexofSelectedObj(selectedObj);
+			}
+			
+			private function getIndexofSelectedObj(obj:Object):int {
+				return childChoiceList.dataProvider.getItemIndex(obj);
+			}
+			
+			private var selectedObj:Object;
+			private var selectedRowCount:int;
+			
+			private function setSelectedRowCount(event:ListEvent):void {
+				selectedRowCount = event.rowIndex;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox id="addDelBox" width="100%" horizontalGap="2">
+		<mx:TextInput text="" width="{addDelBox.width - addBtn.width - 5}" id="childChoiceItem" height="20"/>
+		<mx:Button id="addBtn" label="추가" click="{addUniqueItemToList(childChoiceItem.text)}" height="20"/>	
+	</mx:HBox>
+	<mx:HBox id="childChoiceListBox" width="100%" horizontalGap="2">
+		<mx:List id="childChoiceList" verticalAlign="middle" width="{childChoiceListBox.width - childChoiceListBoxBtn.width - 5}" height="65"
+			dataProvider="{children}" labelField="name"
+			change="selectedObj=childChoiceList.selectedItem;setSelectedRowCount(event);"
+			/>	
+			<!--dataProvider="{children}" labelField="name" click="{changeSelected()}"/>-->	
+		<mx:Box id="childChoiceListBoxBtn" verticalAlign="middle" width="{addBtn.width}" height="70">
+			<mx:VBox width="15" horizontalAlign="right" verticalGap="0">
+				<mx:Button click="{changeIndex(childChoiceList.selectedItem as FormEntity, 0)}"
+					styleName="staticListAUp" width="13" height="13"
+					enabled="{childChoiceList.selectedItem != null}"/>	
+<!--				<mx:Button click="{changeIndex(childChoiceList.selectedItem as FormEntity, (childChoiceList.selectedIndex == 0?0:(childChoiceList.selectedIndex -1)))}"-->
+				<mx:Button click="{changeIndex(childChoiceList.selectedItem as FormEntity, (selectedRowCount == 0?0:(selectedRowCount -1)))}"
+					styleName="staticListUp" width="13" height="13"
+					enabled="{childChoiceList.selectedItem != null}"/>	
+				<mx:Button click="{delUniqueItemToList(childChoiceList.selectedItem as FormEntity)}"
+					styleName="staticListRemove" width="13" height="13"
+					enabled="{childChoiceList.selectedItem != null}"/>	
+<!--				<mx:Button click="{changeIndex(childChoiceList.selectedItem as FormEntity, (children.length == (childChoiceList.selectedIndex + 1)?children.length:(childChoiceList.selectedIndex + 1)))}"-->
+				<mx:Button click="{changeIndex(childChoiceList.selectedItem as FormEntity, (children.length == (selectedRowCount + 1)?children.length:(selectedRowCount + 1)))}"
+					styleName="staticListDown" width="13" height="13"
+					enabled="{childChoiceList.selectedItem != null}"/>	
+				<mx:Button click="{changeIndex(childChoiceList.selectedItem as FormEntity, children.length - 1)}"
+					styleName="staticListADown" width="13" height="13"
+					enabled="{childChoiceList.selectedItem != null}"/>	
+			</mx:VBox>
+		</mx:Box>
+	</mx:HBox>
+</mx:VBox>

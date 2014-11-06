@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:view="com.maninsoft.smart.formeditor.refactor.view.*" xmlns:runTime="mxmlComponet.runTime.*"  
+	title="지시업무" showCloseButton="true" close="{cancel()}" fontSize="11" xmlns:controls="com.maninsoft.smart.common.controls.*"
+	titleStyleName="normalLabel" dropShadowEnabled="false"
+	 borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3" >
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import mx.controls.DateField;
+			import portalAs.Properties;
+			import mx.managers.PopUpManager;
+		
+			private var formId:String;
+			private var version:int;
+			
+			private var relatedWorkitemId:String;
+			
+			public function loadAssignForm(formId:String, version:int, relatedWorkitemId:String):void{
+				
+				this.formId = formId;
+				this.version = version;
+				this.relatedWorkitemId = relatedWorkitemId;
+				
+				runtimeForm.loadRecord(this.formId, this.version);
+			}
+			
+			private var assignExecuteWin:AssignExeWin;
+			
+			private function completeExecute():void{
+				assignExecuteWin = AssignExeWin(PopUpManager.createPopUp(this, AssignExeWin));
+				PopUpManager.centerPopUp(assignExecuteWin);
+				
+				assignExecuteWin.formDataXml = this.runtimeForm.getDataXML();
+				assignExecuteWin.addEventListener(Event.COMPLETE, completeExecuteResult);
+			}
+			
+			private function completeExecuteResult(e:Event):void{
+				var durDataStr:String = "";
+				
+				try{
+					durDataStr = DateField.dateToString(assignExecuteWin.nextDuration.selectedDate, "YYYY-MM-DD");
+				}catch(e:Error){
+				}
+//				runtimeForm.addEventListener(WorklistServiceEvent.SUCESS_ASSIGN, completeResult);
+//				runtimeForm.addEventListener(WorklistServiceEvent.FAIL_EXECUTE, completeFail);
+				runtimeForm.assignForm(assignExecuteWin.titleField.text, relatedWorkitemId, 
+					assignExecuteWin.userField.userId, durDataStr);
+			}
+			
+			private function completeResult(e:Event):void{
+				complete();
+			}
+			
+			private function completeFail(e:Event):void{
+				MsgUtil.showPopupMsg(this, "작업할당에 실패했습니다!", "작업할당 결과");
+			}
+			
+			private function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();
+			}
+			
+			private function cancel():void{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox id="stageBox" width="100%" height="100%" verticalGap="3">
+		<view:RuntimeForm id="runtimeForm" width="100%" height="{this.stageBox.height - 30}" basePath="{Properties.basePath}" userId="{Properties.userId}" 
+			sucessWorkitemAssign="{completeResult(event)}" failWorkitemExecute="{completeFail(event)}" horizontalScrollPolicy="off" verticalScrollPolicy="off">		
+		</view:RuntimeForm>
+		<mx:Canvas width="100%" height="27" backgroundColor="#FFFFFF">
+			<controls:GradientBox width="100%" height="28" cornerRadius="0" verticalAlign="middle" gradientFrom="#CCCCCC" gradientTo="#999999">
+				<mx:HBox width="100%" height="20" horizontalGap="0" verticalAlign="middle"
+					>
+					<mx:HBox width="50%"  horizontalAlign="left" verticalAlign="middle" horizontalGap="1" id="hb1" paddingLeft="3">
+					</mx:HBox>
+					<mx:HBox width="50%" horizontalAlign="right"  verticalAlign="middle" horizontalGap="3" id="hb2" paddingRight="3">
+						<mx:Button id="btn5" label="지시"  click="{completeExecute()}" fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:Button id="btn6" label="취소"  click="{cancel()}" fontSize="11" styleName="normalLabel" height="20"/>
+					</mx:HBox>
+				</mx:HBox>
+			</controls:GradientBox>
+		</mx:Canvas>
+	</mx:VBox>	
+	<mx:TextInput width="0" height="0" id="entruster" visible="false"/>
+</mx:TitleWindow>

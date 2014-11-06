@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SmartChart xmlns="mxmlComponet.gadget.chart.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:axis="mxmlComponet.home.chartInfo.axis.*" borderColor="#ffffff">
+	<mx:Script>
+		<![CDATA[
+			import mx.graphics.Stroke;
+			import mx.events.ListEvent;
+			import mx.controls.ComboBox;
+			import mx.charts.series.PieSeries;
+			import mx.charts.HitData;
+			import mx.charts.series.items.PieSeriesItem;
+			import mx.graphics.LinearGradient;
+			import mx.collections.XMLListCollection;
+			import mxmlComponet.gadget.ChartGadget2;
+			import mx.controls.Alert;
+			
+			private var repeatDelay:int = 25;
+			private var repeatCount:int = 40;
+			private var repeat:int = 0;
+			override public function set chartXml(xml:XML):void{
+								
+				if(xml.@dimension != 2 || xml==null){
+					this.chartViewType=null;
+					return;
+				}
+				_chartXml = xml;
+				ChartXmlUtil.xyMakeTitle(_chartXml, grouping.label, valueInfo.label);
+				ChartXmlUtil.unitTitle(_chartXml, unitInfo);
+				var nullTransXml:XML= new XML(tranceXml);
+				ChartXmlUtil.makeChartXml(chartType, _chartXml, tranceXml);
+				if(tranceXml == nullTransXml){
+					this.chartViewType=null;
+					return;					
+				}
+				piechart.dataProvider = new XMLListCollection(tranceXml.res);
+//				piechart.scaleX = 0;
+//				piechart.scaleY = 0;
+//				var timerSlide: Timer = new Timer(repeatDelay, repeatCount-1);
+//				timerSlide.addEventListener(TimerEvent.TIMER, doTimerSlide);
+//				timerSlide.start();
+				piechart.dataTipFunction = function displayDataTipRightChart(e:HitData):String {
+					var pSI:PieSeriesItem = e.chartItem as PieSeriesItem;
+					var s:String; 
+						s = "<font size='11'>"+ pSI.percentValue.toFixed(2) + "%</font><br/>";
+					return s;};
+				
+				var seriesArray:Array = new Array;
+				var pie:PieSeries = new PieSeries;
+
+				for (var i:int = 0; i < 1; i++){
+					pie.field = "@value";
+					pie.labelFunction = function(data:Object, field:String, index:Number, percentValue:Number):String{
+						var temp:String= (" " + percentValue).substr(0,6);
+	            		return data.name + '\n'  + data.@value;
+					};
+
+					pie.setStyle("fontSize", 12);
+					pie.setStyle("labelPosition", "insideWithCallout");
+					pie.filters = new Array();
+					var st1:Stroke=new Stroke();
+					var st2:Stroke=new Stroke();
+					var st3:Stroke=new Stroke();
+					st1.weight=0;
+					st1.alpha=1.0;
+					st1.color = 0x4d4d4d;
+					st2.weight=0;
+					st2.alpha=0.50;
+					st2.color = 0xFFFFFF;
+					st3.weight=2;
+					st3.alpha=0.20;
+					st3.color = 0xFFFFFF;
+					pie.setStyle("calloutStroke", st1);
+					pie.setStyle("radialStroke", st2);
+					pie.setStyle("stroke", st3);			
+//				 	pie.setStyle("fills", getPieChartColor());
+					seriesArray.push(pie);
+				}
+
+				piechart.series = seriesArray;
+				matrixObj.xmlResult = xml;
+			}
+			
+			private function doTimerSlide(event: TimerEvent):void{
+				var scale:Number = ++repeat/repeatCount;
+				piechart.scaleX = scale;
+				piechart.scaleY = scale;
+				if(repeat+1==repeatCount){
+					piechart.scaleX = 1;
+					piechart.scaleY = 1;
+				}
+			}			
+
+/*
+			private function goToChartType(event:ListEvent):void{
+				if(ComboBox(event.target).selectedItem)
+					if(ComboBox(event.target).selectedItem != this.chartType)
+						ChartGadget2(parent).goToChart(ComboBox(event.target).selectedItem.data, this.chartXml);
+			}
+*/
+
+			override public function set chartViewType(viewType:String): void{
+				if(viewType == "CHART"){
+					chartBox.visible = true;
+					matrixBox.visible = false;
+					nullBox.visible = false;
+					chartBox.percentHeight = 95;
+					matrixBox.height = 0;
+					nullBox.height = 0;
+				}else if(viewType=="MATRIX"){
+					matrixBox.visible = true;
+					chartBox.visible = false;
+					nullBox.visible = false;
+					matrixBox.percentHeight = 95;
+					chartBox.height = 0;
+					nullBox.height = 0;
+				}else{
+					matrixBox.visible = false;
+					chartBox.visible = false;
+					nullBox.visible = true;
+					nullBox.percentHeight = 95;
+					matrixBox.height = 0;
+					chartBox.height = 0;					
+				}
+			}
+/*			
+			private function goChartAndMatrix(event:MouseEvent):void{
+				var objId:String = Button(event.target).id;
+				if(objId=="chartMove"){
+					chartBox.visible = true;
+					matrixBox.visible = false;
+					chartBox.percentHeight = 95;
+					matrixBox.height = 0;
+				}else if(objId=="matrixMove"){
+					matrixBox.visible = true;
+					chartBox.visible = false;
+					matrixBox.percentHeight = 95;
+					chartBox.height = 0;
+				}
+			}
+*/
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="2" verticalAlign="middle" borderColor="#ffffff">
+		<mx:HBox width="100%" height="0">
+			<mx:HBox width="50%" height="30">
+				<mx:Label id="unitInfo" width="50%"/>
+			</mx:HBox>
+			<mx:HBox width="50%" height="30" horizontalAlign="right">
+<!--
+				<mx:Button id="chartMove" toolTip="{resourceManager.getString('ChartGadgetETC', 'ChartViewTTip')}"  click="goChartAndMatrix(event);" styleName="columnBtn"/>
+				<mx:Button id="matrixMove" toolTip="{resourceManager.getString('ChartGadgetETC', 'MatrixViewTTip')}"  click="goChartAndMatrix(event);" styleName="gridBtn"/>
+				<mx:Spacer width="10"/>
+-->
+			</mx:HBox>
+		</mx:HBox>
+		<mx:VBox id="chartBox" width="100%" height="95%" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff">
+			<mx:HBox width="100%" height="100%" horizontalGap="2" horizontalAlign="center" verticalAlign="middle" borderColor="#ffffff">
+				<mx:VBox width="0" height="0" horizontalAlign="center" verticalAlign="middle" id="YBox" visible="false">
+					<axis:CustormLabel id="valueInfo" width="{YBox.height}" height="0" angle="270" widthAndHeightChange="true"  rotateble="true" />
+				</mx:VBox>					
+				<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" id="chartArea">
+			        <mx:PieChart id="piechart" styleName="" height="100%" width="100%"
+			            showDataTips="true"  innerRadius=".3" fontSize="18">
+			            <mx:filters>
+				           <mx:DropShadowFilter distance="3" color="0x666666" alpha=".8"/>
+				        </mx:filters>
+			        </mx:PieChart>
+		        </mx:VBox>			
+			</mx:HBox>	
+			<mx:HBox width="100%" height="30" horizontalAlign="center" verticalAlign="middle" id="XBox">
+				<axis:CustormLabel id="grouping" width="100%" height="20" rotateble="false" widthAndHeightChange="false"/>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox id="matrixBox" width="100%" height="0" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff"
+			 visible="false">
+			 <ChartTranceMatrix width="100%" height="100%" id="matrixObj"/>
+		</mx:VBox>
+		<mx:VBox id="nullBox" width="100%" height="0" borderStyle="solid" paddingTop="50" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff"
+			 visible="false">
+			 <mx:Label text="{resourceManager.getString('ChartGadgetETC', 'NoDataProvidedTTip')}" textAlign="center" width="100%" height="100%"/>
+		</mx:VBox>
+	</mx:VBox>
+</SmartChart>

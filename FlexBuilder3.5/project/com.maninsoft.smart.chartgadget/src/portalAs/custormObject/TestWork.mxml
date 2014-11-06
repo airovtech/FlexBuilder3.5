@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AccordionEmbedWork xmlns="portalAs.custormObject.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+		]]>
+	</mx:Script>
+	<mx:Form width="50%" height="50%">
+		<mx:FormItem label="이름">
+			<mx:TextInput text="{selXml.name}"/>
+		</mx:FormItem>
+		<mx:FormItem label="전화">
+			<mx:TextInput text="{selXml.phone}"/>
+		</mx:FormItem>
+		<mx:FormItem label="메일">
+			<mx:TextInput text="{selXml.email}"/>
+		</mx:FormItem>
+	</mx:Form>
+</AccordionEmbedWork>

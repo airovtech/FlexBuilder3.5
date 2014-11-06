@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="mxmlComponet.common.*" creationComplete="init()" backgroundColor="#FFFFFF" xmlns:page="com.maninsoft.smart.common.page.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import portalAs.event.DocumentEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.collections.XMLListCollection;
+			import portalAs.Properties;
+			
+			public var fileType:Array = [ {label:"", data:""}, 
+										  {label:"xls", data:"xls"}, {label:"ppt", data:"ppt"}, {label:"doc", data:"doc"},
+										  {label:"pdf", data:"pdf"}, {label:"html", data:"html"}, {label:"xml", data:"xml"},
+										  {label:"hwp", data:"hwp"}, {label:"jpg", data:"jpg"}, {label:"gif", data:"gif"},
+										  {label:"bmp", data:"bmp"}, {label:"png", data:"png"}, {label:"swf", data:"swf"} ];
+				
+			private function init():void{
+				searchDocumentList();
+			}
+									  
+			public function searchDocumentList():void{
+				getDocumentService.url = Properties.basePath + "smartserver/services/portal/documentService.jsp?method=searchDocument";
+				getDocumentService.send();
+			}
+			
+			private function getWorkListResult(event:ResultEvent):void {
+				documentListGrid.rowHeight = 22;
+				var searchCount:int;
+				var xmlResult:XML = XML(event.result);    
+				var idList:XMLListCollection = new XMLListCollection(xmlResult.Document.id);
+				searchCount = idList.length;
+				naviPg.totalCount = Number(String(xmlResult.@totalCount));
+				documentListGrid.height = Number(documentListGrid.headerHeight) + Number(documentListGrid.rowHeight)*searchCount;
+			}
+			
+			private function newDocument():void{
+				var eventObj:DocumentEvent = new DocumentEvent("documentItemDoubleClick");
+				eventObj.documentId = "";
+				dispatchEvent(eventObj);
+			}
+			
+			private function getSavePage():void{
+				var eventObj:DocumentEvent = new DocumentEvent("documentItemClick");
+				eventObj.documentId = documentListGrid.selectedItem.id;
+				dispatchEvent(eventObj);
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="documentItemClick", type="portalAs.event.DocumentEvent")]
+    </mx:Metadata>
+	<mx:HTTPService id="getDocumentService"  resultFormat="e4x" useProxy="false" result="getWorkListResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<pageCount>{naviPg.pageCount}</pageCount>
+			<recordCount>{naviPg.pageSize}</recordCount>
+			<title>{parTitle.text}</title>
+			<keyword>{parKeyword.text}</keyword>
+			<fileName>{parFileName.text}</fileName>
+			<description>{parDescription.text}</description>
+			<type>{parType.text}</type>
+			<writtenTimeFrom>{parWrittenTimeFrom.text}</writtenTimeFrom>
+			<writtenTimeTo>{parWrittenTimeTo.text}</writtenTimeTo>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:VBox width="100%" height="100%" verticalCenter="0" verticalGap="3">
+		<mx:Canvas width="100%" height="72" backgroundColor="#808080" horizontalScrollPolicy="off">
+			<mx:HBox width="100%" height="100%" horizontalGap="0">
+				<mx:Form width="45%" height="100%" paddingLeft="3" paddingTop="3" verticalGap="3" paddingRight="3" paddingBottom="3">
+					<mx:FormItem label="제목" width="100%" fontSize="11" styleName="normalLabel" height="20">
+						<mx:TextInput width="100%" id="parTitle" height="20"/>
+					</mx:FormItem>
+					<mx:FormItem label="키워드" width="100%" fontSize="11" styleName="normalLabel" height="20">
+						<mx:TextInput width="100%" id="parKeyword" height="20"/>
+					</mx:FormItem>
+					<mx:FormItem label="파일이름" width="100%" fontSize="11" styleName="normalLabel" height="20">
+						<mx:TextInput width="100%" id="parFileName" height="20"/>
+					</mx:FormItem>
+				</mx:Form>
+				<mx:Form width="45%" height="100%" paddingLeft="3" paddingTop="3" verticalGap="3" paddingRight="3" paddingBottom="3">
+					<mx:FormItem label="설명" width="100%" fontSize="11" styleName="normalLabel" height="20">
+						<mx:TextInput width="100%" id="parDescription" height="20"/>
+					</mx:FormItem>
+					<mx:FormItem label="종류" width="100%" fontSize="11" styleName="normalLabel" height="20">
+						<mx:ComboBox dataProvider="{fileType}" id="parType" width="50%" height="20"/>
+					</mx:FormItem>
+					<mx:FormItem label="등록일" width="100%" fontSize="11" styleName="normalLabel" height="20">
+						<mx:HBox width="100%" height="100%">
+							<mx:DateField id="parWrittenTimeFrom" height="20"/>
+							<mx:Label text=" ~ "/>
+							<mx:DateField id="parWrittenTimeTo" height="20"/>
+						</mx:HBox>
+					</mx:FormItem>
+				</mx:Form>
+				<mx:VBox width="10%" height="100%" verticalGap="0" horizontalAlign="left" verticalAlign="top" paddingBottom="3" paddingRight="3" paddingTop="3" paddingLeft="3">
+					<mx:Button label="검색"  horizontalCenter="0" fontSize="11" styleName="normalLabel" click="searchDocumentList()" height="20"/>
+				</mx:VBox>
+			</mx:HBox>
+		</mx:Canvas>
+		<mx:DataGrid width="100%" height="100%" dataProvider="{getDocumentService.lastResult.Document}" id="documentListGrid"
+		    itemClick="getSavePage()" fontSize="11" styleName="normalLabel">
+			<mx:columns>
+				<mx:DataGridColumn headerText="id" dataField="id" width="0"/>
+				<mx:DataGridColumn headerText="제목" dataField="title" textAlign="center"/>
+				<mx:DataGridColumn headerText="키워드" dataField="keyword" textAlign="center"/>
+				<mx:DataGridColumn headerText="타입" dataField="type" textAlign="center"/>
+				<mx:DataGridColumn headerText="파일이름" dataField="fileName" textAlign="center"/>
+				<mx:DataGridColumn headerText="사이즈" dataField="fileSize" textAlign="center"/>
+				<mx:DataGridColumn headerText="등록자" dataField="writer" textAlign="center"/>
+				<mx:DataGridColumn headerText="등록일" dataField="writtenTime" textAlign="center"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:HBox width="100%" height="16" horizontalAlign="center" verticalAlign="middle">
+			<page:PageNavigate   width="90%" height="100%" clickPageItem="searchDocumentList()" id="naviPg" pageSize="15"/>
+			<!--
+			<mx:Canvas width="10%" height="100%">
+				<mx:Button label="문서작성"  horizontalCenter="0" fontSize="11" styleName="normalLabel" click="newDocument()"/>
+			</mx:Canvas>
+			-->
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

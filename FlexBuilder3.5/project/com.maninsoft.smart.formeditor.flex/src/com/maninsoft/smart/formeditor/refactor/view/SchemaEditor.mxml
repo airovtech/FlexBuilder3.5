@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="180" height="100%" xmlns:schema="com.maninsoft.smart.formeditor.refactor.view.schema.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+	        [Bindable]
+	        public var formDocument:FormDocument;	    
+	        
+		]]>
+	</mx:Script>	
+	<mx:Box width="100%" height="100%" styleName="fseControlBar" />
+	<mx:Box width="100%" height="100%" backgroundAlpha="1" styleName="fseControlBar">
+		<mx:filters>
+  			<flash.filters:BevelFilter xmlns:flash.filters="flash.filters.*" angle="90" blurX="1" blurY="1"
+  				 distance="1" highlightAlpha=".4" shadowAlpha=".4" highlightColor="0x000000" shadowColor="0xFFFFFF" knockout="true" />
+  		</mx:filters>
+	</mx:Box>
+	
+	<mx:ViewStack left="5" top="10" bottom="30" right="5" id="viewStack" selectedIndex="0">				
+		<schema:SchemaTreeEditPartViewer id="treeNav" editDomain="{this.editDomain}" formDocument="{this.formDocument}" width="{this.width - 10}" height="{this.height - 50}"/>
+		<mx:Canvas id="listNav" />
+		<mx:Canvas id="miniNav" width="20"/>
+	</mx:ViewStack>
+</mx:Canvas>

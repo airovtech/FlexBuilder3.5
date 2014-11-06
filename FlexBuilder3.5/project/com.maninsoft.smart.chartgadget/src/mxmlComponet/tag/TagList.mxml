@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()"> 
+	<mx:Script>
+		<![CDATA[
+			import mx.core.ScrollPolicy;
+			import mx.controls.LinkButton;
+			import mx.containers.Box;
+			import portalAs.Properties;
+			import portalAs.FindApplication;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.mxml.HTTPService;
+			
+			public var dataRequest:HTTPService;
+			
+        	[Bindable]
+            public var selectedItem:String;	
+            
+            private var conBar:Box;
+        	private var initVBoxWidth:Number;
+        	private var xmlList:XMLList;
+        	private var initStatus:Boolean = false;
+        	private var myTimer:Timer;
+			
+			private function init():void {
+				myTimer = new Timer(1000, 2);
+	            myTimer.addEventListener("timer", reStanding);
+	            myTimer.start();
+
+				initVBoxWidth = vBox.width;
+				
+				var params:Object = new Object();
+				params.method = "searchTagByUser";
+				params.userId = Properties.userId;//Properties.userId;
+				
+		    	dataRequest = new HTTPService();
+		    	dataRequest.resultFormat = "e4x";
+		    	dataRequest.url = Properties.basePath + "smartserver/services/portal/tagService.jsp";
+		    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandlerForTag);
+		    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest.useProxy = false;
+				dataRequest.send(params);
+		    }
+		    
+    		private function resultHandlerForTag(event:ResultEvent):void {
+    			//tagList.dataProvider = event.result.Tag.tag;
+    			xmlList = XMLList(event.result.Tag);
+    			for(var i:int=0; i<xmlList.length(); i++){
+    				createLink(xmlList[i].id, xmlList[i].tag);
+    			}
+    			initStatus = true;
+    		}
+    		
+    		private function reStanding(event:TimerEvent):void {
+    			if(initStatus){
+	    			for(var k:int=0; k<xmlList.length(); k++){
+	    				var link:LinkButton = LinkButton(offCan.getChildAt(0));
+	    				addTag(link, link.width);
+	    			}
+	    		}
+	    		myTimer.stop();
+    		}
+    				    
+    		private function faultHandler(event:FaultEvent):void {
+    			Alert.show("Exception occured during read data.\n"+event.fault.message);
+    		}
+    		
+    		private function clickItem():void {
+    			FindApplication.getApplciation(this).viewstack1.selectedIndex = 11;
+    		}
+    		
+    		private function createBox():void{
+        		conBar = new Box();
+    			conBar.width = vBox.width;
+    			conBar.direction = "horizontal";
+    			conBar.horizontalScrollPolicy = ScrollPolicy.OFF;
+    			conBar.setStyle("horizontalGap", 0);
+    			//conBar.setStyle("borderStyle", "inset");
+        	}
+        	
+        	private function createLink(id:String, labelText:String):void{
+        		var link:LinkButton = new LinkButton();
+        		link.setStyle("styleName", "normalLabel");
+        		link.setStyle("fontSize", "11");
+        		link.setStyle("color", "#666666");
+        		link.id = id;
+        		link.label = labelText;
+        		link.addEventListener(MouseEvent.CLICK, tagClick);
+        		offCan.addChild(link);
+        	}
+        	
+        	private function addTag(linkButton:LinkButton, linkWidth:Number):void{
+        		if(vBox.getChildren().length == 0){
+        			createBox();
+        			conBar.addChild(linkButton);
+        			vBox.addChild(conBar);	
+        		}else{
+        			conBar.addChild(linkButton);
+        		}
+    			addTag2(linkWidth);
+        	}
+        	
+        	private function addTag2(linkWidth:Number):void{
+        		var arr:Array = conBar.getChildren();
+        		var count:Number = 0;
+        		
+        		for(var i:int=0; i<arr.length-1; i++){
+        			count += LinkButton(arr[i]).width;
+        		}
+        		count += linkWidth;
+        		if(vBox.width < count){
+        			tagResize();
+        		}
+        	}
+        	
+        	private function tagResize():void{
+        		try{
+        			var link:LinkButton = LinkButton(conBar.getChildAt(conBar.numChildren-1));
+        			createBox();
+        			conBar.addChild(link);
+        			vBox.addChild(conBar);	
+        			vBox.width = initVBoxWidth;
+        		}catch(err:Error){}
+        	}
+        	
+        	private function tagClick(event:MouseEvent):void{
+        		selectedItem = LinkButton(event.target).label;
+        		clickItem();
+        	}
+    		
+		]]>
+	</mx:Script>
+	<mx:Panel x="0" y="0" width="100%" height="100%" layout="absolute" title="태그" styleName="leftCustomPanel" titleStyleName="leftCustomPanelTitle"
+		horizontalScrollPolicy="off"> 
+		<!--
+		<mx:List id="tagList" width="100%" height="95%" borderStyle="none" styleName="tagList"
+				horizontalScrollPolicy="auto" verticalScrollPolicy="auto" variableRowHeight="true" wordWrap="true"
+				change="this.selectedItem = List(event.target).selectedItem.toString()" click="clickItem()" x="0" y="0" color="#333333"/>
+		-->
+		<mx:VBox width="100%" height="90%" borderStyle="none" id="vBox" horizontalScrollPolicy="off"  visible="true">
+      	</mx:VBox>
+      	<mx:VBox width="100%" height="90%" borderStyle="none" id="offCan" horizontalScrollPolicy="off" visible="false">
+      	</mx:VBox>
+	</mx:Panel>
+</mx:Canvas>

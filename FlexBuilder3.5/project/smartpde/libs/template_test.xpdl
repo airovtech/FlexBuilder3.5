@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xpdl:Package Id="null" Name="null" xmlns:xpdl="http://www.wfmc.org/2004/XPDL2.0alpha">
+  <xpdl:PackageHeader>
+    <xpdl:XPDLVersion>2.0</xpdl:XPDLVersion>
+    <xpdl:Vendor>ManInSoft</xpdl:Vendor>
+    <xpdl:Created>null</xpdl:Created>
+    <xpdl:Description>null</xpdl:Description>
+  </xpdl:PackageHeader>
+  <xpdl:RedefinableHeader>
+    <xpdl:Author>null</xpdl:Author>
+    <xpdl:Version>1</xpdl:Version>
+    <xpdl:Codepage>UTF-8</xpdl:Codepage>
+    <xpdl:Countrykey>KR</xpdl:Countrykey>
+  </xpdl:RedefinableHeader>
+  <xpdl:Script Type="null" Version="null" Grammar="null"/>
+  <xpdl:Pools>
+    <xpdl:Pool Orientation="HORIZONTAL" Process="null" BoundaryVisible="false" Id="0" Name="프로세스">
+      <xpdl:Lanes>
+        <xpdl:Lane Id="0" Name="주관부서" ParentLane="0">
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Page="0" Height="117" Width="21" BorderColor="0" FillColor="16777215" HeadColor="0xcccccc"/>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Lane>
+      </xpdl:Lanes>
+      <xpdl:NodeGraphicsInfos>
+        <xpdl:NodeGraphicsInfo Width="575" Height="117" BorderColor="0" FillColor="0x999999" TextColor="0">
+          <xpdl:Coordinates XCoordinate="10" YCoordinate="10"/>
+        </xpdl:NodeGraphicsInfo>
+      </xpdl:NodeGraphicsInfos>
+    </xpdl:Pool>
+  </xpdl:Pools>
+  <xpdl:WorkflowProcesses>
+    <xpdl:WorkflowProcess Id="null" Name="null" AccessLevel="null" Status="null">
+      <xpdl:ProcessHeader DurationUnit="null">
+        <xpdl:Created>null</xpdl:Created>
+        <xpdl:Description>null</xpdl:Description>
+      </xpdl:ProcessHeader>
+      <xpdl:RedefinableHeader>
+        <xpdl:Author>null</xpdl:Author>
+        <xpdl:Version>null</xpdl:Version>
+        <xpdl:Codepage>null</xpdl:Codepage>
+        <xpdl:Countrykey>null</xpdl:Countrykey>
+      </xpdl:RedefinableHeader>
+      <xpdl:FormalParameters>
+      	<xpdl:FormalParameter Id="inputValue" InitialValue="null" Required="false" Mode="IN">
+      		<xpdl:DataType>
+      			<xpdl:BasicType Type="string"/>
+      		</xpdl:DataType>
+      	</xpdl:FormalParameter>
+      	<xpdl:FormalParameter Id="outputValue" InitialValue="null" Required="false" Mode="OUT">
+      		<xpdl:DataType>
+      			<xpdl:BasicType Type="string"/>
+      		</xpdl:DataType>
+      	</xpdl:FormalParameter>
+      	<xpdl:FormalParameter Id="in-outputValue" InitialValue="null" Required="false" Mode="INOUT">
+      		<xpdl:DataType>
+      			<xpdl:BasicType Type="string"/>
+      		</xpdl:DataType>
+      	</xpdl:FormalParameter>
+      </xpdl:FormalParameters>
+      <xpdl:Applications>
+      	<xpdl:Application Id="sdfdsfjsdlkfj" Name="getOrganization">
+      		<Description>Get the company Oranization</Description>
+      		<ExtenalReference Location="http://maninsoft.co.kr/oraganization.wsdl" Port="port1" Xref="GetOrganization"/>
+      	</xpdl:Application
+      </xpdl:Applications>
+      <xpdl:Activities>
+        <xpdl:Activity StartActivity="false" Id="1" Name="시작">
+          <xpdl:Event>
+            <xpdl:StartEvent Trigger="None"/>
+          </xpdl:Event>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="30" Height="30" BorderColor="0" FillColor="0xa5b8ce" TextColor="0" LaneId="0" Shadow="true" Gradient="true">
+              <xpdl:Coordinates XCoordinate="25" YCoordinate="44"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+        <xpdl:Activity StartActivity="false" Id="2" Name="조직도가져오기">
+          <xpdl:Implementation>
+            <xpdl:Task>
+              <xpdl:TaskService Id="sdfdsfjsdlkfj" Name="getOrganization">
+              	<ActualParameters>
+        		  <ActualParameter Id="param_sdfdfdjfdslfjdf" Name="회사명1" DataType="string" TargetType="expression" Expression="'직접입력값'" ValueType="value"/>
+        		  <ActualParameter Id="param_sdfddfdfdfdffdd" Name="회사명2" DataType="string" TargetType="processTree" Expression="$ActivityData.11.45.사용자" ValueType="value"/>
+        		  <ActualParameter Id="param_sdfddfdfdfdffdd" Name="회사명3" DataType="string" TargetType="processTree" Expression="$ProcessParam.IN.회사명3" ValueType="value"/>
+        		  <ActualParameter Id="param_sdfddfdfdfdffdd" Name="회사명4" DataType="string" TargetType="processTree" Expression="$SubParameter.252.OUT.회사명4" ValueType="value"/>
+        		  <ActualParameter Id="dfdsfd" Name="회사명" DataType="string" TargetType="return"/>
+        		<ActualParameters/>
+              <xpdl:TaskService/>
+            </xpdl:Task>
+          </xpdl:Implementation>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="80" Height="40" BorderColor="0" FillColor="0xa5b8ce" TextColor="0x424444" LaneId="0" Shadow="true" Gradient="true">
+              <xpdl:Coordinates XCoordinate="155" YCoordinate="39"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+        <xpdl:Activity StartActivity="false" PerformerName="" Id="851" Name="하위업무">          
+          <xpdl:Implementation>
+            <xpdl:SubFlow SubProcessPackId="pkg_cf3b0087995f4f99a41c93e2fe95b22d" SubProcessVer="1" Execution="SYNCHR">
+              <ActualParameters>
+        	  	<ActualParameter Id="param_sdfdfdjfdslfjdf" Name="회사명1" DataType="string" TargetType="expression" Expression="'직접입력값'" ValueType="value"/>
+        	  	<ActualParameter Id="param_sdfddfdfdfdffdd" Name="회사명2" DataType="string" TargetType="processTree" Expression="$ActivityData.11.45.사용자" ValueType="value"/>
+        	  	<ActualParameter Id="param_sdfddfdfdfdffdd" Name="회사명3" DataType="string" TargetType="processTree" Expression="$ProcessParam.IN.회사명3" ValueType="value"/>
+        	  	<ActualParameter Id="param_sdfddfdfdfdffdd" Name="회사명4" DataType="string" TargetType="processTree" Expression="$SubParameter.251.OUT.회사명4" ValueType="value"/>
+        		<ActualParameter Id="dfdsfd" Name="회사명" DataType="string" TargetType="return"/>
+        	  <ActualParameters/>
+            <xpdl:SubFlow/>
+          </xpdl:Implementation>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="77" Height="33" BorderColor="10536142" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="1">
+              <xpdl:Coordinates XCoordinate="514" YCoordinate="211"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+      </xpdl:Activities>
+      <xpdl:Transitions>
+        <xpdl:Transition Id="4" Name="" From="1" To="2">
+          <xpdl:Description/>
+          <xpdl:Condition Type="CONDITION">
+            <xpdl:Expression ScriptGrammar="javascript"/>
+          </xpdl:Condition>
+          <xpdl:ConnectorGraphicsInfos>
+            <xpdl:ConnectorGraphicsInfo Path="90,270" TextPos="0,0"/>
+          </xpdl:ConnectorGraphicsInfos>
+        </xpdl:Transition>
+      </xpdl:Transitions>
+    </xpdl:WorkflowProcess>
+  </xpdl:WorkflowProcesses>
+  <xpdl:Artifacts/>
+</xpdl:Package>

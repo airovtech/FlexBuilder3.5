@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:smart="com.maninsoft.smart.modeler.xpdl.*" backgroundColor="#ffffff">
+	<mx:Script source="DiagramViewer_mxml.as"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalAlign="center" backgroundColor="#FFFFFF" verticalAlign="middle" paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="1"
+			borderStyle="none" borderThickness="1" horizontalScrollPolicy="off" verticalScrollPolicy="off">	
+		<mx:Canvas id="diagramViewerHeaderToolBar" visible="true" width="100%" height="27" backgroundColor="#e9eeee" borderStyle="none" borderThickness="0">
+			<mx:LinkButton  id="fullBtn" styleName="overview" click="fitMap()" right="{diagramScale.width+3+2}" top="10" visible="true" toolTip="{resourceManager.getString('WorkbenchETC', 'fitToScreenTTip')}"/>
+			<mx:HSlider id="diagramScale" styleName="PSlider" minimum="20" maximum="100" showDataTip="false" liveDragging="true" width="60" right="3" top="0" value="100" change="sliderChange()" visible="true"/>
+		</mx:Canvas>
+		<mx:HBox width="100%" height="100%" borderStyle="none" borderThickness="0">
+			<smart:XPDLViewer id="xpdlViewer" width="100%" height="100%" backgroundColor="#ffffff" resize="xpdlViewer_resize(event);" selectionChanged="xpdlViewer_selectionChanged(event);"/>						
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

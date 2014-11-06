@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TabNavigator implements="com.maninsoft.smart.formeditor.property.IFormPropertyEditor" 
+	label="{resourceManager.getString('FormEditorETC', 'formGridPropertiesText')}" 
+	width="100%" height="100%" styleName="formGridPropEditor" 
+	paddingTop="2" paddingBottom="2" tabStyleName="propTitle" 
+	creationComplete="{refreshVisual()}" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:property="com.maninsoft.smart.formeditor.property.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.util.FormEditorAssets;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.formeditor.property.part.FormCommonPropController;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.layout.grid.model.FormGridLayout;
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain;
+			
+			private var _editDomain:FormEditDomain;
+
+			public function set editDomain(editDomain:FormEditDomain):void{
+			    this._editDomain = editDomain;
+			}
+			public function get editDomain():FormEditDomain{
+			    return this._editDomain;
+			}
+			
+			private var _selectModel:ISelectableModel;
+
+			public function set selectModel(selectModel:ISelectableModel):void{
+			    this._selectModel = selectModel;
+			    
+			    this.formGridLayout = this._selectModel as FormGridLayout;
+			    if(this.formGridLayout.container != null && this.formGridLayout.container is FormDocument){
+			    	formDocument = this.formGridLayout.container as FormDocument
+			    }
+			}
+			public function get selectModel():ISelectableModel{
+			    return this._selectModel;
+			}
+			
+			private var formGridLayout:FormGridLayout;
+			private var formDocument:FormDocument;
+			private var formCommonPropController:FormCommonPropController;
+			
+			public function registerViewer():void{
+				if(formCommonPropController == null){
+					this.formCommonPropController = new FormCommonPropController();
+					this.formCommonPropController.editDomain = this.editDomain;
+				}
+				this.formCommonPropController.formView = this;
+				this.formCommonPropController.selectModel = this.formDocument;
+				
+			}
+			
+			public function refreshVisual():void{
+				if(this.formDocument != null && this.initialized){
+					this.registerViewer();
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox icon="{FormEditorAssets.propertyIcon}" label="{resourceManager.getString('FormEditorETC', 'formGridPropertiesText')}" 
+		paddingLeft="5" paddingTop="5"  width="100%"/>
+</mx:TabNavigator>

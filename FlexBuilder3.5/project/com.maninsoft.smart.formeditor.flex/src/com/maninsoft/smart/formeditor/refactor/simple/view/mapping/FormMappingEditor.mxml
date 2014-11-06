@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" fontSize="12" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import mx.automation.delegates.controls.SWFLoaderAutomationImpl;
+			import com.maninsoft.smart.formeditor.refactor.command.RemoveFormMappingCommand;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.simple.navigator.FormItemProxy;
+			import com.maninsoft.smart.formeditor.refactor.util.RefFormSelectWindow;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.maninsoft.smart.formeditor.refactor.simple.control.FormMappingEditorController;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.refactor.util.ProcessFormSelectWindow;
+			import mx.containers.Form;
+			import com.maninsoft.smart.formeditor.refactor.command.RemoveFormMappingFragCommand;
+			import com.maninsoft.smart.formeditor.refactor.util.Map;
+			import com.maninsoft.smart.formeditor.refactor.command.CreateFormMappingFragCommand;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormMappingFragCommand;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.refactor.command.CreateFormConditionCommand;
+			import com.maninsoft.smart.formeditor.refactor.command.RemoveFormConditionCommand;
+			import com.maninsoft.smart.formeditor.refactor.util.FormMappingConditionMgrWin;
+			import com.maninsoft.smart.formeditor.refactor.command.CreateFormMappingCommand;
+			import com.maninsoft.smart.formeditor.refactor.simple.view.item.FormSelectComboBox;
+			import mx.controls.ComboBox;
+			import mx.events.DataGridEvent;
+			import com.maninsoft.smart.formeditor.model.mapping.FormMappingFrag;
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.refactor.event.service.ServiceEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.model.condition.FormCondition;
+			import com.maninsoft.smart.formeditor.model.mapping.FormMapping;
+			import com.maninsoft.smart.formeditor.refactor.util.FormSelectWindow;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.assets.MappingIconLibrary;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			public static const RIGHT_SPACE:int  = 10;
+			
+			public var editDomain:FormEditDomain;
+			
+			private var controller:FormMappingEditorController = new FormMappingEditorController();
+			
+			[Bindable]
+			private var _formDocument:FormDocument;
+			
+			[Bindable]
+			public var swForm:SWForm;
+			
+			public var formId:String;
+			public var version:int;
+			
+			[Bindable]
+			private var importArrayCollection:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var exportArrayCollection:ArrayCollection = new ArrayCollection();
+			
+			public function set formDocument(formDocument:FormDocument):void{
+				this._formDocument = formDocument;
+				
+				controller.formModel = this._formDocument;
+				controller.editDomain = this.editDomain;
+				controller.editor = this;
+				
+				importArrayCollection.removeAll();
+				exportArrayCollection.removeAll();
+			}
+			
+			public function get formDocument():FormDocument{
+				return this._formDocument;
+			}
+			
+//			public var swForm:SWForm;
+			
+			private var formSelectWin:RefFormSelectWindow;
+			
+			private function selectForm():void{
+				formSelectWin = RefFormSelectWindow(PopUpManager.createPopUp(this, RefFormSelectWindow)); 
+				formSelectWin.serviceClient = editDomain.serviceClient;
+				formSelectWin.addEventListener(Event.COMPLETE, selectFormResultHandler);
+				
+				if(swForm != null && swForm.getPackage().getProcessResource() != null){
+					formSelectWin.swForm = swForm;
+				}else{
+					formSelectWin.formId = formId;
+					formSelectWin.version = version;
+				}
+				formSelectWin.start();
+			}
+			
+			private function selectFormResultHandler(e:Event):void{
+				var formMapping:FormMapping = new FormMapping(this.formDocument);
+				formMapping.targetFormId = formSelectWin.selectFormId;
+				formMapping.targetFormVersion = formSelectWin.selectFormVersion; 
+				formMapping.targetFormName = formSelectWin.selectFormModel.name;
+				formMapping.type = formSelectWin.formType;
+				
+				
+				var command:CreateFormMappingCommand = new CreateFormMappingCommand(this.formDocument, formMapping);
+				editDomain.getCommandStack().execute(command);
+
+				// 커맨드 처리
+				targetFormList.selectedIndex = formDocument.mappings.length - 1;
+				
+				loadTargetFormInfo();
+			}
+			
+			private function deleteForm():void{
+				if(targetFormList.selectedItem != null && targetFormList.selectedItem is FormMapping){
+					var command:RemoveFormMappingCommand = new RemoveFormMappingCommand(targetFormList.selectedItem as FormMapping, "");
+					editDomain.getCommandStack().execute(command);
+				}
+			}
+			
+			private function filterLabelFunc(row:Object, column:DataGridColumn):String{
+				if(row is FormCondition){
+					return FormCondition(row).firstOperandName + " " + FormCondition(row).operator + " " + FormCondition(row).secondOperandName;
+				}
+				return "";
+			}
+			
+			private function loadTargetFormInfo():void{
+				formMapping = FormMapping(this.targetFormList.selectedItem);
+				
+				editDomain.serviceClient.formService.load(formMapping.targetFormId, formMapping.targetFormVersion, loadTargetFormInfoResultHandler, 
+					function (e:ServiceEvent):void{
+						MsgUtil.showError(e.msg);
+					});
+			}
+			
+			private function loadTargetFormInfoResultHandler(e:FormPersistenceEvent):void{
+				targetFormDocument = e.formModel;
+				loadFilter();
+
+				loadMappingFrag();
+			}
+			
+			public function loadMapping():void{
+				if(formDocument != null){
+					
+				}								
+			}
+			
+			public function loadMappingFrag():void{
+				if(targetFormDocument != null){
+					loadImport();
+					loadExport();
+				}								
+			}
+			
+			private var targetFormDocument:FormDocument;
+			private var formMapping:FormMapping;
+			
+			private function loadFilter():void{
+				filterList.dataProvider = formMapping.conditions;
+			}
+			
+			private function loadImport():void{
+				importArrayCollection.removeAll();
+				
+				for each(var formItem:FormEntity in this.formDocument.children){
+					if(!(formItem is FormItemProxy)){
+						var mappingItemObj:Object = new Object();
+						mappingItemObj["toId"] = formItem.id;
+						mappingItemObj["toName"] = formItem.name;
+						for each(var formMappingFrag:FormMappingFrag in formMapping.frags){
+							if(formMappingFrag.actionType == FormMappingFrag.IMPORT_ACTION 
+								&& formMappingFrag.toFieldId == formItem.id){
+								mappingItemObj["fromId"] = formMappingFrag.fromFieldId;
+								mappingItemObj["fromName"] = formMappingFrag.fromFieldName;
+							}
+						}
+						importArrayCollection.addItem(mappingItemObj);
+					}					
+				}
+			}
+			
+			private function loadExport():void{
+				exportArrayCollection.removeAll();
+				
+				for each(var formItem:FormEntity in this.formDocument.children){
+					if(!(formItem is FormItemProxy)){
+						var mappingItemObj:Object = new Object();
+						mappingItemObj["fromId"] = formItem.id;
+						mappingItemObj["fromName"] = formItem.name;
+						for each(var formMappingFrag:FormMappingFrag in formMapping.frags){
+							if(formMappingFrag.actionType == FormMappingFrag.EXPORT_ACTION 
+								&& formMappingFrag.fromFieldId == formItem.id){
+								mappingItemObj["toId"] = formMappingFrag.toFieldId;
+								mappingItemObj["toName"] = formMappingFrag.toFieldName;
+							}
+						}
+						exportArrayCollection.addItem(mappingItemObj);
+					}					
+				}
+			}
+			
+			/*************************그리드 셀 에디팅***********************************/
+            private function importGridEditing(event:DataGridEvent):void {
+            	if(event.columnIndex == 0){
+					// Handle the event here.
+	                event.preventDefault();
+	                
+	                importGrid.createItemEditor(event.columnIndex,event.rowIndex);	                
+	                
+	                FormSelectComboBox(importGrid.itemEditorInstance).labelField = "name";
+	                FormSelectComboBox(importGrid.itemEditorInstance).formDocument = targetFormDocument;
+            	}
+            }  
+ 
+            private function importGridEditEnd(event:DataGridEvent):void {    
+            	if(event.columnIndex == 0){
+            		if(FormSelectComboBox(importGrid.itemEditorInstance).selectFormField != null
+            			&& FormSelectComboBox(importGrid.itemEditorInstance).formDocument != null){
+            			var mappingFrag:FormMappingFrag = getMappingFrag(this.formMapping, (importGrid.selectedItem)["toId"], true);
+            	
+	            		var newMappingFrag:FormMappingFrag = new FormMappingFrag();
+	            		newMappingFrag.actionType = FormMappingFrag.IMPORT_ACTION;
+	            		newMappingFrag.fromFieldId = FormSelectComboBox(importGrid.itemEditorInstance).selectFormField.id;
+	            		newMappingFrag.fromFieldName = FormSelectComboBox(importGrid.itemEditorInstance).selectFormField.name;
+	            		newMappingFrag.toFieldId = (importGrid.selectedItem)["toId"];
+	            		newMappingFrag.toFieldName = (importGrid.selectedItem)["toName"];
+	            		
+		            	var command:Command;
+		            	if(mappingFrag == null){
+		            		command = new CreateFormMappingFragCommand(this.formMapping, newMappingFrag);
+		            	}else{
+		            		command = new RemoveFormMappingFragCommand(mappingFrag);
+		            		command = command.chain(new CreateFormMappingFragCommand(this.formMapping, newMappingFrag, this.formMapping.frags.getItemIndex(mappingFrag)));
+		            	}
+		            	editDomain.getCommandStack().execute(command);	
+            		}            		
+            	}
+            } 
+            
+            private function getMappingFrag(formMapping:FormMapping, fieldId:String, importFlag:Boolean):FormMappingFrag {       
+            	for each(var mappingFrag:FormMappingFrag in formMapping.frags){
+            		if(importFlag && mappingFrag.actionType == FormMappingFrag.IMPORT_ACTION ){            				
+        				if(mappingFrag.toFieldId == fieldId){
+        					return mappingFrag;
+        				}            			
+            		}else if(!importFlag && mappingFrag.actionType == FormMappingFrag.EXPORT_ACTION){
+            			if(mappingFrag.fromFieldId == fieldId){
+        					return mappingFrag;
+        				}   
+            		}
+            	}
+            	return null;
+            } 
+            
+            private function exportGridEditing(event:DataGridEvent):void {
+            	if(event.columnIndex == 1){
+					// Handle the event here.
+	                event.preventDefault();
+	                
+	                exportGrid.createItemEditor(event.columnIndex,event.rowIndex);
+	                
+	                FormSelectComboBox(exportGrid.itemEditorInstance).labelField = "name";
+	                FormSelectComboBox(exportGrid.itemEditorInstance).formDocument = targetFormDocument;
+	        	}
+            }  
+ 
+            private function exportGridEditEnd(event:DataGridEvent):void {            	
+            	if(event.columnIndex == 1){
+            		if(FormSelectComboBox(exportGrid.itemEditorInstance).selectFormField != null
+            			&& FormSelectComboBox(exportGrid.itemEditorInstance).formDocument != null){
+            			var mappingFrag:FormMappingFrag = getMappingFrag(this.formMapping, (exportGrid.selectedItem)["fromId"], false);
+            	
+	            		var newMappingFrag:FormMappingFrag = new FormMappingFrag();
+	            		newMappingFrag.actionType = FormMappingFrag.EXPORT_ACTION;
+	            		newMappingFrag.fromFieldId = (exportGrid.selectedItem)["fromId"];
+	            		newMappingFrag.fromFieldName = (exportGrid.selectedItem)["fromName"];
+	            		newMappingFrag.toFieldId = FormSelectComboBox(exportGrid.itemEditorInstance).selectFormField.id;
+	            		newMappingFrag.toFieldName = FormSelectComboBox(exportGrid.itemEditorInstance).selectFormField.name;
+	            		
+		            	var command:Command;
+		            	if(mappingFrag == null){
+		            		command = new CreateFormMappingFragCommand(this.formMapping, newMappingFrag);
+		            	}else{
+		            		command = new RemoveFormMappingFragCommand(mappingFrag);
+		            		command = command.chain(new CreateFormMappingFragCommand(this.formMapping, newMappingFrag, this.formMapping.frags.getItemIndex(mappingFrag)));
+		            	}
+		            	editDomain.getCommandStack().execute(command);	
+            		}            		
+            	}
+            }
+            
+            private var conditionWin:FormMappingConditionMgrWin;
+            
+            private function saveCondition(isFirst:Boolean = false, condition:FormCondition = null):void {   
+            	conditionWin = FormMappingConditionMgrWin(PopUpManager.createPopUp(this, FormMappingConditionMgrWin));   
+            	conditionWin.formDocument = this.formDocument;
+            	conditionWin.targetFormDocument = this.targetFormDocument;
+            	
+            	conditionWin.first = isFirst;
+            	
+            	if(condition != null)
+            		conditionWin.condition = condition;
+            	
+            	conditionWin.addEventListener(Event.COMPLETE, saveConditionResultHandler);
+			} 
+			
+			private function saveConditionResultHandler(event:Event):void {   
+				var command:Command;
+				
+				if(conditionWin.condition == null){
+					command = new CreateFormConditionCommand(this.formMapping, conditionWin.newCondition);
+					editDomain.getCommandStack().execute(command);
+				}else{
+					command = new RemoveFormConditionCommand(FormCondition(this.filterList.selectedItem));
+            		command = command.chain(new CreateFormConditionCommand(this.formMapping, conditionWin.newCondition, this.filterList.selectedIndex));    	
+					editDomain.getCommandStack().execute(command);
+				}
+			}
+			
+			private function checkEnableFilter(target:Object):Boolean{
+				return target != null && FormMapping(target).type == SWForm.FORMTYPE_SINGLE;
+			}
+		]]>
+	</mx:Script>
+	<mx:Text text="참조할 폼 선택 :" y="10" x="10"/>
+	<mx:Button y="10" id="addFormBtn" icon="{MappingIconLibrary.add_form}" width="31" toolTip="참조할 폼 추가" right="{RIGHT_SPACE + delFormBtn.width + 3}" click="{selectForm()}"/>
+	<mx:Button y="10" id="delFormBtn" icon="{MappingIconLibrary.del_form}" width="31" toolTip="참조할 폼 삭제" right="{RIGHT_SPACE}" enabled="{targetFormList.selectedItem != null}" click="{deleteForm()}"/>
+	<mx:List id="targetFormList" x="10" y="41" borderStyle="inset" borderColor="#020202" width="{this.width - this.targetFormList.x - RIGHT_SPACE}" right="{RIGHT_SPACE}" fontSize="12" selectedIndex="0" height="72"
+		dataProvider="{_formDocument.mappings}" labelField="targetFormName" itemClick="{loadTargetFormInfo()}" change="{loadTargetFormInfo()}">
+	</mx:List>	
+	<mx:Text x="10" y="119" text="필터조건 :"/>	
+	<mx:Button y="120" icon="{MappingIconLibrary.filter}" width="20" height="20" right="{RIGHT_SPACE}"
+		enabled="{checkEnableFilter(targetFormList.selectedItem)}" click="{saveCondition((FormMapping(targetFormList.selectedItem).conditions).length == 0)}"  toolTip="필터조건 추가"
+		/>
+	<mx:DataGrid id="filterList" x="10" y="147" borderStyle="inset" borderColor="#020202" width="{this.width - this.filterList.x - RIGHT_SPACE}" right="{RIGHT_SPACE}"  height="72"
+		dataProvider="{FormMapping(targetFormList.selectedItem).conditions}" doubleClickEnabled="true"
+		itemDoubleClick="{saveCondition((event.rowIndex == 0), FormCondition(this.filterList.selectedItem))}"
+		enabled="{FormMapping(targetFormList.selectedItem).type == FormMapping.WORK_TYPE}">
+		<mx:columns>
+			<mx:DataGridColumn width="45" headerText="" dataField="connectOperator"/>
+			<mx:DataGridColumn headerText="조건" labelFunction="filterLabelFunc"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Text text="가져오기 :"  y="227" x="10"/>
+	<mx:DataGrid id="importGrid" x="10" y="250" borderStyle="inset" borderColor="#020202" width="{this.width - this.importGrid.x - RIGHT_SPACE}" right="{RIGHT_SPACE}"  height="122"
+		itemEditBegin="{importGridEditing(event)}" itemEditEnd="{importGridEditEnd(event)}" editable="true"
+		dataProvider="{importArrayCollection}">
+		<mx:columns>
+			<mx:DataGridColumn headerText="원본" dataField="fromName" itemEditor="com.maninsoft.smart.formeditor.refactor.simple.view.item.FormSelectComboBox" editable="true"/>
+			<mx:DataGridColumn headerText="대상" dataField="toName" editable="false"/>
+			<!--<mx:DataGridColumn width="45" headerText="변환"/>-->
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Text text="내보내기 :"  x="10" y="376"/>
+	<mx:DataGrid id="exportGrid" x="10" y="399" borderStyle="inset" borderColor="#020202" width="{this.width - this.exportGrid.x - RIGHT_SPACE}" right="{RIGHT_SPACE}"  height="122"
+		itemEditBegin="{exportGridEditing(event)}" itemEditEnd="{exportGridEditEnd(event)}" editable="true"
+		enabled="{FormMapping(targetFormList.selectedItem).type == SWForm.FORMTYPE_SINGLE}"
+		dataProvider="{exportArrayCollection}">
+		<mx:columns>
+			<mx:DataGridColumn headerText="원본" dataField="fromName" editable="false"/>
+			<mx:DataGridColumn headerText="대상" dataField="toName" itemEditor="com.maninsoft.smart.formeditor.refactor.simple.view.item.FormSelectComboBox" editable="true"/>
+			<!--<mx:DataGridColumn width="45" headerText="변환"/>-->
+		</mx:columns>
+	</mx:DataGrid>
+	<!--<mx:Button y="227" icon="{MappingIconLibrary.add_field}" toolTip="필드 추가" enabled="true" width="20" height="20" right="{RIGHT_SPACE}"/>
+	<mx:Button y="376" icon="{MappingIconLibrary.add_field}" toolTip="필드 추가" enabled="true" width="20" height="20" right="{RIGHT_SPACE}"/>-->
+</mx:Canvas>

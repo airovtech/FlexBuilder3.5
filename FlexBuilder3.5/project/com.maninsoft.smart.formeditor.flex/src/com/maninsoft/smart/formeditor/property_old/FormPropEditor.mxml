@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	implements="com.maninsoft.smart.formeditor.property.IFormPropertyEditor"
+	styleName="formNonePropEditor">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain;
+			
+			private var _editDomain:FormEditDomain;
+
+			public function set editDomain(editDomain:FormEditDomain):void{
+			    this._editDomain = editDomain;
+			}
+			public function get editDomain():FormEditDomain{
+			    return this._editDomain;
+			}
+			
+			private var _selectModel:ISelectableModel;
+
+			public function set selectModel(selectModel:ISelectableModel):void{
+			    this._selectModel = selectModel;
+			}
+			public function get selectModel():ISelectableModel{
+			    return this._selectModel;
+			}
+			
+			public function refreshVisual():void{
+				
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Filter xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="mxmlComponet.home.chartInfo.filter.*" 
+	width="300" height="90" remove="filterRemove()">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ItemClickEvent;
+			import mxmlComponet.home.chartInfo.model.GroupingFilterModel;
+			
+			[Bindable]
+			private var _filterModel:GroupingFilterModel;
+			
+			override public function crComplete():void{
+				inclusionType.selectedValue = filterModel.inclusion;
+			}
+			
+			public function set filterModel(model:GroupingFilterModel):void{
+				_filterModel = model;
+				inclusionType.selectedValue = _filterModel.inclusion;
+			}
+			
+			public function get filterModel():GroupingFilterModel{
+				return _filterModel;
+			}
+			
+			private function filterRemove():void{
+				filterModel.elements = elementsText.text;
+				filterModel.inclusion = inclusionType.selectedValue as String;
+			}
+			
+			private function handleCard(event:ItemClickEvent):void {
+				filterModel.inclusion = event.currentTarget.selectedValue;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" backgroundColor="#EDF5B4">
+		<mx:Label text="Grouping 필터요소" width="117" styleName="normalLabel"/>
+		<mx:TextInput width="280" text="{filterModel.elements}" id="elementsText"></mx:TextInput>
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:RadioButtonGroup id="inclusionType" itemClick="handleCard(event);"/>
+			<mx:RadioButton groupName="inclusionType" label="IN" value="IN"/>
+			<mx:RadioButton groupName="inclusionType" label="NOT IN" value="NOT IN"/>
+		</mx:HBox>
+	</mx:VBox>
+</Filter>

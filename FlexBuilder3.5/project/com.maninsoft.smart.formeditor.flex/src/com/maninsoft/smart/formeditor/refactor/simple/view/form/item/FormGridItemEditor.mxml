@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:common="com.maninsoft.smart.common.*" xmlns:org="com.maninsoft.smart.common.org.*" xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.controls.RadioButton;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormListType;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			
+			private var _formItem:FormEntity;
+			
+			public function set formItem(formItem:FormEntity):void{
+				this._formItem = formItem;
+				
+				var idx:int = getContentsIndex(this._formItem);
+						switch(idx){
+							case 0:// 라디오
+								for each(var childObj:DisplayObject in this.valueRadioBox.getChildren()){
+									if(childObj is RadioButton){
+										this.valueRadioBox.removeChild(childObj);
+									}
+								}
+								for each(var staticExample:String in formItem.format.staticListExamples){
+									var valueRadioBtn:RadioButton = new RadioButton();
+									valueRadioBtn.label = staticExample;
+									valueRadioBtn.value = staticExample;
+									valueRadioBtn.group = this.valueRadio;
+									valueRadioBtn.enabled = !formItem.readOnly;
+									this.valueRadioBox.addChild(valueRadioBtn);
+								}	
+								break;
+							case 1:// 콤보
+								if(formItem.format.listType == FormListType.FORM){
+									
+								}else if(formItem.format.listType == FormListType.CODE){
+									loadCode(formItem.format.refCodeCategoryId);
+								}else{
+									this.valueCombo.dataProvider = formItem.format.staticListExamples;	
+								}
+								valueCombo.editable = !formItem.readOnly;
+								break;
+							case 2:// 데이트
+								var disableDayArray:Array = new Array();
+								
+								if(formItem.format.sunNotUse)
+									disableDayArray.push(0);
+								if(formItem.format.monNotUse)
+									disableDayArray.push(1);
+								if(formItem.format.tueNotUse)
+									disableDayArray.push(2);
+								if(formItem.format.wedNotUse)
+									disableDayArray.push(3);
+								if(formItem.format.thuNotUse)
+									disableDayArray.push(4);
+								if(formItem.format.friNotUse)
+									disableDayArray.push(5);
+								if(formItem.format.satNotUse) 
+									disableDayArray.push(6);						
+															
+								this.valueDateField.disabledDays = disableDayArray;
+								
+								this.valueDateField.yearNavigationEnabled = formItem.format.yearUse;
+								
+								valueDateField.editable = !formItem.readOnly;
+								break;
+							case 3:// 뉴머릭
+								if(formItem.format.minNumUse)
+									this.valueNumericStepper.minimum = formItem.format.minNum;
+								if(formItem.format.maxNumUse)
+									this.valueNumericStepper.maximum = formItem.format.maxNum; 
+									
+								this.valueNumericStepper.stepSize = formItem.format.stepSize;	
+								valueNumericStepper.enabled = !formItem.readOnly;
+								break;
+							case 6:// 그리드
+								break;
+							case 7:// text area
+								break;
+							case 7:// text area
+								break;
+							default:// 텍스트
+						}
+						
+					this.valueView.selectedIndex = idx;
+				}
+				
+				public function get formItem():FormEntity{
+					return this._formItem;
+				}
+				
+				private var codeLoader:URLLoader;
+				private var codeURL:String ;
+				private var codeReq:URLRequest = new URLRequest();
+				
+				private function loadCode(categoryId:String):void{
+					
+					codeURL = FormEditorConfig.baseUrl + "smartworksV3/services/portal/codeService.jsp?method=findCode&userId=" 
+								+ FormEditorConfig.userId + "&categoryId=" + categoryId;
+					codeReq.url = codeURL;
+					if(codeLoader == null){
+						codeLoader = new URLLoader();
+						codeLoader.addEventListener(Event.COMPLETE, loadCodeComplete);
+						codeLoader.addEventListener(IOErrorEvent.IO_ERROR, loadCodeFault);
+						codeLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loadCodeFault);
+					}
+					codeLoader.load(codeReq);				
+				}
+				
+				private function loadCodeComplete(e:Event):void{
+					var codeXml:XML = XML(codeLoader.data);
+					if(codeXml.@status == "Failed"){
+						Alert.show("코드 정보 불러오기에 실패했습니다.", "코드정보 호출결과");
+					}else{
+						this.valueCombo.dataProvider = codeXml.Code;	
+						this.valueCombo.labelField = "name"
+					}
+				}
+			
+				private function loadCodeFault(e:Event):void{
+					Alert.show("코드 정보 불러오기에 실패했습니다.", "코드정보 호출결과");
+				}
+				
+				private function getContentsIndex(formEntity:FormEntity):int{
+					if(formEntity.format.type == FormatTypes.radioButton.type)
+						return 0;	
+					else if(formEntity.format.type == FormatTypes.comboBox.type)
+						return 1;	
+					else if(formEntity.format.type == FormatTypes.dateChooser.type)
+						return 2;	
+					else if(formEntity.format.type == FormatTypes.numericStepper.type)
+						return 3;		
+					else if(formEntity.format.type == FormatTypes.dataGrid.type)
+						return 6;	
+					else if(formEntity.format.type == FormatTypes.textArea.type)
+						return 7;			
+					else if(formEntity.format.type == FormatTypes.checkBox.type)
+						return 8;	
+					else if(formEntity.format.type == FormatTypes.userField.type)
+						return 9;
+					else
+						return 4;							
+				}
+				
+				public var newValue:String;
+				
+				private var _data:Object;
+				
+				public override function get data():Object{
+					return this._data;		
+				}
+				[Bindable]
+				public override function set data(data:Object):void{
+					if(data != null){
+						this.newValue = data.toString();
+						presentData();		
+					}
+				}
+				
+				private function generateData():void{
+					var valueObj:String;
+						
+					var typeNum:int = getContentsIndex(formItem);
+					
+					switch(typeNum){
+						case 0:// 라디오
+							valueObj = String(valueRadio.selectedValue);						
+							break;
+						case 1:// 콤보
+							if(formItem.format.listType == FormListType.FORM){								
+								// 폼
+							}else if(formItem.format.listType == FormListType.CODE){
+								// 코드
+								valueObj = XML(valueCombo.selectedItem).id;
+							}else{
+								valueObj = String(valueCombo.selectedItem);
+							}
+							break;
+						case 2:// 데이트
+							try{
+								valueObj = DateField.dateToString(valueDateField.selectedDate, "YYYY-MM-DD");
+							}catch(e:Error){
+								valueObj = "";
+							}									
+							break;
+						case 3:// 뉴머릭
+							valueObj = valueNumericStepper.value.toString();
+							break;
+						case 5:// 리스트 								
+							break;
+						case 6:// 그리드
+							break;
+						case 7:// text area
+							valueObj = textEntityArea.text;
+							break;
+						case 8:// check box
+							valueObj = (valueCheckBox.selected)?"true":"false";
+							break;
+						case 9:// text area
+							valueObj = valuePerson.userId;
+							break;
+						default:// 텍스트
+							valueObj = textEntityInput.text;
+					}
+	
+					newValue = valueObj;	
+					
+					presentData();
+				}
+				
+				private function presentData():void{
+					if(newValue != null){
+						var value:String = newValue;
+					
+						var typeNum:int = getContentsIndex(formItem);
+						
+						switch(typeNum){
+							case 0:// 라디오
+								valueRadio.selectedValue = value;						
+								break;
+							case 1:// 콤보
+								var index:int = -1;
+								
+								if(formItem.format.listType == FormListType.FORM){
+									// 폼									
+								}else if(formItem.format.listType == FormListType.CODE){
+									// 코드
+									var codeListXml:XMLList = XMLList(valueCombo.dataProvider);
+									for(var i:int = 0 ; i < codeListXml.length() ; i++){
+										if(value == codeListXml[i].id){
+											index = i;
+										}
+									} 
+								}else{
+									// 정적인 리스트
+									for(var _i:int = 0 ; _i < ArrayCollection(valueCombo.dataProvider).length ; _i++){
+										if(value == String(ArrayCollection(valueCombo.dataProvider).getItemAt(_i))){
+											index = _i;
+										}
+									} 
+								}
+								
+								// value가 없는 것으로 치고 combo에 추가하고 선택
+								if(index == -1){
+									if(formItem.format.listType == FormListType.STATIC){
+									// 정적인 리스트
+										ArrayCollection(valueCombo.dataProvider).addItem(value);
+									}
+									
+									valueCombo.selectedIndex= ArrayCollection(valueCombo.dataProvider).length - 1;
+								}else{
+									valueCombo.selectedIndex= index;	
+								}
+								
+								break;
+							case 2:// 데이트
+								var date:Date = null;
+								try{
+									date = DateField.stringToDate(value, "YYYY-MM-DD");
+									valueDateField.selectedDate = date;
+								}catch(e:Error){
+									valueDateField.text = "????/??/??"
+								}							
+								break;
+							case 3:// 뉴머릭
+								var valueNum:int;
+								
+								try{
+									valueNum = new int(value);
+									valueNumericStepper.value = valueNum;
+								}catch(e:Error){
+									valueNumericStepper.value = 0;
+								}
+								break;
+							case 5:// 리스트 								
+								break;
+							case 6:// 그리드
+								break;
+							case 7:// text area
+								textEntityArea.text = value;
+								break;
+							case 8:// text area
+								if(value == true){
+									valueCheckBox.selected = true;	
+								}else{
+									valueCheckBox.selected = false;	
+								}
+								break;
+							case 9:// text area
+								valuePerson.userId = value;
+								break;
+							default:// 텍스트
+								textEntityInput.text = value;
+						}
+					}		
+				}
+				private var _inputValue:Object;
+				
+	            public function set text(text:String):void{
+	            	this._inputValue = text;
+	            }  
+	            
+	            public function get text():String{
+	            	if(this.newValue != null) return this.newValue.toString();
+	            	else if(this.data == null) return "";
+	            	return this.data.toString();
+	            }  
+			]]>
+		</mx:Script>
+	<mx:ViewStack id="valueView" x="0" y="0" width="100%" height="100%" creationPolicy="all">
+		
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:RadioButtonGroup id="valueRadio" change="{generateData()}"/>
+			<mx:HBox id="valueRadioBox" x="0" y="0" width="100%" height="100%">
+				
+			</mx:HBox>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:ComboBox id="valueCombo" x="0" y="0" width="100%" height="100%" change="{generateData()}"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:DateField id="valueDateField" x="0" y="0" formatString="YYYY-MM-DD" width="100%" height="100%" change="{generateData()}"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%"  horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:NumericStepper id="valueNumericStepper" x="0" y="0" width="100%" height="100%" change="{generateData()}"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<controls:KoreanTextInput id="textEntityInput" x="0" y="0" text="{data}" width="100%" height="100%" change="{generateData()}"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<controls:KoreanTextArea id="textEntityArea" x="0" y="0" text="{data}" width="100%" height="100%" change="{generateData()}"/>
+		</mx:Canvas>
+		<mx:Canvas id="checkBoxCanvas" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<mx:CheckBox id="valueCheckBox" x="{(checkBoxCanvas.width - valueCheckBox.width)/2}" y="{(checkBoxCanvas.height - valueCheckBox.height)/2}"
+				 change="{generateData()}"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<org:OrgPersonField id="valuePerson" x="0" y="0" userId="{data}" width="100%" height="100%"
+				 change="{generateData()}"
+				 orgServiceUrl="{FormEditorConfig.orgServiceUrl}" connUserId="{FormEditorConfig.userId}"/>
+		</mx:Canvas>
+	</mx:ViewStack>
+</mx:Canvas>
+

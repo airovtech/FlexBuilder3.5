@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractSimpleDialog xmlns="com.maninsoft.smart.common.dialog.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.util.LocaleUtil;
+			import com.maninsoft.smart.ganttchart.model.GanttChartGrid;
+			import mx.controls.Label;
+			import com.maninsoft.smart.ganttchart.server.CalendarInfo;
+			import mx.controls.Button;
+			import mx.events.CalendarLayoutChangeEvent;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.FormEditorBase;
+			import mx.events.DataGridEvent;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.modeler.xpdl.server.Server;
+			import com.maninsoft.smart.modeler.xpdl.dialogs.SelectFormDialog;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskForm;
+			import com.maninsoft.smart.workbench.common.assets.PropertyIconLibrary;
+			import com.maninsoft.smart.modeler.assets.XPDLEditorAssets;
+
+			import flash.display.DisplayObject;
+			import flash.events.FocusEvent;
+			import flash.events.MouseEvent;
+
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.resources.ResourceManager;
+			import mx.controls.TextInput;
+
+			//----------------------------------------------------------------------
+			// Class Variables
+			//----------------------------------------------------------------------
+
+			private static var _dialog: SelectDateDialog;
+
+			//----------------------------------------------------------------------
+			// Variables
+			//----------------------------------------------------------------------
+
+			private var _acceptFunc: Function;
+			private	var _yearMonthLabel:TextInput = new TextInput();
+
+			//----------------------------------------------------------------------
+			// Class methods
+			//----------------------------------------------------------------------
+
+			public static function execute(current: Object, acceptFunc: Function, position:Point=null, rangeStart:Date=null, rangeEnd:Date=null): void {				
+				_dialog = PopUpManager.createPopUp(Application.application as DisplayObject, SelectDateDialog, false) as SelectDateDialog;
+
+				if(current)
+					_dialog.dateChooser.selectedDate = current as Date;
+				_dialog._acceptFunc = acceptFunc;
+				if(position){
+					_dialog.x = position.x;
+					_dialog.y = position.y;
+				}else{
+					PopUpManager.centerPopUp(_dialog);	
+				}
+				if(rangeStart || rangeEnd){
+					var object:Object  = new Object();
+					if(rangeStart) object["rangeStart"] = rangeStart;
+					if(rangeStart) object["rangeEnd"] = rangeEnd;
+					_dialog.dateChooser.selectableRange = object;;
+				}
+				_dialog.dateChooser.dayNames = CalendarInfo.getDaysArrayShort();
+				_dialog._yearMonthLabel.text = CalendarInfo.fullMonthToString(current as Date, GanttChartGrid.DEPLOY_MODE)
+				_dialog._yearMonthLabel.x = 25;
+				_dialog._yearMonthLabel.y = 4;
+				if(LocaleUtil.locale == "ko_KR"){
+					_dialog._yearMonthLabel.x = 25;
+					_dialog._yearMonthLabel.width = 120;
+				}else{
+					_dialog._yearMonthLabel.x = 25;
+					_dialog._yearMonthLabel.width = 160;
+				}
+				_dialog._yearMonthLabel.height = 20;
+				_dialog._yearMonthLabel.editable = false;
+				_dialog._yearMonthLabel.setStyle("borderStyle", "none");
+				_dialog._yearMonthLabel.setStyle("textAlign", "center");
+				_dialog._yearMonthLabel.setStyle("backgroundColor", 0xffffff);
+				_dialog._yearMonthLabel.setStyle("fontFamily", "Tahoma");
+				_dialog._yearMonthLabel.setStyle("fontSize", 13);
+				_dialog._yearMonthLabel.setStyle("fontWeight", "bold");
+				_dialog.dateChooser.addChild(_dialog._yearMonthLabel);
+				_dialog.dateChooser.setFocus();					
+				_dialog.addEventListener(FocusEvent.MOUSE_FOCUS_CHANGE, _dialog.dialogFocusChange);
+			}			
+
+			//----------------------------------------------------------------------
+			// Internal methods
+			//----------------------------------------------------------------------
+			private function close(accept: Boolean = true): void {		
+				if (accept && (_acceptFunc != null) && dateChooser.selectedDate)
+					_acceptFunc(dateChooser.selectedDate);
+		
+				PopUpManager.removePopUp(this);
+			}
+
+			//----------------------------------------------------------------------
+			// Event handlers
+			//----------------------------------------------------------------------
+
+			private function dialogFocusChange(event: FocusEvent): void {
+				if(	(event.relatedObject == _dialog) ||
+					((event.relatedObject is UIComponent) && (UIComponent(event.relatedObject).parentDocument == _dialog)) ||
+					(_dialog.dateChooser && _dialog.dateChooser.contains(event.relatedObject))){
+					return;
+				}
+				close(false);
+			}
+
+			private function dlg_keyDown(event: KeyboardEvent): void {
+				if (event.keyCode == Keyboard.ESCAPE)
+					close(false);
+			}	
+
+			//------------------------
+			// dateChooser
+			//------------------------
+
+			private function dateChooser_change(event:CalendarLayoutChangeEvent): void {
+				close(true);
+			}
+			
+			private function dateChooser_click(event:MouseEvent):void{
+				if(event.target is Button){
+					_yearMonthLabel.text = CalendarInfo.fullMonthToString(
+											new Date(dateChooser.displayedYear, dateChooser.displayedMonth),
+											GanttChartGrid.DEPLOY_MODE);
+				}
+				
+			}
+
+		]]>
+	</mx:Script>
+
+	<mx:VBox verticalGap="0" width="100%" borderStyle="none">
+		<mx:DateChooser id="dateChooser" styleName="selectDateDateChooser" change="dateChooser_change(event)" click="dateChooser_click(event)"
+			 borderThickness="0" headerColors="#ffffff,#ffffff" fontFamily="Tahoma" fontSize="11"/> 
+	</mx:VBox>
+</AbstractSimpleDialog>

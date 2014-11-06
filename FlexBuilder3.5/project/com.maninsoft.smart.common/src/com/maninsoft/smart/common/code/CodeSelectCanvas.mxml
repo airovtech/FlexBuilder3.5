@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" xmlns:code="com.maninsoft.smart.common.code.*">
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.TreeEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			public var baseUrl:String;
+			[Bindable]
+			public var connUserId:String;
+			
+			private var dataXML:XML;
+			private var codeLoader:URLLoader;
+			private var codeURL:String ;
+			private var codeReq:URLRequest = new URLRequest();
+			
+			[Bindable]
+			public var categoryId:String;
+			[Bindable]
+			public var categoryName:String;
+			
+			private function loadCode(categoryId:String, categoryName:String):void{
+				this.categoryId = categoryId;
+				this.categoryName = categoryName;
+				
+				dispatchEvent(new Event(Event.CHANGE));
+				
+				codeURL = baseUrl + "smartworksV3/services/portal/codeService.jsp?method=findCode&userId=" + connUserId + "&categoryId=" + categoryId;
+				codeReq.url = codeURL;
+				if(codeLoader == null){
+					codeLoader = new URLLoader();
+					codeLoader.addEventListener(Event.COMPLETE, loadCodeComplete);
+				}
+				codeLoader.load(codeReq);				
+			}
+			
+			private function loadCodeComplete(e:Event):void{
+				var codeXml:XML = XML(codeLoader.data);
+				if(codeXml.@status == "Failed"){
+					Alert.show("코드 정보 불러오기에 실패했습니다.", "코드정보 호출결과");
+				}else{
+					codeDataGrid.dataProvider = codeXml.Code;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:String id="categoryServiceUrl">{baseUrl + 'smartserver/services/common/categoryService.jsp'}</mx:String>
+	<mx:HDividedBox x="0" y="0" width="100%" height="100%" horizontalGap="1">
+		<code:CodeTree id="codeCatTree" width="40%" height="100%" categoryServiceUrl="{categoryServiceUrl}" connUserId="{connUserId}" custormItemClick="{loadCode(codeCatTree.currentCategoryId, codeCatTree.currentCategoryName)}"/>
+		<mx:DataGrid id="codeDataGrid" width="60%" height="100%" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="코드" dataField="code"/>
+				<mx:DataGridColumn headerText="이름" dataField="name"/>
+				<mx:DataGridColumn headerText="설명" dataField="description"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:HDividedBox>
+</mx:Canvas>

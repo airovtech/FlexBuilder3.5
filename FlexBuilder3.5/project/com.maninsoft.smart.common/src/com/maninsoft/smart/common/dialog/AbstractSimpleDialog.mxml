@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"	styleName="abstractSimpleDialog" creationComplete="init()">
+	<mx:Style source="/assets/css/smartCommon.css"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.VBox;
+			import com.maninsoft.smart.common.assets.DialogAssets;	
+			import flash.events.Event;
+			import flash.events.MouseEvent;
+			import mx.containers.Box;
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import mx.controls.Image;
+			import mx.core.ScrollPolicy;
+			import mx.events.ChildExistenceChangedEvent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+
+			private function init():void{
+
+				horizontalScrollPolicy=ScrollPolicy.OFF;
+				verticalScrollPolicy=ScrollPolicy.OFF;
+				autoLayout = true;
+				showCloseButton = false;
+			}		
+		]]>
+	</mx:Script>	
+</mx:TitleWindow>

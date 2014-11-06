@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="268" height="158" 
+	title="지시업무 선택" titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	 borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3" 
+	creationComplete="{init()}">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import portalAs.Properties;
+			[Bindable]
+			private var formListXml:XML;
+			
+			private function init():void{
+				loadAssignFormList();
+			}
+			
+			// 할당폼을 로드하기 위한 요청변수
+			private var assignReq:URLRequest = new URLRequest();
+			// 할당폼을 로드하기 위한 변수
+			private var assignLoader:URLLoader = new URLLoader();
+			
+			private function loadAssignFormList():void{
+
+				this.assignLoader.addEventListener(Event.COMPLETE, loadAssignFormListResult);
+				this.assignLoader.addEventListener(IOErrorEvent.IO_ERROR, loadAssignFormListFault);
+				this.assignLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loadAssignFormListFault);
+				
+				this.assignReq.url = Properties.basePath+ "/smartserver/services/runtime/searchingService.jsp?method=searchAssignsFormList&userId=" + Properties.userId;
+				this.assignLoader.load(this.assignReq);
+			}
+			
+			private function loadAssignFormListResult(e:Event):void{
+
+				var formListXml:XML = XML(assignLoader.data)
+				
+				if(formListXml.@status == "Failed"){
+					loadAssignFormListFault(e);
+				}else{
+					this.formListXml = formListXml;
+				}
+			}
+			
+			private function loadAssignFormListFault(e:Event):void{
+				msgText.text = "업무 폼 리스트를 얻어 올 수 없습니다.";
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function complete():void{
+				selectForm();
+				
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();
+			}
+			
+			private function cancel():void{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();
+			}
+			
+			public var formId:String;
+			public var version:int;
+			
+			private function selectForm():void{
+				formId = XML(formCombo.selectedItem).formId.toString();
+				version = new int(XML(formCombo.selectedItem).version.toString());
+			}
+		]]>
+	</mx:Script>
+	<mx:ComboBox id="formCombo" x="10" y="34" width="228"  dataProvider="{this.formListXml.Form}" labelField="name">
+	</mx:ComboBox>
+	<mx:Text x="10" y="10" text="지시할 업무 선택:" fontSize="11"/>
+	<mx:Text x="10" y="64" color="#FFB644" id="msgText"/>
+	<mx:Button x="134" y="86" label="확인" fontSize="11" click="{complete()}"/>
+	<mx:Button x="190" y="86" label="취소" fontSize="11" click="{cancel()}"/>
+	
+</mx:TitleWindow>

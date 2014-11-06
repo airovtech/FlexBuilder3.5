@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GadgetPanel xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Canvas width="100%" height="100%">
+		<mx:Image top="10" bottom="10" left="10" right="10" width="100%" height="100%">
+			<mx:source>file:///C|/Documents and Settings/안성호/My Documents/My Pictures/thumb_12tt.gif</mx:source>
+		</mx:Image>
+	</mx:Canvas>
+</GadgetPanel>

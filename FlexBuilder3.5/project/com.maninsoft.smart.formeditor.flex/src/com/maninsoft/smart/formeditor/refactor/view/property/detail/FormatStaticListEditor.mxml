@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	height="100%" width="100%" verticalGap="2" styleName="formTextInputLabel">
+	<mx:Style source="/assets/css/formEditor.css"/>
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.controls.Alert;
+			import mx.collections.ArrayCollection;
+		
+//			private var _staticItemList:ArrayCollection;
+			
+			public function set staticItemList(_staticItemList:ArrayCollection):void{
+				staticList = new ArrayCollection();
+				for each(var staticItem:String in _staticItemList){
+					staticList.addItem(staticItem);
+				}
+//				this._staticItemList = _staticItemList;
+			}
+			
+//			public function get staticItemList():ArrayCollection{
+//				return this._staticItemList;
+//			}
+			[Bindable]
+			public var staticList:ArrayCollection = new ArrayCollection();
+			
+			private function addUniqueItemToList(item:String):Boolean{
+				if(staticList.contains(item))
+					return false;
+
+				staticList.addItemAt(item, (staticList.length==0?0:staticList.length));
+				dispatchEvent(new Event(Event.CHANGE));
+				
+				staticChoiceItem.text = "";
+				return true;
+			}
+			
+			private function delUniqueItemToList(item:String):Boolean{
+				if(staticList.contains(item)){
+					staticList.removeItemAt(staticList.getItemIndex(item));
+					dispatchEvent(new Event(Event.CHANGE));
+					return true;
+				}
+				return false;
+			}
+			
+			private function changeIndex(item:String, index:int):Boolean{
+				
+				if (staticList.length == index)
+					return false;
+				
+				if(staticList.contains(item)){
+					staticList.removeItemAt(staticList.getItemIndex(item));
+					staticList.addItemAt(item, index);
+					
+					dispatchEvent(new Event(Event.CHANGE));
+					
+					selectRow();
+					
+					return true;
+				}
+				return false;
+			}
+			
+			private function selectRow():void {
+				staticChoiceList.validateNow();
+				staticChoiceList.selectedIndex = getIndexofSelectedObj(selectedObj);
+				
+				selectedRowCount = getIndexofSelectedObj(selectedObj);
+			}
+			
+			
+			private function getIndexofSelectedObj(obj:Object):int {
+				return staticChoiceList.dataProvider.getItemIndex(obj);
+			}
+			
+			private var selectedObj:Object;
+			private var selectedRowCount:int;
+			
+			private function setSelectedRowCount(event:ListEvent):void {
+				selectedRowCount = event.rowIndex;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:HBox id="addDelBox" width="100%" horizontalGap="2">
+		<mx:TextInput text="" width="{addDelBox.width - addBtn.width - 5}" id="staticChoiceItem" height="20"/>
+		<mx:Button id="addBtn" label="추가" click="{addUniqueItemToList(staticChoiceItem.text)}" height="20"/>	
+		<!--
+		<mx:Button label="삭제" click="{delUniqueItemToList(staticChoiceItem.text)}"/>	
+		-->
+	</mx:HBox>
+	<mx:HBox id="staticChoiceListBox" width="100%" horizontalGap="2">
+		<mx:List id="staticChoiceList" verticalAlign="middle" width="{staticChoiceListBox.width - staticChoiceListBoxBtn.width - 5}" height="65"
+			dataProvider="{staticList}"
+			change="selectedObj=staticChoiceList.selectedItem;setSelectedRowCount(event);"
+			/>	
+			<!--dataProvider="{staticList}" change="{changeSelected()}"/>-->	
+		<mx:Box id="staticChoiceListBoxBtn" verticalAlign="middle" width="{addBtn.width}" height="70">
+			<mx:VBox width="15" horizontalAlign="right" verticalGap="0">
+				<mx:Button click="{changeIndex(staticChoiceList.selectedItem as String, 0)}"
+					styleName="staticListAUp" width="13" height="13"
+					enabled="{staticChoiceList.selectedItem != null}"/>	
+				<mx:Button click="{changeIndex(staticChoiceList.selectedItem as String, (staticChoiceList.selectedIndex == 0?0:staticChoiceList.selectedIndex - 1))}"
+					styleName="staticListUp" width="13" height="13"
+					enabled="{staticChoiceList.selectedItem != null}"/>	
+				<mx:Button click="{delUniqueItemToList(staticChoiceList.selectedItem as String)}"
+					styleName="staticListRemove" width="13" height="13"
+					enabled="{staticChoiceList.selectedItem != null}"/>	
+				<!--<mx:Button click="{changeIndex(staticChoiceList.selectedItem as String, staticChoiceList.selectedIndex + 1)}"-->
+				<mx:Button click="{changeIndex(staticChoiceList.selectedItem as String, (staticList.length == (staticChoiceList.selectedIndex + 1)?staticList.length:(staticChoiceList.selectedIndex + 1)))}"
+					styleName="staticListDown" width="13" height="13"
+					enabled="{staticChoiceList.selectedItem != null}"/>	
+				<!--<mx:Button click="{changeIndex(staticChoiceList.selectedItem as String, (staticChoiceList.selectedIndex == (staticList.length - 1)?staticList.length-1:staticList.length - 1))}"-->
+				<mx:Button click="{changeIndex(staticChoiceList.selectedItem as String, (staticList.length - 1))}"
+					styleName="staticListADown" width="13" height="13"
+					enabled="{staticChoiceList.selectedItem != null}"/>	
+			</mx:VBox>
+		</mx:Box>
+	</mx:HBox>					
+</mx:VBox>

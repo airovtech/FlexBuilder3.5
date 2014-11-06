@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TextInput xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="{init()}" focusOut="{focusOut(event)}">
+	<mx:Script>
+		<![CDATA[
+			private function init():void{
+				// 한글 입력 빠르게
+				textField.alwaysShowSelection = true;
+			}
+			
+			private function focusOut(e:Event):void{
+				setSelection(0, 0);
+			}
+		]]>
+	</mx:Script>
+</mx:TextInput>

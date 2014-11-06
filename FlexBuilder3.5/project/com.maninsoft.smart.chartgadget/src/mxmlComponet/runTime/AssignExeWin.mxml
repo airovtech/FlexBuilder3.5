@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns="com.maninsoft.smart.formeditor.refactor.util.*" xmlns:mx="http://www.adobe.com/2006/mxml" title="지시업무 완료" 
+	close="cancel()" showCloseButton="true" creationComplete="init()" xmlns:common="com.maninsoft.smart.common.*" 
+	xmlns:org="com.maninsoft.smart.common.org.*" width="566" height="278" xmlns:controls="com.maninsoft.smart.common.controls.*"
+	titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3">
+	<mx:Script>
+		<![CDATA[
+			import portalAs.Properties;
+			import com.maninsoft.smart.formeditor.refactor.model.FormDocument;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			public var formDataXml:XML;
+			
+			private function init():void{
+			}
+			
+			// 폼 선택 취소
+			// 1. 폼 선택정보 제거	
+			// 2. 취소 이벤트
+			private function cancel():void{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();	
+			}
+			
+			// 폼 선택
+			// 1. 완료 이벤트
+			private function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function selectFormField():void{
+				if(this.titleFieldCombo.selectedItem != null){
+					titleField.text = XML(this.titleFieldCombo.selectedItem).toString();
+				}
+				
+			}
+		]]>
+	</mx:Script>
+	<!--
+	<mx:Label x="10" y="60" text="제목 : "/>
+	<mx:TextInput id="processTitleInput" x="70" y="58" text="{this.initName}"/>
+	<mx:Text x="10" y="10" text="이 업무는 시작업무입니다. 다음 제목란에 생성될 프로세스의 제목을 입력하세요." width="231" height="45" color="#EF9516"/>
+	<mx:ComboBox id="prcTitleFieldCombo" x="70" y="111" dataProvider="{this.formDataXml.DataField}" labelField="name" change="{selectFormField()}">
+	</mx:ComboBox>
+	-->
+	<mx:VBox width="100%" height="100%">
+		<mx:Text  text="업무를 할당합니다. 제목, 업무수행자, 업무기한를 변경 할 수 있습니다.." width="100%" height="5%" color="#EF9516"/>
+		<mx:HBox width="100%" height="100%" horizontalGap="0" horizontalAlign="center">
+			<mx:Form width="90%" height="90%">
+				<mx:FormItem label="제목" fontSize="12" fontWeight="bold" direction="horizontal" width="100%">
+					<controls:KoreanTextInput id="titleField" change="{selectFormField()}" editable="true" enabled="true"/>
+					<mx:ComboBox id="titleFieldCombo" dataProvider="{this.formDataXml.DataField}" labelField="name" 
+						click="{selectFormField()}" maxWidth="150"/>					
+				</mx:FormItem>
+				<mx:FormItem label="업무수행자" fontSize="12" fontWeight="bold" direction="horizontal" width="100%">
+					<org:OrgPersonField id="userField" width="100%" height="100%"
+						orgServiceUrl="{Properties.basePath + '/smartserver/services/common/organizationService.jsp'}" connUserId="{Properties.userId}"/>
+				</mx:FormItem>
+				<mx:FormItem label="업무기한" fontSize="12" fontWeight="bold" width="100%">
+					<mx:DateField width="100%" id="nextDuration" formatString="YYYY-MM-DD"/>
+				</mx:FormItem>
+			</mx:Form>
+		</mx:HBox>
+		<mx:HBox width="100%" height="45%" horizontalAlign="right">
+			<mx:Button x="118" y="144" label="확인" click="complete()"/>
+			<mx:Button x="178" y="144" label="취소" click="cancel()"/>
+		</mx:HBox>
+	</mx:VBox>	
+</mx:TitleWindow>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:gridComponent="portalAs.gridComponent.*" 
+	creationComplete="crComplete()" backgroundColor="#DDCFFA">
+	<mx:Script>
+		<![CDATA[
+			import portalAs.gridComponent.FindSelectItem;
+			import mxmlComponet.home.chartInfo.model.ConditionModel;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mxmlComponet.home.chartInfo.util.FilterPopUpLayOut;
+			import mx.core.Application;
+			import mxmlComponet.home.chartInfo.filter.ConditionFilter;
+			import mx.events.ItemClickEvent;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			private var _conditionContents:ArrayCollection = new ArrayCollection();
+			private var filterPopUpLayOut:FilterPopUpLayOut = new FilterPopUpLayOut();
+			public var app:Application;
+			private var conditionFilter:ConditionFilter = new ConditionFilter();
+			
+			private function crComplete():void{
+				var arr:Array = conditionGrid.columns;
+				DataGridColumn(arr[1]).width = conditionGrid.width*0.6;
+				DataGridColumn(arr[2]).width = conditionGrid.width*0.2;
+				DataGridColumn(arr[3]).width = conditionGrid.width*0.2;
+				conditionFilter.addEventListener(CustormEvent.CUSTORM_ITEM_ADD, addCondition);
+				conditionFilter.addEventListener(CustormEvent.CUSTORM_ITEM_MODIFY, modityCondition);
+				filterPopUpLayOut.addEventListener(CustormEvent.CUSTORM_CLOSE, closePop)
+			}
+			
+			public function set conditionContents(arr:ArrayCollection):void{
+				if(arr!=null){
+					_conditionContents = arr;
+				}
+			}
+			
+			public function get conditionContents():ArrayCollection{
+				return _conditionContents
+			}
+			
+			private function handleCard(event:ItemClickEvent):void {
+			}
+			
+			private function conditionAddPopUp():void{
+				conditionFilter.conditionCount = conditionContents.length;
+				filterPopUpLayOut.createPop("조건필터", conditionFilter, app, this);
+			}
+			
+			public function conditionModifyPopUp(event:CustormEvent):void{
+				var dataGrid:DataGrid = event.dataGrid;
+				conditionFilter.conditionModel = ConditionModel(dataGrid.selectedItem);
+				filterPopUpLayOut.createPop("조건필터", conditionFilter, app, this);
+			}
+			
+			private function addCondition(event:CustormEvent):void{
+				conditionContents.addItem(event.conditionModel);
+				conditionFilter.conditionModel = null;
+			}
+			
+			private function modityCondition(event:CustormEvent):void{
+				conditionFilter.radioInit();
+				conditionFilter.conditionModel = null;
+			}
+			
+			public function removeCondition(event:CustormEvent):void{
+				var dataGrid:DataGrid = event.dataGrid;
+				_conditionContents.removeItemAt(dataGrid.selectedIndex);
+			}
+			
+			private function closePop(event:CustormEvent):void{
+				conditionFilter.radioInit();
+				conditionFilter.conditionModel = null;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center">
+		<mx:Canvas width="100%" height="5%"/>
+		<mx:HBox width="95%" height="15%">
+			<mx:HBox width="50%" height="100%">
+				<mx:Label text="조건" styleName="normalLabel"/>
+			</mx:HBox>
+			<mx:HBox width="50%" height="100%" horizontalAlign="right">
+				<mx:Button label="추가" click="conditionAddPopUp()"/>
+			</mx:HBox>
+		</mx:HBox>
+		<mx:HBox width="100%" height="80%" horizontalAlign="center" verticalAlign="middle" horizontalScrollPolicy="off">
+			<mx:DataGrid width="95%" height="70" dataProvider="{_conditionContents}" id="conditionGrid">
+				<mx:columns>
+					<mx:DataGridColumn headerText="id" dataField="id" width="0" visible="false"/>
+					<mx:DataGridColumn headerText="조건명" dataField="name" textAlign="center"/>
+					<mx:DataGridColumn headerText="수정" textAlign="center">
+						<mx:itemRenderer>
+							<mx:Component>
+								<gridComponent:EmbedGridButton embedId="{data.id}"  buttonName="수정" custormItemClick="btnClick(event)">
+									<mx:Script>
+										<![CDATA[
+											import com.maninsoft.smart.common.event.CustormEvent;
+											import mx.controls.DataGrid;
+											import mxmlComponet.home.chartInfo.info.ConditionInfo;
+											function btnClick(event:CustormEvent):void{
+												var dataGrid:DataGrid = event.dataGrid;
+												ConditionInfo(dataGrid.parent.parent.parent).conditionModifyPopUp(event);
+											}
+										]]>
+									</mx:Script>
+								</gridComponent:EmbedGridButton>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="삭제" textAlign="center">
+						<mx:itemRenderer>
+							<mx:Component>
+								<gridComponent:EmbedGridButton embedId="{data.id}"  buttonName="삭제" custormItemClick="btnClick(event)">
+									<mx:Script>
+										<![CDATA[
+											import com.maninsoft.smart.common.event.CustormEvent;
+											import mx.controls.DataGrid;
+											import mxmlComponet.home.chartInfo.info.ConditionInfo;
+											function btnClick(event:CustormEvent):void{
+												var dataGrid:DataGrid = event.dataGrid;
+												ConditionInfo(dataGrid.parent.parent.parent).removeCondition(event);
+											}
+										]]>
+									</mx:Script>
+								</gridComponent:EmbedGridButton>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		<mx:HBox width="100%" height="10%" horizontalAlign="center">
+			<mx:Label text="조건관계" styleName="normalLabel"/>
+			<mx:RadioButtonGroup id="conditionsRel" itemClick="handleCard(event);"/>
+			<mx:RadioButton groupName="conditionsRel" label="AND" value="AND"/>
+			<mx:RadioButton groupName="conditionsRel" label="OR" value="OR"/>
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

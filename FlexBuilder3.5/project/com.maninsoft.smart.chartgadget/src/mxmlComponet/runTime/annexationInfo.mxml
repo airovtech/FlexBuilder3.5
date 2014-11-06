@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GadgetPanel xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="mxmlComponet.runTime.*">
+	<mx:Script>
+		<![CDATA[
+			[Bindable]
+			private var workId:String;
+			
+			public function getAnnexationInfo(parWorkId:String):void{
+				workId = parWorkId;
+				try{
+					opinionList.getOpinion();
+					qnaList.getQna();
+				}catch(err:Error){}
+			}	
+		]]>
+	</mx:Script>
+	<mx:Accordion width="100%" height="100%" id="acc" styleName="Accordion">
+		<mx:Canvas label="댓글" width="100%" height="100%">
+			<ns1:opinionList width="100%" height="100%" workId="{workId}" id="opinionList">
+			</ns1:opinionList>
+		</mx:Canvas>
+		<mx:Canvas label="Q&amp;A" width="100%" height="100%">
+			<ns1:qnaList width="100%" height="100%" workId="{workId}" id="qnaList">
+			</ns1:qnaList>
+		</mx:Canvas>
+	</mx:Accordion>
+</GadgetPanel>

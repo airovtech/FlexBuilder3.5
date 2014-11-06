@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:ns1="smartWork.custormObj.*" xmlns:ns2="mxmlComponet.runTime.*" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mxmlComponet.process.processtInstanceDetail;
+			import smartWork.custormObj.GadgetPanel;
+			import mx.binding.utils.BindingUtils;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			
+			[Bindable]
+			public var workStatus:String=""; //ing:처리할 업무목록, ed:완료한업무목록
+			
+			[Bindable]
+			public var workId:String;
+			
+			public function refresh():void{
+				trace("xxxxxxxxxxxxxxxxxxxx");
+			}  
+			
+			private function init():void {
+				workListDivBox.height = 900;
+				if(workStatus=="ed"){
+					var worked:workListed = new workListed();
+					worked.percentWidth = 100;
+					worked.percentHeight = 100;
+					//worked.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, seachMetaInfo);스팩변경으로 인한 주석 처리(메타정보 페이지 삭제)
+					worked.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, changeFormPage);
+					worked.addEventListener(CustormEvent.CUSTORM_ITEM_DOUBLE_CLICK, moveFormPage);
+					worked.addEventListener(CustormEvent.CUSTORM_ITEM_LOAD, firstItemLoad);
+					workCanvas.addChild(worked);
+					workPanelExe.showBtn = false;
+				}else if(workStatus=="del"){
+					var workdel:workListDelete = new workListDelete();
+					workdel.percentWidth = 100;
+					workdel.percentHeight = 100;
+					//worked.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, seachMetaInfo);스팩변경으로 인한 주석 처리(메타정보 페이지 삭제)
+					workdel.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, changeFormPage);
+					workdel.addEventListener(CustormEvent.CUSTORM_ITEM_DOUBLE_CLICK, moveFormPage);
+					workdel.addEventListener(CustormEvent.CUSTORM_ITEM_LOAD, firstItemLoad);
+					workCanvas.addChild(workdel);
+					workPanelExe.showBtn = false;
+				}else if(workStatus=="ing"){
+					var working:workListing = new workListing();
+					working.percentWidth = 100;
+					working.percentHeight = 100;
+					//worked.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, seachMetaInfo);스팩변경으로 인한 주석 처리(메타정보 페이지 삭제)
+					working.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, changeFormPage);
+					working.addEventListener(CustormEvent.CUSTORM_ITEM_DOUBLE_CLICK, moveFormPage);
+					working.addEventListener(CustormEvent.CUSTORM_ITEM_LOAD, firstItemLoad);
+					workCanvas.addChild(working);
+				}else if(workStatus=="noti"){
+					var workNoti:workListNotice = new workListNotice();
+					workNoti.percentWidth = 100;
+					workNoti.percentHeight = 100;
+					//worked.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, seachMetaInfo);스팩변경으로 인한 주석 처리(메타정보 페이지 삭제)
+					workNoti.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, changeFormPage);
+					workNoti.addEventListener(CustormEvent.CUSTORM_ITEM_DOUBLE_CLICK, moveFormPage);
+					workNoti.addEventListener(CustormEvent.CUSTORM_ITEM_LOAD, firstItemLoad);
+					workCanvas.addChild(workNoti);
+					workPanelExe.showBtn = false;
+				}
+				workHistory.addEventListener(CustormEvent.CUSTORM_ITEM_DOUBLE_CLICK, moveHistoryFormPage);
+				workListDivBox.addChild(workListBox);
+				workListBox.visible = true;				
+				workListBox.height = 298;
+				workListDivBox.addChild(workExeBox);
+				workExeBox.visible = true;
+				workExeBox.height = 600;
+			}
+
+			private function firstItemLoad(event:CustormEvent):void {
+				workId = event.workId;
+				workPanelExe.activateMode();				
+			}			
+			
+			private function moveHistoryFormPage(event:CustormEvent):void {
+				var pop:processtInstanceDetail = processtInstanceDetail(PopUpManager.createPopUp(this, processtInstanceDetail, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.workId = workId = event.workId; 
+				//PopUpManager.centerPopUp(pop);
+				pop.x = 120;
+				pop.y = 10;
+			}
+			private function changeFormPage(event:CustormEvent):void { 
+				workId = event.workId;
+				workPanelExe.activateMode();
+			}
+			private function moveFormPage(event:CustormEvent):void {
+				workListDivBox.height = 1130;
+				trace(event.workId);	
+				workListDivBox.removeAllChildren();
+				
+				workListDivBox.addChild(workExeBox); // 업무영역 확대
+				workExeBox.height = 700;
+				workExeBox.visible = true;
+
+				workListDivBox.addChild(workHistoryBox);//히스토리 영역 확대
+				workHistoryBox.height = 420;
+				workHistoryBox.visible = true;
+				
+				workPanelExe.activateMode();
+				workHistory.getWorkHostory();
+				workHistory.monitorDiagramCreate(event.prcInstId);
+				
+				workPanelExeTitleBox.height = 30;
+				workTitleLable.text = event.title;
+				
+				workId = event.workId;
+				workHistory.workItemId = event.workId;
+				workHistory.getWorkHostory();
+			}
+			private function moveWorkListPage():void {
+				workListDivBox.height = 900; 
+				workListDivBox.removeAllChildren();
+				workHistoryBox.visible = false; 
+				
+				workListDivBox.addChild(workListBox); //워크리스트 영역 확대
+				workListBox.visible = true;				
+				workListBox.height = 298;
+				
+				workListDivBox.addChild(workExeBox);//업무영역 확대
+				workExeBox.visible = true;
+				workExeBox.height = 600;
+				
+				workPanelExeTitleBox.height = 0;
+				workTitleLable.text = "";
+			}
+			private function workCreateComplete():void {
+				moveWorkListPage();
+			}
+		]]>
+	</mx:Script>
+
+	<mx:VDividedBox x="0" y="0" id="workListDivBox" width="100%" height="100%" verticalGap="2" 
+		dividerThickness="2" dividerColor="#999999">
+	</mx:VDividedBox>
+	
+	<!--업무 리스트 영역 -->
+	<mx:HBox  width="100%" height="100%" id="workListBox" visible="false" horizontalGap="3">
+		<mx:Canvas id="workCanvas" width="100%" height="100%">
+		</mx:Canvas>
+	</mx:HBox>
+	
+	<!-- 업무 실행 영역 -->
+	<mx:VBox id="workExeBox" width="100%" verticalGap="0">
+		<mx:HBox id="workPanelExeTitleBox" width="100%" height="0" backgroundColor="#E9975A" horizontalAlign="left" verticalAlign="top">
+			<mx:HBox width="100%" backgroundColor="#FFFFFF" height="27">
+				<mx:HBox y="0" width="50%" height="25" horizontalAlign="left" verticalAlign="middle" horizontalGap="2">
+					<mx:Image source="@Embed('images/portal_main/processInst_content_title_icon.jpg')" width="26" height="26"/>
+					<mx:Label text="" fontSize="14" styleName="normalLabel" id="workTitleLable"/>
+				</mx:HBox>
+				<mx:HBox y="0" width="50%" height="25" horizontalAlign="right" verticalAlign="middle" horizontalGap="0">
+					<mx:Image width="23" height="21" id="workListIcon"
+						source="@Embed('images/portal_main/processInst_content_new_icon.jpg')" click="moveWorkListPage()"/>
+					<mx:Label text="목록보기" fontSize="12" styleName="normalLabel" id="workListLabel" click="moveWorkListPage()"/>
+				</mx:HBox>  
+			</mx:HBox>
+		</mx:HBox>		
+		<mx:VBox width="100%" height="100%" paddingBottom="0" borderStyle="solid" borderColor="#9A9A9A">
+			<ns2:formEditor id="workPanelExe" width="100%" height="100%" workId="{workId}" sucessWorkitemExecute="workCreateComplete()" workStatus="{workStatus}">
+			</ns2:formEditor>
+		</mx:VBox>
+	</mx:VBox>	
+	
+	<!-- 업무 히스토리 영역 -->
+	<mx:HBox width="100%" height="0%" id="workHistoryBox" paddingTop="3" visible="false" horizontalGap="3">
+		<ns2:workHistory id="workHistory" width="100%" height="100%">
+		</ns2:workHistory>
+	</mx:HBox>
+			
+	<!-- 업무 히스토리 팝업 -->	
+	<ns2:formEditor id="workPanelHistory" width="100%" height="100%" workId="{workId}" visible="false"/>			
+</mx:Canvas>
+
+
+

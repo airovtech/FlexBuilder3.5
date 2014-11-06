@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties version="1">
+  <includeClasses>
+    <classEntry path="com.maninsoft.smart.formeditor.FormEditorBase"/>
+    <classEntry path="com.maninsoft.smart.formeditor.model.property.FormatListPropertyInfo"/>
+    <classEntry path="com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent"/>
+    <classEntry path="com.maninsoft.smart.formeditor.refactor.simple.SimpleFormEditor"/>
+    <classEntry path="com.maninsoft.smart.formeditor.view.dialog.util.FormMappingTypeComboBox"/>
+    <classEntry path="com.maninsoft.smart.formeditor.view.format.EmailIDInputView"/>
+  </includeClasses>
+  <includeResources>
+    <resourceEntry destPath="assets/icon/import.gif" sourcePath="assets/icon/import.gif"/>
+    <resourceEntry destPath="assets/icon/schema/item/remote_form.gif" sourcePath="assets/icon/schema/item/remote_form.gif"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_check.png" sourcePath="assets/icon/format/tbtn_check.png"/>
+    <resourceEntry destPath="assets/icon/btn_worklist.png" sourcePath="assets/icon/btn_worklist.png"/>
+    <resourceEntry destPath="assets/icon/mapping/filter.PNG" sourcePath="assets/icon/mapping/filter.PNG"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_datetime.png" sourcePath="assets/icon/format/tbtn_datetime.png"/>
+    <resourceEntry destPath="assets/icon/closeNav.png" sourcePath="assets/icon/closeNav.png"/>
+    <resourceEntry destPath="assets/icon/system.gif" sourcePath="assets/icon/system.gif"/>
+    <resourceEntry destPath="assets/icon/hasImport.gif" sourcePath="assets/icon/hasImport.gif"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_member.png" sourcePath="assets/icon/format/tbtn_member.png"/>
+    <resourceEntry destPath="assets/icon/schema/minus.gif" sourcePath="assets/icon/schema/minus.gif"/>
+    <resourceEntry destPath="assets/icon/openNav.png" sourcePath="assets/icon/openNav.png"/>
+    <resourceEntry destPath="assets/icon/expression.png" sourcePath="assets/icon/expression.png"/>
+    <resourceEntry destPath="assets/icon/tbtn_redo.png" sourcePath="assets/icon/tbtn_redo.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_department.png" sourcePath="assets/icon/format/tbtn_department.png"/>
+    <resourceEntry destPath="assets/icon/formLink.png" sourcePath="assets/icon/formLink.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_email.png" sourcePath="assets/icon/format/tbtn_email.png"/>
+    <resourceEntry destPath="assets/icon/form.png" sourcePath="assets/icon/form.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_combo.png" sourcePath="assets/icon/format/tbtn_combo.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_celmerge.png" sourcePath="assets/icon/format/tbtn_celmerge.png"/>
+    <resourceEntry destPath="assets/icon/btn_diwork.png" sourcePath="assets/icon/btn_diwork.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_ab.png" sourcePath="assets/icon/format/tbtn_ab.png"/>
+    <resourceEntry destPath="assets/icon/nextPageGroup.gif" sourcePath="assets/icon/nextPageGroup.gif"/>
+    <resourceEntry destPath="assets/icon/disclose_open.png" sourcePath="assets/icon/disclose_open.png"/>
+    <resourceEntry destPath="assets/icon/mapping/add_page_16.gif" sourcePath="assets/icon/mapping/add_page_16.gif"/>
+    <resourceEntry destPath="assets/icon/prevPageGroup.gif" sourcePath="assets/icon/prevPageGroup.gif"/>
+    <resourceEntry destPath="assets/icon/mapping/docs_16.gif" sourcePath="assets/icon/mapping/docs_16.gif"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_image.png" sourcePath="assets/icon/format/tbtn_image.png"/>
+    <resourceEntry destPath="assets/icon/btn_worksclist.png" sourcePath="assets/icon/btn_worksclist.png"/>
+    <resourceEntry destPath="assets/icon/schema/item/local_form.gif" sourcePath="assets/icon/schema/item/local_form.gif"/>
+    <resourceEntry destPath="assets/icon/mapping/document_exchange.png" sourcePath="assets/icon/mapping/document_exchange.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_radio.png" sourcePath="assets/icon/format/tbtn_radio.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_textarea.png" sourcePath="assets/icon/format/tbtn_textarea.png"/>
+    <resourceEntry destPath="assets/icon/mapping/filter.bmp" sourcePath="assets/icon/mapping/filter.bmp"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_currency.png" sourcePath="assets/icon/format/tbtn_currency.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_12.png" sourcePath="assets/icon/format/tbtn_12.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_file.png" sourcePath="assets/icon/format/tbtn_file.png"/>
+    <resourceEntry destPath="assets/icon/disclose_close.png" sourcePath="assets/icon/disclose_close.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_mail.png" sourcePath="assets/icon/format/tbtn_mail.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_table.png" sourcePath="assets/icon/format/tbtn_table.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_autoindex.png" sourcePath="assets/icon/format/tbtn_autoindex.png"/>
+    <resourceEntry destPath="assets/icon/hasExport.gif" sourcePath="assets/icon/hasExport.gif"/>
+    <resourceEntry destPath="assets/icon/schema/item/base.gif" sourcePath="assets/icon/schema/item/base.gif"/>
+    <resourceEntry destPath="assets/icon/serviceLink.png" sourcePath="assets/icon/serviceLink.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_percent.png" sourcePath="assets/icon/format/tbtn_percent.png"/>
+    <resourceEntry destPath="assets/icon/tbtn_save.png" sourcePath="assets/icon/tbtn_save.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_time.png" sourcePath="assets/icon/format/tbtn_time.png"/>
+    <resourceEntry destPath="assets/icon/mapping/del_page_16.gif" sourcePath="assets/icon/mapping/del_page_16.gif"/>
+    <resourceEntry destPath="assets/icon/process.gif" sourcePath="assets/icon/process.gif"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_label.png" sourcePath="assets/icon/format/tbtn_label.png"/>
+    <resourceEntry destPath="assets/icon/tbtn_undo.png" sourcePath="assets/icon/tbtn_undo.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_referwork.png" sourcePath="assets/icon/format/tbtn_referwork.png"/>
+    <resourceEntry destPath="assets/icon/format/tbtn_date.png" sourcePath="assets/icon/format/tbtn_date.png"/>
+    <resourceEntry destPath="assets/icon/schema/plus.gif" sourcePath="assets/icon/schema/plus.gif"/>
+    <resourceEntry destPath="assets/icon/bracket.png" sourcePath="assets/icon/bracket.png"/>
+    <resourceEntry destPath="assets/icon/export.gif" sourcePath="assets/icon/export.gif"/>
+  </includeResources>
+  <namespaceManifests/>
+</flexLibProperties>

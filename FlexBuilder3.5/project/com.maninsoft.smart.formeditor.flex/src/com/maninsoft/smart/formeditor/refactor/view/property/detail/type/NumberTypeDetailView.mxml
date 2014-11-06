@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TypeDetailView 
+	xmlns="com.maninsoft.smart.formeditor.refactor.view.property.detail.type.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:type="com.maninsoft.smart.formeditor.model.type.*"
+	title="숫자" xmlns:property="com.maninsoft.smart.formeditor.model.property.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			
+			private function change():void{
+				changeFormItemType = FormItemType(patternList.selectedItem).clone();
+				dispatchEvent(new Event(Event.CHANGE));				
+			}
+			
+			private function getPatternListIndex(formItemType:FormItemType):int{
+				for(var i:int = 0 ; i < patternListArray.length ; i++){
+					var example:FormItemType = FormItemType(patternListArray.getItemAt(i));
+					if(equalFormItemType(example, formItemType))
+						return i;						
+				}			
+				return -1;
+			}
+			
+			private function equalFormItemType(one:FormItemType, two:FormItemType):Boolean{
+				if(one == null || two == null)
+					return false;
+				if(one.type != two.type)
+					return false;
+//				if(one.precision != two.precision)
+//					return false;
+//				if(one.thousandsSeparator != two.thousandsSeparator)
+//					return false;
+				if(one.minus != two.minus)
+					return false;
+				if(one.plus != two.plus)
+					return false;
+				if(one.red != two.red)
+					return false;
+				return true;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox height="100%" width="100%">
+		<mx:HBox>
+			<mx:Text text="소수 자릿수:" fontSize="12"/>
+			<mx:NumericStepper id="precision" fontSize="10" value="{formItemType.precision}" change="{change()}"/>	
+		</mx:HBox>
+		<mx:CheckBox id="thousandsSeparator" label="1000단위 구분기호(,) 사용" fontSize="12" selected="{formItemType.thousandsSeparator}" change="{change()}"/>
+		<mx:Text text="음수 : " fontSize="12"/>
+		<mx:List id="patternList" width="100%" itemRenderer="com.maninsoft.smart.formeditor.refactor.view.property.renderer.NumberFormTypeRenderer"
+			itemClick="{change()}" selectedIndex="{getPatternListIndex(formItemType)}">
+			<mx:dataProvider>
+				<mx:ArrayCollection id="patternListArray">
+					<property:FormItemType type="{FormItemType.NUMBER}" data='-1234' minus='false' precision="{precision.value}" thousandsSeparator="{(thousandsSeparator.selected)}" plus='false' red='false'/>
+					<property:FormItemType type="{FormItemType.NUMBER}" data='-1234' minus='false' precision="{precision.value}" thousandsSeparator="{(thousandsSeparator.selected)}" plus='false' red='true'/>
+					<property:FormItemType type="{FormItemType.NUMBER}" data='-1234' minus='false' precision="{precision.value}" thousandsSeparator="{(thousandsSeparator.selected)}" plus='true' red='true'/>
+					<property:FormItemType type="{FormItemType.NUMBER}" data='-1234' minus='true' precision="{precision.value}" thousandsSeparator="{(thousandsSeparator.selected)}" plus='false' red='true'/>
+					<property:FormItemType type="{FormItemType.NUMBER}" data='-1234' minus='true' precision="{precision.value}" thousandsSeparator="{(thousandsSeparator.selected)}" plus='false' red='false'/>
+				</mx:ArrayCollection>
+			</mx:dataProvider>
+		</mx:List>								
+	</mx:VBox>
+</TypeDetailView>

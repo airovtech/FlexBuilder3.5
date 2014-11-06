@@ -1,0 +1,1167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+	creationComplete="init()" 
+	borderStyle="none"	borderThickness="3"	borderColor="#FF8400"
+	xmlns:type="com.maninsoft.smart.formeditor.refactor.view.form.type.*"
+	verticalScrollPolicy="off" horizontalScrollPolicy="off"
+	click="{selectHandler(event)}"
+	xmlns:common="com.maninsoft.smart.common.*" xmlns:org="com.maninsoft.smart.common.org.*" xmlns:file="com.maninsoft.smart.common.file.*" xmlns:controls="com.maninsoft.smart.common.controls.*" xmlns:ref="com.maninsoft.smart.formeditor.refactor.component.ref.*" x="101" y="2">
+	<!-- mouseUp="{resizeEnd(event)}"-->
+		<mx:Metadata>
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.workbench.common.event.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.formeditor.model.func.FunctionExecutor;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.formeditor.refactor.event.FormRuntimeEvent;
+			import com.maninsoft.smart.formeditor.refactor.simple.view.form.item.FormListItemEditor;
+			import mx.managers.IFocusManagerComponent;
+			import mx.managers.IFocusManager;
+			import com.maninsoft.smart.formeditor.refactor.simple.view.form.item.FormGridItemEditor;
+			import mx.events.DataGridEvent;
+			import mx.events.ListEvent;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormItemCommandUtil;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import mx.events.DividerEvent;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.refactor.simple.control.SubFormItemController;
+			import mx.containers.Box;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.maninsoft.smart.formeditor.refactor.simple.control.FormItemController;
+			import com.maninsoft.smart.formeditor.refactor.view.form.FormModelEditPartViewer;
+			import mx.containers.VDividedBox;
+			import com.maninsoft.smart.formeditor.refactor.view.form.type.FormEntityTypeViewer;
+			import mx.controls.FormItemLabel;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormItemLabelPlacement;
+			import mx.controls.RadioButton;
+			import com.maninsoft.smart.formeditor.refactor.view.property.detail.FormListType;
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+			import com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent;
+			import mx.containers.Form;
+			import com.maninsoft.smart.formeditor.model.IFormResource;
+			import mx.events.PropertyChangeEvent;
+			import mx.events.PropertyChangeEventKind;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import mx.managers.CursorManager;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.edit.part.FormEntityModelEditPart;
+			import com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			
+			[Bindable]
+			public var mode:String 	= Constants.MODE_DESIGN;
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+	        
+			[Bindable]
+			public var abstractLabelVisible:Boolean = true;	        
+
+			/*************************폼 구조**************************************/	        
+			[Bindable]
+			public var formViewer:FormDocumentRootViewer;
+	        
+	        /*************************폼 아이템 모델************************************/
+	        [Bindable]
+	        private var _formEntityModel:FormEntity;
+	        
+	        [Bindable]
+	        public function set formEntityModel(formEntityModel:FormEntity):void{
+	        	this._formEntityModel = formEntityModel;
+	        	
+	        	registerViewer();
+	        	refreshVisual();
+	        }
+	        
+	        public function get formEntityModel():FormEntity{
+	        	return this._formEntityModel;
+	        }
+	        
+			/*******************************초기화********************************************/
+			
+	        protected function init():void{	    
+				refreshVisual();    	
+	        	registerViewer();
+				registerConextMenu();
+	        }
+	        	        
+	        public var formItemController:FormItemController;
+	        
+	        protected function registerViewer():void{
+	        	if(formItemController == null)
+	        		formItemController = new FormItemController();
+	        	formItemController.editDomain = this.editDomain;
+	        	formItemController.formEntityModel = this.formEntityModel;
+	        	formItemController.formItemViewer = this;
+	        }	        
+
+			/***************************화면************************************************/
+			// 기본 화면 보인는 속성조정
+			public function refreshBasicVisual():void{
+				if(valueView != null && formEntityModel != null ){
+						var typeNum:int = getContentsIndex(formEntityModel);
+						
+						switch(typeNum){
+							case 0:// 라디오
+								for each(var childObj:DisplayObject in this.valueRadioBox.getChildren()){
+									if(childObj is RadioButton){
+										this.valueRadioBox.removeChild(childObj);
+									}
+								}
+								for each(var staticExample:String in formEntityModel.format.staticListExamples){
+									var valueRadioBtn:RadioButton = new RadioButton();
+									valueRadioBtn.label = staticExample;
+									valueRadioBtn.value = staticExample;
+									valueRadioBtn.group = this.valueRadio;
+									valueRadioBtn.enabled = !formEntityModel.readOnly;
+									this.valueRadioBox.addChild(valueRadioBtn);
+								}	
+								break;
+							case 1:// 콤보
+								if(formEntityModel.format.listType == FormListType.STATIC){
+									this.valueComboBox.dataProvider = formEntityModel.format.staticListExamples;	
+								}else if(formEntityModel.format.listType == FormListType.CODE){
+									loadCode(formEntityModel.format.refCodeCategoryId);
+								}
+								valueComboBox.editable = !formEntityModel.readOnly;
+								break;
+							case 2:// 데이트
+								var disableDayArray:Array = new Array();
+								
+								if(formEntityModel.format.sunNotUse)
+									disableDayArray.push(0);
+								if(formEntityModel.format.monNotUse)
+									disableDayArray.push(1);
+								if(formEntityModel.format.tueNotUse)
+									disableDayArray.push(2);
+								if(formEntityModel.format.wedNotUse)
+									disableDayArray.push(3);
+								if(formEntityModel.format.thuNotUse)
+									disableDayArray.push(4);
+								if(formEntityModel.format.friNotUse)
+									disableDayArray.push(5);
+								if(formEntityModel.format.satNotUse) 
+									disableDayArray.push(6);						
+															
+								this.valueDateField.disabledDays = disableDayArray;
+								
+								this.valueDateField.yearNavigationEnabled = formEntityModel.format.yearUse;
+								
+								valueDateField.editable = !formEntityModel.readOnly;
+								break;
+							case 3:// 뉴머릭
+								if(formEntityModel.format.minNumUse)
+									this.valueNumericStepper.minimum = formEntityModel.format.minNum;
+								if(formEntityModel.format.maxNumUse)
+									this.valueNumericStepper.maximum = formEntityModel.format.maxNum; 
+									
+								this.valueNumericStepper.stepSize = formEntityModel.format.stepSize;	
+								valueNumericStepper.enabled = !formEntityModel.readOnly;
+								break;
+							case 5:// 리스트 
+//								entityList.itemEditor = new ClassFactory(com.maninsoft.smart.formeditor.refactor.simple.view.form.item.FormListItemEditor);								
+//								entityList.itemEditor
+								break;
+							case 6:// 그리드
+								var gridColumns:ArrayCollection = new ArrayCollection();
+								
+								var dataGridColumn:DataGridColumn;
+								for each(var childEntity:FormEntity in formEntityModel.children){
+									dataGridColumn = new DataGridColumn();
+									dataGridColumn.headerText = childEntity.name;
+									dataGridColumn.dataField = Constants.DATAGRID_DATAFIELD_PREFIX + childEntity.id;
+									dataGridColumn.width = childEntity.contentWidth;	
+									dataGridColumn.sortable = false;        		
+	        						
+	        						dataGridColumn.itemEditor = new ClassFactory(com.maninsoft.smart.formeditor.refactor.simple.view.form.item.FormGridItemEditor);
+	        						
+									gridColumns.addItem(dataGridColumn);
+								}
+								entityGrid.columns = gridColumns.toArray();
+								entityGrid.editable = !formEntityModel.readOnly;
+								
+								var subFormItemController:SubFormItemController;
+								
+								if(formEntityModel.children != null){
+									for(var i:int = 0 ; i < formEntityModel.children.length ; i++){
+										if(subFormItemControllers.length - 1 < i){
+											subFormItemController = new SubFormItemController();
+								        	subFormItemController.editDomain = this.editDomain;
+								        	subFormItemController.formEntityModel = FormEntity(formEntityModel.children.getItemAt(i));
+								        	subFormItemController.formItemViewer = this;
+								        	
+								        	subFormItemControllers.addItem(subFormItemController);
+										}else{
+											subFormItemController = SubFormItemController(subFormItemControllers.getItemAt(i));
+								        	subFormItemController.editDomain = this.editDomain;
+								        	subFormItemController.formEntityModel = FormEntity(formEntityModel.children.getItemAt(i));
+								        	subFormItemController.formItemViewer = this;
+										}
+									}
+								}
+
+								break;
+							case 7:// text area
+								break;
+							case 8:// checkbox
+								break;
+							case 11:// checkbox
+								entityRefForm.formId = this.formEntityModel.format.refFormId;
+								entityRefForm.formVer = this.formEntityModel.format.refFormVer;
+								entityRefForm.formName = this.formEntityModel.format.refFormName;
+								entityRefForm.formFieldId = this.formEntityModel.format.refFormFieldId;
+								entityRefForm.formFieldName = this.formEntityModel.format.refFormFieldName;
+								break;
+							case 12:// checkbox
+								break;
+							case 13:// checkbox
+								entityRichEditor.linkTextInput.visible = false;
+								break;
+							default:// 텍스트
+						}
+						
+						var valueStr:String
+						if(this.formEntityModel.expression != null && this.formEntityModel.expression != ""){
+								try{
+									if(this.formEntityModel.expression.substr(0, 5) == "func:"){
+										valueStr = FunctionExecutor[this.formEntityModel.expression.substr(5, this.formEntityModel.expression.length - 5)]();
+									}else{
+										valueStr = this.formEntityModel.expression;
+									}									
+								}catch(e:Error){
+								}
+								
+								setValue(valueStr);
+						}
+						
+						if(_formValueXml != null){
+							valueXml = _formValueXml;
+						}
+						this.valueView.selectedIndex = getContentsIndex(formEntityModel);
+							
+					}
+				refreshValidVisual();	
+        		// 라벨 그리기
+				refreshLabelVisual();
+			}
+			
+			private function refreshValidVisual():void {
+			}
+			private var codeLoader:URLLoader;
+			private var codeURL:String ;
+			private var codeReq:URLRequest = new URLRequest();
+			
+			private function loadCode(categoryId:String):void{
+				
+				codeURL = FormEditorConfig.baseUrl + "smartworksV3/services/portal/codeService.jsp?method=findCode&userId=" 
+							+ FormEditorConfig.userId + "&categoryId=" + categoryId;
+				codeReq.url = codeURL;
+				if(codeLoader == null){
+					codeLoader = new URLLoader();
+					codeLoader.addEventListener(Event.COMPLETE, loadCodeComplete);
+					codeLoader.addEventListener(IOErrorEvent.IO_ERROR, loadCodeFault);
+					codeLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loadCodeFault);
+				}
+				codeLoader.load(codeReq);				
+			}
+			
+			private function loadCodeComplete(e:Event):void{
+				var codeXml:XML = XML(codeLoader.data);
+				if(codeXml.@status == "Failed"){
+					Alert.show("코드 정보 불러오기에 실패했습니다.", "코드정보 호출결과");
+				}else{
+					this.valueComboBox.dataProvider = codeXml.Code;	
+					this.valueComboBox.labelField = "name"
+				}
+			}
+			
+			private function loadCodeFault(e:Event):void{
+				Alert.show("코드 정보 불러오기에 실패했습니다.", "코드정보 호출결과");
+			}
+			
+			private var subFormItemControllers:ArrayCollection = new ArrayCollection();
+			
+			private function getContentsIndex(formEntity:FormEntity):int{
+				if(this.formEntityModel.format.type == FormatTypes.radioButton.type)
+					return 0;	
+				else if(this.formEntityModel.format.type == FormatTypes.comboBox.type)
+					return 1;	
+				else if(this.formEntityModel.format.type == FormatTypes.dateChooser.type)
+					return 2;	
+				else if(this.formEntityModel.format.type == FormatTypes.numericStepper.type)
+					return 3;		
+				else if(this.formEntityModel.format.type == FormatTypes.dataGrid.type)
+					return 6;	
+				else if(this.formEntityModel.format.type == FormatTypes.textArea.type)
+					return 7;	
+				else if(this.formEntityModel.format.type == FormatTypes.checkBox.type)
+					return 8;			
+				else if(this.formEntityModel.format.type == FormatTypes.userField.type)
+					return 9;			
+				else if(this.formEntityModel.format.type == FormatTypes.fileField.type)
+					return 10;		
+				else if(this.formEntityModel.format.type == FormatTypes.refFormField.type)
+					return 11;		
+				else if(this.formEntityModel.format.type == FormatTypes.timeField.type)
+					return 12;		
+				else if(this.formEntityModel.format.type == FormatTypes.richEditor.type)
+					return 13;		
+				else
+					return 4;							
+			}
+			
+			private var box:Box;
+			private var valueViewers:ArrayCollection = new ArrayCollection();
+			
+			private var horisontalBox:HDividedBox;
+			private var verticalBox:VDividedBox;
+			
+	        public function refreshVisual():void{
+	        	if(this.formEntityModel != null){
+	        		// 자기자신 그리기
+	        		// 1. 크기(모양) 그리기
+	        		this.width = this.formEntityModel.labelWidth + this.formEntityModel.contentWidth;
+	        		this.height = this.formEntityModel.height;
+	        		// 2. 내용 (bindable 사용)
+	        		refreshBasicVisual();
+	        		// 자식 그리기
+				
+	        	}
+	        }
+
+	        public function refreshFormVisual():void{
+	        	formViewer.refreshVisual();
+	        }
+	        
+	        private function refreshLabelVisual():void{
+	        	if(this.leftFormEntityLabel != null){
+		        	if(this.formEntityModel.titleTextStyle != null){
+//			        	this.leftFormEntityLabel.setStyle("fontFamily", this.formEntityModel.titleTextStyle.font);
+			        	this.leftFormEntityLabel.setStyle("fontSize", this.formEntityModel.titleTextStyle.size);
+			        	this.leftFormEntityLabel.setStyle("fontStyle", this.formEntityModel.titleTextStyle.italic?"italic":"normal");
+			        	this.leftFormEntityLabel.setStyle("fontWeight", this.formEntityModel.titleTextStyle.bold?"bold":"normal");
+			        	this.leftFormEntityLabel.setStyle("textDecoration", this.formEntityModel.titleTextStyle.underline?"underline":"normal");
+			        	this.leftFormEntityLabel.setStyle("textAlign", this.formEntityModel.titleTextStyle.align);
+						this.leftFormEntityLabel.setStyle("color", this.formEntityModel.titleTextStyle.color);
+		        	}       	
+		        	if(this.formEntityModel.contentsTextStyle != null){
+//			        	this.valueView.setStyle("fontFamily", this.formEntityModel.contentsTextStyle.font);
+			        	this.valueView.setStyle("fontSize", this.formEntityModel.contentsTextStyle.size);
+			        	this.valueView.setStyle("fontStyle", this.formEntityModel.contentsTextStyle.italic?"italic":"normal");
+			        	this.valueView.setStyle("fontWeight", this.formEntityModel.contentsTextStyle.bold?"bold":"normal");
+			        	this.valueView.setStyle("textDecoration", this.formEntityModel.contentsTextStyle.underline?"underline":"normal");
+			        	this.valueView.setStyle("textAlign", this.formEntityModel.contentsTextStyle.align);
+						this.valueView.setStyle("color", this.formEntityModel.contentsTextStyle.color);
+		        	}  
+	        		this.setStyle("backgroundColor", this.formEntityModel.bgColor);
+
+					// 이름 변경 이벤트
+					var oldTitle:String;
+					if(this.leftFormEntityLabel.text.lastIndexOf('(*)') != -1){
+						oldTitle = this.leftFormEntityLabel.text.substr(0, this.leftFormEntityLabel.text.length - 3);
+					}else{
+						oldTitle = this.leftFormEntityLabel.text;
+					}
+		        	if(oldTitle != null && oldTitle != "" 
+		        		&& oldTitle != this.formEntityModel.name){
+		        		var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.FORM_FIELD_RENAME);
+		        		event.formId = this.formEntityModel.root.id;
+		        		event.formFieldId = this.formEntityModel.id;
+		        		event.newName = this.formEntityModel.name;
+		        		
+		        		dispatchEvent(event);
+		        	}
+		        	
+	        		this.leftFormEntityLabel.text = this.formEntityModel.name + (this.formEntityModel.required?'(*)':'');
+
+	        		 if(formEntityModel.labelVisible){
+	        			if(this.abstractLabelVisible){
+		        			this.leftFormEntityLabel.width = this.formEntityModel.labelWidth;
+		        			this.leftFormEntityLabel.height = this.formEntityModel.height;	
+	        			}else{
+	        				this.leftFormEntityLabel.width = 0;
+	        			}
+	        			
+	        			this.valueView.width = this.formEntityModel.contentWidth+ this.leftFormEntityLabel.width;
+						this.valueView.height = this.formEntityModel.height;
+	        		}else{
+	        			
+	        			this.valueView.width = this.formEntityModel.labelWidth + this.formEntityModel.contentWidth;
+						this.valueView.height = this.formEntityModel.height;						
+	        		}
+	        	}
+	        }
+	        
+	        [Bindable]
+	        private var selected:Boolean = false;
+	        // 포커스 활성화
+	        public function select(formResources:ArrayCollection):Boolean{
+	        	if(formResources.contains(this.formEntityModel)){
+//	        		this.setStyle("borderStyle", "inset");
+	        		selected = true;
+	        	}else{	        		
+//	        		this.setStyle("borderStyle", "none");
+	        		selected = false;
+	       	 	}
+	        	return selected;
+//	        	if(this.childViewers != null)
+//		        	for each(var childViewer:FormItemViewer in this.childViewers){
+//		        		childViewer.select(formResources);
+//		        	}
+	        }
+
+	        
+	        /******************************포커스*************************************************/
+	        private function selectHandler(event:MouseEvent):void{
+				if(getFormItemViewer(event.target) == this){
+					var formEvent:FormEditEvent = new FormEditEvent(FormEditEvent.SELECT_FORM_ITEM);
+					formEvent.formItem = this.formEntityModel;
+					dispatchEvent(formEvent);				
+				}
+			}
+			
+			private function getFormItemViewer(target:Object):FormItemViewer{
+				if(target is FormItemViewer)
+					return FormItemViewer(target);
+					
+				if(DisplayObject(target).parent != null)
+					return getFormItemViewer(DisplayObject(target).parent);
+					
+				return null;
+			}
+
+	        
+	        /**********************실행 데이터 처리***********************************/
+	        
+			private var _valueXml:XML = 
+					<DataField id="" name="">
+					</DataField>;
+					
+			private var _formValueXml:XML;
+		
+			public function set valueXml(valueXML:XML):void{
+				_formValueXml = valueXML;
+				
+				var valueStr:String = valueXML.DataField.(@id==this.formEntityModel.id).toString();
+				
+				setValue(valueStr, valueXML);
+	        }
+	        
+	        private function setValue(valueStr:String, valueXML:XML = null):void{
+	        	
+	        	var typeNum:int = getContentsIndex(formEntityModel);
+				
+				if(valueStr != null && valueStr != ""){
+					switch(typeNum){
+						case 0:// 라디오
+							valueRadio.selectedValue = valueStr;
+							break;
+						case 1:// 콤보
+							if(this.formEntityModel.format.listType == FormListType.FORM){
+								// todo
+							}else if(this.formEntityModel.format.listType == FormListType.CODE){
+								var codeList:XMLList = XMLList(valueComboBox.dataProvider);
+								for each(var codeXml:XML in codeList){
+									if(codeXml.id == valueStr){
+										valueComboBox.selectedItem = codeXml;
+									}
+								}
+							}else{
+								valueComboBox.selectedItem = valueStr;
+							}
+							break;
+						case 2:// 데이트
+							valueDateField.selectedDate = DateField.stringToDate(valueStr, "YYYY-MM-DD");
+							break;
+						case 3:// 뉴머릭
+							valueNumericStepper.value = new int(valueStr);
+							break;
+						case 5:// 리스트 								
+							break;
+						case 6:// 그리드
+							entityGridArray.removeAll();
+							if(valueXML != null){
+								for each(var dataFileldXml:XML in valueXML.DataField.(@id==this.formEntityModel.id)){
+									var valueObj:Object = new Object();
+									for each(var subDataFileldXml:XML in dataFileldXml.DataField){
+										valueObj[Constants.DATAGRID_DATAFIELD_PREFIX + subDataFileldXml.@id] = subDataFileldXml.toString();
+									}
+									entityGridArray.addItem(valueObj);
+								}
+							}
+							
+							break;
+						case 7:// text area
+							textEntityArea.text = valueStr;
+							break;
+						case 8:// checkbox
+							entityCheck.selected = (valueStr=="true");
+							break;
+						case 9:// user field
+							entityPerson.userId = valueStr;
+							break;	
+						case 10:// file field
+							entityFile.fileGroupId = valueStr;
+							break;	
+						case 11:// refform field
+							entityRefForm.fieldContents.text = valueStr;
+							break;	
+						case 12:// time field
+							var ampm:int = 0;
+							var hour:String;
+							var hourInt:int;
+							var minute:String;
+							var sepPos:int = valueStr.lastIndexOf(":");
+							if(sepPos == 0){
+								hour = "";
+							}else{
+								hour = valueStr.substr(0, sepPos - 1);
+								hourInt = new int(hour);
+								if(hourInt >= 12){
+									ampm = 1;
+									hourInt = hourInt - 12;
+								}
+								hour = SmartUtil.toString(hourInt);
+							}
+							minute = valueStr.substring(valueStr.lastIndexOf(":"), valueStr.length);
+							
+							ampmComboBox.selectedIndex = ampm;
+							
+							var hourList:ArrayCollection = ArrayCollection(hourComboBox.dataProvider);
+							for each(var hourObj:Object in hourList){
+								if(hourObj.value == hour){
+									hourComboBox.selectedItem = hourObj;
+								}
+							}
+							
+							var minuteList:ArrayCollection = ArrayCollection(minuteComboBox.dataProvider);
+							for each(var minuteObj:Object in minuteList){
+								if(minuteObj.value == minute){
+									minuteComboBox.selectedItem = minuteObj;
+								}
+							}
+							break;		
+						case 13:// rich editor
+							entityRichEditor.htmlText = valueStr;
+							break;					
+						default:// 텍스트
+							textEntityInput.text = valueStr;
+					}
+				}
+	        }
+	        
+	        public function get valueXml():XML{
+	        	var valueXML:XML = <DataRecord></DataRecord>;
+	        	
+	        	var typeNum:int = getContentsIndex(formEntityModel);
+	        	
+				switch(typeNum){
+					case 6:// 그리드
+						for each(var valueObj:Object in entityGridArray){
+							var _itemXML:XML = <DataField id="" name=""></DataField>;
+							_itemXML.@id = this.formEntityModel.id;
+							_itemXML.@name = this.formEntityModel.name;
+							
+							if(this.formEntityModel.children != null){
+								var subItemXml:XML;
+								for each(var subFormItem:FormEntity in this.formEntityModel.children){
+									var value:String = valueObj[Constants.DATAGRID_DATAFIELD_PREFIX + subFormItem.id];
+									if(value == null){
+										subItemXml = <DataField id="" name=""/>;
+									}else{
+										subItemXml = <DataField id="" name="">{value}</DataField>;
+									}									
+									subItemXml.@id = subFormItem.id;
+									subItemXml.@name = subFormItem.name;
+									_itemXML.appendChild(subItemXml);									
+								}
+							}
+							valueXML.appendChild(_itemXML);
+						}
+						break;
+					default:
+						var itemXML:XML = <DataField id="" name="">{getValue()}</DataField>;
+						itemXML.@id = this.formEntityModel.id;
+						itemXML.@name = this.formEntityModel.name;
+						valueXML.appendChild(itemXML);
+				}
+       		 	
+       		 	
+				return valueXML;
+	        }
+			
+			 public function getValue():String{
+			 	var value:String = "";
+	        	var typeNum:int = getContentsIndex(formEntityModel);
+	        	
+				switch(typeNum){
+					case 0:
+						if(valueRadio.selectedValue != null){
+							value = valueRadio.selectedValue.toString();
+						}else{
+							value = "";
+						}
+						break;
+					case 1:
+						if(valueComboBox.selectedItem == null){
+							value = "";
+						}else if(this.formEntityModel.format.listType == FormListType.FORM){
+							// todo
+						}else if(this.formEntityModel.format.listType == FormListType.CODE){
+							if(valueComboBox.selectedItem.id != null)
+								value = valueComboBox.selectedItem.id.toString();
+							else
+								value = "";
+						}else{
+							value = valueComboBox.selectedItem.toString();
+						}
+						break;
+					case 2:
+						var itemDateStr:String;
+						try{
+							itemDateStr = DateField.dateToString(valueDateField.selectedDate, "YYYY-MM-DD");
+						}catch(e:Error){
+							itemDateStr = "";
+						}
+						value = itemDateStr;
+						break;
+					case 3:
+						value = valueNumericStepper.value.toString();
+						break;
+					case 5:// 리스트
+						break;
+					case 6:// 그리드						
+						break;
+					case 7:
+						value = textEntityArea.text;
+						break;
+					case 8:
+						value =(entityCheck.selected)?"true":"false";
+						break;
+					case 9:
+						value = entityPerson.userId;
+						break;
+					case 10:
+						value = entityFile.fileGroupId;
+						break;
+					case 11:
+						value = entityRefForm.fieldContents.text;
+						break;
+					case 12:
+						var hour:String;
+						var minute:String;
+						
+						if(hourComboBox.selectedItem == null){
+							hour = "";
+						}else{
+							hour = hourComboBox.selectedItem.value.toString();
+						}
+						
+						if(minuteComboBox.selectedItem == null){
+							minute = "";
+						}else{
+							minute = minuteComboBox.selectedItem.value.toString();
+						}
+						
+						if(hour != null){
+							var hourInt:int = new int(hour);
+							if(minuteComboBox.selectedIndex > 0){
+								hourInt += 12;
+							}
+							hour = SmartUtil.toString(hourInt);
+						}
+						
+						value = hour + ":" + minute;
+						break;
+					case 13:
+						value = entityRichEditor.htmlText;
+						break;
+					default:
+						value = textEntityInput.text;
+				}
+       		 	
+       		 	
+				return value;
+	        }
+	        
+			public function getText():String{
+	        	var text:String;
+	        	
+	        	var typeNum:int = getContentsIndex(formEntityModel);
+	        	
+				switch(typeNum){
+					case 0:
+						text = valueRadio.selectedValue.toString();
+						break;
+					case 1:
+						text = valueComboBox.text;
+						break;
+					case 2:
+						text = valueDateField.text;
+						break;
+					case 3:
+						text = valueNumericStepper.value.toString();
+						break;
+					case 5:// 리스트
+						break;
+					case 6:// 그리드
+						for each(var valueObj:Object in entityGridArray){
+							var itemXML:XML = <DataField id="" name=""></DataField>;
+							itemXML.@id = this.formEntityModel.id;
+							itemXML.@name = this.formEntityModel.name;
+							
+							if(this.formEntityModel.children != null){
+								var subItemXml:XML;
+								for each(var subFormItem:FormEntity in this.formEntityModel.children){
+									var value:String = valueObj[Constants.DATAGRID_DATAFIELD_PREFIX + subFormItem.id];
+									if(value == null){
+										subItemXml = <DataField id="" name=""/>;
+									}else{
+										subItemXml = <DataField id="" name="">{value}</DataField>;
+									}									
+									subItemXml.@id = subFormItem.id;
+									subItemXml.@name = subFormItem.name;
+									itemXML.appendChild(subItemXml);									
+								}
+							}
+						}
+						break;
+					case 7:
+						text = textEntityArea.text;
+						break;
+					case 8:
+						text = (entityCheck.selected)?"true":"false";
+						break;
+					case 9:
+						text = entityPerson.userName.text;
+						break;
+					case 10:
+						break;
+					case 11:
+						break;
+					case 12:
+						break;
+					case 13:
+						break;
+					default:
+						text = textEntityInput.text;
+				}
+       		 	
+       		 	
+				return text;
+	        }
+	        
+			private function  dividerRelease(e:DividerEvent):void{
+				FormItemCommandUtil.executeResizeFormItem(this.editDomain, this.formEntityModel, this.formEntityModel.labelWidth + e.delta, this.formEntityModel.contentWidth - e.delta, this.formEntityModel.height);
+			}
+			
+			/*************************그리드 셀 에디팅***********************************/
+            private function gridEditing(event:DataGridEvent):void {
+            	if(this.formEntityModel.children != null && this.formEntityModel.children.length > event.columnIndex){
+					// Handle the event here.
+	                event.preventDefault();
+	                
+	                // Creates an item editor.                
+	                entityGrid.createItemEditor(event.columnIndex,event.rowIndex);
+	                
+            		var subFormItem:FormEntity = FormEntity(this.formEntityModel.children.getItemAt(event.columnIndex));
+            		FormGridItemEditor(entityGrid.itemEditorInstance).formItem = subFormItem;
+            		FormGridItemEditor(entityGrid.itemEditorInstance).data = Object(entityGridArray.getItemAt(event.rowIndex))[Constants.DATAGRID_DATAFIELD_PREFIX + subFormItem.id];
+            	}
+            }  
+ 
+            private function gridEditEnd(event:DataGridEvent):void {            	
+            	var subFormItem:FormEntity = FormEntity(this.formEntityModel.children.getItemAt(event.columnIndex));
+            	Object(entityGridArray.getItemAt(event.rowIndex))[Constants.DATAGRID_DATAFIELD_PREFIX + subFormItem.id] = FormGridItemEditor(entityGrid.itemEditorInstance).newValue;
+            	
+            	changeFieldData(subFormItem.id);
+            }   
+            
+ 			/*************************리스트 셀 에디팅***********************************/
+//            private function listEditing(event:ListEvent):void {
+//            	if(this.formEntityModel != null){
+//	                FormListItemEditor.targetFormItem = this.formEntityModel;
+	                // Creates an item editor. 
+//	                entityList.createItemEditor(event.columnIndex,event.rowIndex);
+//	                entityList.editedItemPosition = {rowIndex: event.rowIndex, columnIndex: 0};
+//	                
+//            		FormGridItemEditor(entityList.itemEditorInstance).formItem = this.formEntityModel;
+//            		FormGridItemEditor(entityList.itemEditorInstance).data = entityListArray.getItemAt(event.rowIndex);
+//            	}
+//            }  
+ 
+//            private function listEditEnd(event:ListEvent):void {            
+//            	entityListArray.setItemAt(FormGridItemEditor(entityList.itemEditorInstance).newValue, event.rowIndex);
+//            	
+//            	FormListItemEditor.targetFormItem = null;
+//            }            
+           /*******************************마우스 메뉴****************************************/
+            [Bindable]
+            private var formItemContextMenu:ContextMenu = new ContextMenu();
+            
+            private function registerConextMenu():void
+            {
+                formItemContextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenuTriggered);
+                formItemContextMenu.hideBuiltInItems();
+                buildMenuItem();
+                
+                this.contextMenu = formItemContextMenu;
+            }
+            
+			private var commonContextMenu:Array;
+			private var dataGridContextMenu:Array;
+			private var listContextMenu:Array;
+
+			// 컨텍스트 메뉴 생성
+			private function buildMenuItem():void
+            {
+                buildCommonMenuItem();
+                buildDataGridMenuItem();
+                buildListMenuItem();
+            }
+            
+            private var commonMenu:Array = 
+            	[            		
+            	]
+            	
+            private var dataGridMenu:Array = 
+            	[
+            		{name:"위로 행 삽입", listener:insertPreviousInDataGrid, useSeperator:false, enabled:true},
+            		{name:"아래로 행 삽입", listener:insertNextInDataGrid, useSeperator:false, enabled:true},
+            		{name:"행 삭제", listener:removeInDataGrid, useSeperator:false, enabled:true},
+            	]
+            
+            private var listMenu:Array = 
+            	[
+            		{name:"위로 행 삽입", listener:insertPreviousInList, useSeperator:false, enabled:true},
+            		{name:"아래로 행 삽입", listener:insertNextInList, useSeperator:false, enabled:true},
+            		{name:"행 삭제", listener:removeInList, useSeperator:false, enabled:true},
+            	]
+            	
+            	
+            // 폼 컨텍스트 메뉴
+            private function buildCommonMenuItem():void
+            {
+            	commonContextMenu = new Array();
+            	
+            	for each(var menuObj:Object in commonMenu){
+            		var menu:ContextMenuItem = new ContextMenuItem(menuObj["name"], menuObj["useSeperator"], menuObj["enabled"]);
+					menu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectCommonMenu);
+					commonContextMenu.push(menu);
+            	}
+            }
+            // 폼 아이템 컨텍스트 메뉴
+            private function buildDataGridMenuItem():void
+            {
+            	var menu:ContextMenuItem;
+
+            	dataGridContextMenu = new Array();
+            	
+            	for each(var menuObj:Object in dataGridMenu){
+            		menu = new ContextMenuItem(menuObj["name"], menuObj["useSeperator"], menuObj["enabled"]);
+					menu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectGridMenu);
+					dataGridContextMenu.push(menu);
+            	}
+            }
+            
+                        // 폼 아이템 컨텍스트 메뉴
+            private function buildListMenuItem():void
+            {
+            	var menu:ContextMenuItem;
+
+            	listContextMenu = new Array();
+            	
+            	for each(var menuObj:Object in listMenu){
+            		menu = new ContextMenuItem(menuObj["name"], menuObj["useSeperator"], menuObj["enabled"]);
+					menu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectListMenu);
+					listContextMenu.push(menu);
+            	}
+            }
+            			
+            private function contextMenuTriggered(event:ContextMenuEvent):void
+            {
+                    if(this.formEntityModel.format.type == FormatTypes.dataGrid.type){
+                        formItemContextMenu.customItems = dataGridContextMenu;
+                    }else{
+                        formItemContextMenu.customItems = commonContextMenu;
+                    }
+            }
+            
+            private function selectCommonMenu(event:ContextMenuEvent):void
+            {
+            	for each(var menu:Object in commonMenu){
+            		if(menu.name == ContextMenuItem(event.currentTarget).caption)
+            			menu.listener();
+            	}
+            }
+            
+            private function selectGridMenu(event:ContextMenuEvent):void
+            {
+            	for each(var menu:Object in dataGridMenu){
+            		if(menu.name == ContextMenuItem(event.currentTarget).caption)
+            			menu.listener();
+            	}
+            }
+            
+            private function selectListMenu(event:ContextMenuEvent):void
+            {
+            	for each(var menu:Object in listMenu){
+            		if(menu.name == ContextMenuItem(event.currentTarget).caption)
+            			menu.listener();
+            	}
+            }
+            
+            private var gridSelectIndex:int = -1;
+            
+            private function insertPreviousInDataGrid():void
+            {
+            	if(entityGrid.selectedItem != null){
+            		entityGridArray.addItemAt(new Object(), entityGridArray.getItemIndex(entityGrid.selectedItem));
+            	}else if(gridSelectIndex != -1){
+            		entityGridArray.addItemAt(new Object(), gridSelectIndex);
+            	}else{
+            		entityGridArray.addItemAt(new Object(), 0);
+            	}
+            }
+            
+            private function insertNextInDataGrid():void
+            {
+            	if(entityGrid.selectedItem != null){
+            		if(entityGridArray.length > (entityGridArray.getItemIndex(entityGrid.selectedItem) + 1))
+            			entityGridArray.addItemAt(new Object(), entityGridArray.getItemIndex(entityGrid.selectedItem) + 1);
+            		else
+            			entityGridArray.addItem(new Object());
+            	}else if(gridSelectIndex != -1){
+            		if(entityGridArray.length > (gridSelectIndex + 1))
+            			entityGridArray.addItemAt(new Object(), gridSelectIndex + 1);
+            		else
+            			entityGridArray.addItem(new Object());
+            	}else{
+            		entityGridArray.addItem(new Object());
+            	}
+            }
+            
+            private function removeInDataGrid():void
+            {
+            	if(entityGrid.selectedItem != null){
+            		entityGridArray.removeItemAt(entityGridArray.getItemIndex(entityGrid.selectedItem));
+            	}else if(gridSelectIndex != -1){
+            		entityGridArray.removeItemAt(gridSelectIndex);
+            	}
+            }
+            
+            private var listSelectIndex:int = -1;
+            
+            private function insertPreviousInList():void
+            {
+            	if(entityList.selectedItem != null){
+            		entityListArray.addItemAt("", entityListArray.getItemIndex(entityList.selectedItem));
+            	}else if(listSelectIndex != -1){
+            		entityListArray.addItemAt("", listSelectIndex);
+            	}else{
+            		entityListArray.addItemAt("", 0);
+            	}
+            }
+            
+            private function insertNextInList():void
+            {
+            	if(entityList.selectedItem != null){
+            		if(entityListArray.length > (entityListArray.getItemIndex(entityList.selectedItem) + 1))
+            			entityListArray.addItemAt("", entityListArray.getItemIndex(entityList.selectedItem) + 1);
+            		else
+            			entityListArray.addItem("");
+            	}else if(listSelectIndex != -1){
+            		if(entityListArray.length > (gridSelectIndex + 1))
+            			entityListArray.addItemAt("", listSelectIndex + 1);
+            		else
+            			entityListArray.addItem("");
+            	}else{
+            		entityListArray.addItem("");
+            	}
+            }
+            
+            private function removeInList():void
+            {
+            	if(entityList.selectedItem != null){
+            		entityListArray.removeItemAt(entityListArray.getItemIndex(entityList.selectedItem));
+            	}else if(listSelectIndex != -1){
+            		entityListArray.removeItemAt(listSelectIndex);
+            	}
+            }
+            
+            private function changeFieldData(fieldId:String):void
+            {
+            	if(mode == Constants.MODE_DESIGN){
+            		FormItemCommandUtil.executeUpdateFormItemProperty(editDomain, formEntityModel, this.getValue(), FormEntity.PROP_EXPRESSION);
+            	}else{
+            		refreshValidVisual();
+            		
+            		var e:FormRuntimeEvent = new FormRuntimeEvent(FormRuntimeEvent.CHANGE_FIELD_DATA);
+	            	e.formFieldId = fieldId;
+	            	dispatchEvent(e);
+            	}
+            }
+            
+            public function isValid():Boolean
+            {
+            	if(this.formEntityModel.required){
+//            		var value:String;
+//            		try{
+//            			value = getValue();
+//            		}catch(e:Error){
+//            		}
+//            		if(this.formEntityModel.array){
+//            			// todo 하위타입 valid 확인
+//            			return true;
+//            		}else if(value == null || value == ""){
+//            			return false;
+//            		}
+            	}
+            	return true;
+            }
+            
+            public function getTimeArray():ArrayCollection
+            {
+            	var timeArray:ArrayCollection = new ArrayCollection();
+            	for(var i:int = 0 ; i < 12; i++){
+            		var timeObj:Object = new Object();
+            		timeObj["value"] = i;
+            		timeObj["label"] = i;
+            		/*if(i < 12)
+            			timeObj["label"] = "오전 " + i;
+            		else
+            			timeObj["label"] = ("오후 " + (i - 12));
+            		*/	
+            		timeArray.addItem(timeObj);
+            	}
+            	return timeArray;
+            }
+            
+            public function getMinuteArray():ArrayCollection
+            {
+            	var minuteArray:ArrayCollection = new ArrayCollection();
+            	for(var i:int = 0 ; i < 60; i++){
+            		var timeObj:Object = new Object();
+            		timeObj["value"] = i;
+            		timeObj["label"] = i;
+            		
+            		minuteArray.addItem(timeObj);
+            	}
+            	return minuteArray;
+            }
+		]]>
+	</mx:Script>
+	<mx:HDividedBox 
+		id="valueMainBox"
+		horizontalGap="1"
+		verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		width="{this.width}" height="100%"
+		dividerRelease="{dividerRelease(event)}"
+		>	
+		<!--x="0" right="20" -->
+		<mx:Text id="leftFormEntityLabel" width="0" height="100%"
+			 styleName="formTextInputLabel"/>
+		<mx:ViewStack id="valueView" width="100%" height="100%" verticalGap="0" horizontalGap="0" creationPolicy="all" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			>		
+			<mx:HBox width="100%" id="valueRadioBox" height="100%" fontSize="12" verticalScrollPolicy="off" horizontalScrollPolicy="auto"
+				>
+				<mx:RadioButtonGroup id="valueRadio" change="{changeFieldData(this.formEntityModel.id)}"/>
+			</mx:HBox>
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto"
+				>
+				<mx:ComboBox id="valueComboBox" width="100%" height="100%" change="{changeFieldData(this.formEntityModel.id)}">				
+				</mx:ComboBox>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" fontSize="12" verticalScrollPolicy="off" horizontalScrollPolicy="auto"
+				>
+				<mx:DateField id="valueDateField" width="100%" height="100%" formatString="YYYY-MM-DD" change="{changeFieldData(this.formEntityModel.id)}">
+					
+				</mx:DateField>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" fontSize="12" verticalScrollPolicy="off" horizontalScrollPolicy="auto"
+				>
+				<mx:NumericStepper id="valueNumericStepper" width="100%" height="100%" change="{changeFieldData(this.formEntityModel.id)}">
+					
+				</mx:NumericStepper>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto"
+				>
+				<!-- mouseUp="resizeUp(event)" mouseMove="resizeMove(event)"-->
+				<controls:KoreanTextInput id="textEntityInput" text="{formEntityModel.expression}" width="100%" height="100%" change="{changeFieldData(this.formEntityModel.id)}"/>
+				<!-- mouseUp="resizeUp(event)" mouseMove="resizeMove(event)"-->			
+			</mx:Box>		
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto"
+				>
+				<mx:List id="entityList" width="100%" height="100%" editable="true"
+					itemEditor="mx.controls.TextInput"
+					selectable="true"
+					change="{changeFieldData(this.formEntityModel.id)}">
+					<!--  	itemRollOver="{listSelectIndex = event.rowIndex}" itemClick="{listEditing(event)}" itemEditEnd="{listEditEnd(event)}"
+					itemEditBegin="{listEditing(event)}"-->
+					<mx:dataProvider>
+						<mx:ArrayCollection id="entityListArray" >
+							<mx:String></mx:String>
+						</mx:ArrayCollection>
+					</mx:dataProvider>
+				</mx:List>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+				<mx:DataGrid id="entityGrid" width="100%" height="100%" editable="true"
+					itemEditBegin="{gridEditing(event)}" itemEditEnd="{gridEditEnd(event)}"
+					itemRollOver="{gridSelectIndex = event.rowIndex}">
+					<mx:dataProvider>
+						<mx:ArrayCollection id="entityGridArray" >
+							<mx:Object/>							
+						</mx:ArrayCollection>
+					</mx:dataProvider>
+				</mx:DataGrid>
+			</mx:Box>
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto">
+				<controls:KoreanTextArea id="textEntityArea" text="{formEntityModel.expression}" width="100%" height="100%" change="{changeFieldData(this.formEntityModel.id)}"/>	
+			</mx:Box>	
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto" >
+				<mx:CheckBox id="entityCheck" change="{changeFieldData(this.formEntityModel.id)}"/>	
+			</mx:Box>	
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto" >
+				<org:OrgPersonField id="entityPerson" change="{changeFieldData(this.formEntityModel.id)}" width="100%" height="100%" 
+					orgServiceUrl="{FormEditorConfig.orgServiceUrl}" connUserId="{FormEditorConfig.userId}"/>	
+			</mx:Box>	
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto" >
+				<file:FileField id="entityFile" change="{changeFieldData(this.formEntityModel.id)}" width="100%" height="100%" 
+					baseUrl="{FormEditorConfig.baseUrl}" userId="{FormEditorConfig.userId}"/>	
+			</mx:Box>	
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto" >
+				<ref:FormRefField id="entityRefForm" width="100%" height="100%"  />
+			</mx:Box>	
+			<mx:HBox width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off" >
+				<mx:ComboBox id="ampmComboBox" change="{changeFieldData(this.formEntityModel.id)}">
+					<mx:dataProvider>
+						<mx:ArrayCollection>
+							<mx:String>오전</mx:String>
+							<mx:String>오후</mx:String>
+						</mx:ArrayCollection>
+					</mx:dataProvider>
+				</mx:ComboBox>
+				<mx:ComboBox id="hourComboBox" change="{changeFieldData(this.formEntityModel.id)}" dataProvider="{getTimeArray()}">
+				</mx:ComboBox>
+				<mx:Text text=":"/>
+				<mx:ComboBox id="minuteComboBox" change="{changeFieldData(this.formEntityModel.id)}" dataProvider="{getMinuteArray()}">	
+				</mx:ComboBox>
+			</mx:HBox>	
+			<mx:Box width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="auto" >
+				<mx:RichTextEditor id="entityRichEditor" change="{changeFieldData(this.formEntityModel.id)}" width="{valueView.width}" height="{valueView.height}"
+					/>	
+			</mx:Box>	
+		</mx:ViewStack>
+	</mx:HDividedBox>
+</mx:Canvas>

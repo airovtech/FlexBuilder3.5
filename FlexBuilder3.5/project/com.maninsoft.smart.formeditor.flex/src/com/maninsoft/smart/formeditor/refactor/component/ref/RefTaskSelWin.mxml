@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	title="{resourceManager.getString('FormEditorETC', 'itemSelectionText')}" 
+	width="750" height="400" layout="absolute" 
+	showCloseButton="true" close="{cancel()}" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:runtime="com.maninsoft.smart.formeditor.refactor.runtime.*">
+	<mx:Metadata>
+		[Event(name="cancel", type="flash.events.Event")]
+		[Event(name="complete", type="flash.events.Event")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.messaging.config.ServerConfig;
+			
+			private var _formId:String;
+			private var _formVer:String;
+			private var _formFieldId:String;
+			private var _formName:String;
+			[Bindable]
+			private var _formFieldName:String;
+			
+			public function start(formId:String, formVer:String, formName:String, formFieldId:String, formFieldName:String):void {
+				this._formId = formId;
+				this._formVer = formVer;
+				this._formName = formName;
+				
+				this._formFieldId = formFieldId;
+				this._formFieldName = formFieldName;
+				
+				singleWorkLayOut.formIdVer = this._formId + "|" + this._formVer;
+				singleWorkLayOut.labelTitle = this._formFieldName;
+			}
+			
+			private function selectRecord():void{
+				if(singleWorkLayOut.singleWorkList.selectedItem != null){
+					
+				}
+			}
+			
+			[Bindable]
+			public var fieldValue:String;
+			
+			protected function selectDataRecord():void{
+				if(singleWorkLayOut.singleWorkList.selectedItem != null){
+					okBtn.enabled = true;
+					
+					if(singleWorkLayOut.singleWorkList.selectedItem != null){
+						var dataRecord:XML = XML(singleWorkLayOut.singleWorkList.selectedItem);
+						for each(var dataField:XML in dataRecord.children()){
+							if(dataField.name() == ("A" + this._formFieldId + "Header")){
+								this.fieldValue = dataField.toString();
+							}
+						}
+					}
+				}
+			}
+			
+			protected function close():void{
+				PopUpManager.removePopUp(this);
+			}
+			protected function cancel():void{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();
+			}
+			protected function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox x="0" y="0" width="100%" height="100%">
+		<runtime:SingleWorkRef id="singleWorkLayOut"  width="100%" height="100%"
+			baseUrl="{FormEditorConfig.baseUrl}" connUserId="{FormEditorConfig.userId}" select="{selectDataRecord()}">
+		</runtime:SingleWorkRef>
+		<mx:HBox width="100%" height="50" verticalAlign="middle">
+			<mx:HBox>
+				<mx:Label text="{this._formFieldName + ' : '}"/>
+				<mx:TextInput text="{this.fieldValue}" width="170"/>
+			</mx:HBox>
+			<mx:Canvas width="100%">
+				<mx:Button id="okBtn" label="{resourceManager.getString('WorkbenchETC', 'confirmText')}" click="{complete()}" enabled="false" right="{this.cancelBtn.width + 20}"/>
+				<mx:Button id="cancelBtn" label="{resourceManager.getString('WorkbenchETC', 'cancelText')}" click="{cancel()}"  right="10"/>
+			</mx:Canvas>
+		</mx:HBox>
+	</mx:VBox>
+</mx:TitleWindow>
+	
+

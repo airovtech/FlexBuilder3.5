@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<view:AbstractFormatView 
+	paddingLeft="0" paddingRight="0" 
+	verticalGap="0" horizontalGap="0" 
+	verticalScrollPolicy="off" horizontalScrollPolicy="auto" 
+	horizontalAlign="left" verticalAlign="top"
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:view="com.maninsoft.smart.formeditor.view.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import com.maninsoft.smart.formeditor.util.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.controller.GraphicalController;
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import mx.controls.dataGridClasses.DataGridItemRenderer;
+			import mx.controls.DataGrid;
+			import mx.collections.ArrayCollection;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import mx.events.DataGridEvent;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			
+			public var table:DataGrid;
+			private var tableArray:ArrayCollection;
+			private var subFormItemControllers:ArrayCollection = new ArrayCollection();
+			
+			public var isDataGridSelected:Boolean = false;
+			
+			private var resizing:Boolean = false;
+			private function resizeWidth(event:Event):void {
+				if (resizing)
+					return;
+				resizing = true;
+				try {
+					var columns:Array = this.table.columns;
+					if (SmartUtil.isEmpty(columns))
+						return;
+					var i:Number = 0;
+					for each (var column:DataGridColumn in columns) {
+						var field:FormEntity = fieldModel.getFieldAt(i++);
+						var formatType:FormatType = FormatTypes.getFormatType(field.format.type, false);
+						var type:String = formatType.type;
+//						var isFixedWidth:Boolean = type == "dateChooser" || type == "timeField" || type == "userField" || type == "percentInput";
+						var isFixedWidth:Boolean = false;
+						if (isFixedWidth) {
+							if (column.width == formatType.contentWidth)
+								continue;
+							field.contentWidth = formatType.contentWidth;
+						} else {
+							if (column.width == field.contentWidth)
+								continue;
+							field.contentWidth = column.width;
+						}
+					}
+				} catch (e:Error) {
+					throw e;
+				} finally {
+					resizing = false;
+				}
+			}
+			override public function refreshVisual():void{
+				 if (this.table == null) {
+					this.table = new DataGrid();
+					this.table.editable = true;
+					this.table.sortableColumns = false;
+					this.table.height = 50;
+					this.table.horizontalScrollPolicy = "auto";
+					this.table.draggableColumns = false;
+					this.table.dragMoveEnabled = false;
+					this.table.setStyle("headerStyleName", "myHeaderBasicStyles");
+					this.table.verticalScrollPolicy = "off";
+					this.table.horizontalScrollPolicy = "off";
+					this.table.addEventListener(DataGridEvent.COLUMN_STRETCH, resizeWidth);
+					
+					this.tableArray = new ArrayCollection();
+					this.table.dataProvider = this.tableArray;
+
+					this.addChild(this.table); 
+				}
+				
+				var columns:Array = new Array();
+				
+				var column:DataGridColumn;
+				
+				if(fieldModel.children != null && fieldModel.children.length > 0){
+					for each(var child:FormEntity in fieldModel.children){
+						column = new DataGridColumn();
+						column.setStyle("textAlign", "center");
+						column.headerText = child.name;
+						column.dataField = Constants.DATAGRID_DATAFIELD_PREFIX + child.id;
+						if (child.contentWidth > 0)
+							column.width = child.contentWidth;
+						column.draggable = false;
+						column.sortable = false;
+						column.rendererIsEditor = true;
+						var formatType:FormatType = FormatTypes.getFormatType(child.format.type, false);
+//						column.itemRenderer = new ClassFactory(formatType.formatClass);
+//						column.itemEditor = new ClassFactory(com.maninsoft.smart.formeditor.refactor.simple.view.form.item.FormGridItemEditor);
+						
+						columns.push(column);
+					}
+					
+					this.table.columns = columns;
+					
+					for (var i:int=0; i<fieldModel.children.length; i++) {
+						if (subFormItemControllers.length - 1 < i) {
+							var controller:GraphicalController = new GraphicalController();
+				        	controller.model = FormEntity(fieldModel.children.getItemAt(i));
+				        	controller.view = this.fieldView;
+				        	
+				        	subFormItemControllers.addItem(controller);
+						} else {
+							var _controller:GraphicalController = GraphicalController(subFormItemControllers.getItemAt(i));
+				        	_controller.model = FormEntity(fieldModel.children.getItemAt(i));
+				        	_controller.view = this.fieldView;
+						}
+					}
+					this.table.addEventListener(MouseEvent.CLICK, dataGridSelected);
+				}
+				
+				if (fieldModel.fitWidth) {
+					this.table.percentWidth = 100;
+					resizeWidth(null);
+				} else {
+					this.table.percentWidth = NaN;
+				}
+
+				if(this.fieldView.dataGridSelectFormEntity!= null){
+					var tableColumns:Array = this.table.columns;
+					if(tableColumns!=null){
+						for each(var tableColumn:DataGridColumn in tableColumns){
+							if(tableColumn.headerText == this.fieldView.dataGridSelectFormEntity.name){
+								tableColumn.setStyle("headerStyleName", "myHeaderSelectStyles");									
+							}
+						}
+					}
+				}
+				//removeHeadColor();
+			}
+			
+			// 기존 선택되어진 컬럼헤드의 스타일 삭제.
+			public function removeHeadColor():void {
+		 		for (var n:Number = 0; n<table.columnCount; n++) {
+					this.table.columns[n].setStyle("headerStyleName", "myHeaderBasicStyles");
+				} 
+			}
+			
+			public function dataGridSelected(event:MouseEvent):void{
+				removeHeadColor();
+				this.fieldView.dataGridSelectFormEntity = null;																
+				var targetObject:Object = event.target;
+				if(targetObject is DataGridItemRenderer) {					
+					var name:String = ((targetObject as DataGridItemRenderer).data as DataGridColumn).headerText;
+					for (var i:Number = 0; i<this.table.columnCount; i++) {
+						//trace(this.table.columns[i].headerText +" / "+ name);
+						if (this.table.columns[i].headerText == name) {
+							this.table.columns[i].setStyle("headerStyleName", "myHeaderSelectStyles");
+						}
+					}
+				
+					if(fieldModel.children != null && fieldModel.children.length > 0){
+						for each(var child:FormEntity in fieldModel.children) {
+							if(child.name == name) {
+								this.fieldView.dataGridSelectFormEntity = child;																
+								break;
+							}
+						}
+					}
+					this.isDataGridSelected = true;	
+				}	
+			}
+			
+			override public function get formatType():FormatType {
+				return FormatTypes.dataGrid;
+			}
+			override public function release():void {
+				removeHeadColor();
+			}
+		]]>
+	</mx:Script>
+</view:AbstractFormatView>

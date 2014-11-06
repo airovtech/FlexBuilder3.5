@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:ns1="com.maninsoft.smart.workbench.*"
+	 backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#FFFFFF, #EDEDED]"
+	 implements="com.maninsoft.smart.workbench.common.IWorkbenchEditor" initialize="init()" 
+	 creationComplete="workBeanchLoad()" xmlns:local="*" horizontalAlign="center"
+	 fontFamily="맑은 고딕">
+	 <!--preloader="com.maninsoft.smart.workbench.preloader.CustomPreloader">-->
+	 <mx:Script>
+	 	<![CDATA[
+	 		import com.maninsoft.smart.workbench.event.MISPackageEvent;
+	 		import com.maninsoft.smart.workbench.WorkBenchBuilder2;
+	 		import com.maninsoft.smart.modeler.xpdl.controller.tool.ShowMappingTool;
+	 		import mx.messaging.config.ServerConfig;
+	 		import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+	 		import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+	 		
+	 		[Bindable]
+	 		private var packId:String;
+	 		
+	 		[Bindable]
+	 		private var packVer:int;
+	 		
+	 		[Bindable]
+			public var categoryId:String;
+			
+			[Bindable]
+			public var categoryName:String;
+			
+			[Bindable]
+			private var packName:String;
+			
+			[Bindable]
+			public var currentStatus:String;
+			
+			public var workbench:WorkBenchBuilder2;
+	 		
+            private function init():void {
+            	
+//            	Application.application.parameters.userId = "admin";
+//            	Application.application.parameters.serviceUrl = "http://192.168.0.16:8090/";
+//            	Application.application.parameters.packId = "pkg_9b6978897efc4ada8d280dbf56f21989";
+//            	Application.application.parameters.packVer = "1";
+//            	Application.application.parameters.packName = "메츠";
+//            	Application.application.parameters.categoryName = "안성호카테고리";
+            	
+				WorkbenchConfig.userId = Application.application.parameters.userId;
+				WorkbenchConfig.userName = Application.application.parameters.userName;
+				WorkbenchConfig.toDay = Application.application.parameters.toDay;
+				WorkbenchConfig.basePath = Application.application.parameters.serviceUrl + "smartserver";
+				WorkbenchConfig.serviceUrl = Application.application.parameters.serviceUrl + "smartserver/services/builder/builderService.jsp";
+        		FormEditorConfig.userId = Application.application.parameters.userId;
+				FormEditorConfig.baseUrl = Application.application.parameters.serviceUrl;	
+        		packId = Application.application.parameters.packId;
+        		packVer = Application.application.parameters.packVer;
+        		packName = Application.application.parameters.packName;
+        		categoryId = Application.application.parameters.categoryId;
+        		categoryName = Application.application.parameters.categoryName;
+        		
+				ExternalInterface.addCallback("goProcessEditor", goProcessEditor);
+				ExternalInterface.addCallback("goFormEditor", goFormEditor);
+				ExternalInterface.addCallback("addForm", addForm);
+				ExternalInterface.addCallback("addFormAndModify", addFormAndModify);
+				ExternalInterface.addCallback("renameForm", renameForm);
+				ExternalInterface.addCallback("removeForm", removeForm);
+				
+				ExternalInterface.addCallback("addProcess", addProcess);
+				ExternalInterface.addCallback("renameProcess", renameProcess);
+				ExternalInterface.addCallback("removeProcess", removeProcess);
+				
+				ExternalInterface.addCallback("checkIn", checkIn);
+				ExternalInterface.addCallback("checkOut", checkOut);
+				
+				ExternalInterface.addCallback("reload", reload);
+				ExternalInterface.addCallback("processEditorReload", processEditorReload);
+				
+            }
+            
+            public function goProcessEditor():void{
+				workbench.openProcess();
+			}
+			
+			public function goFormEditor(formId:String):void{
+				workbench.openForm(formId);
+			}
+			
+			public function addForm():void{
+				workbench.addForm();
+			}
+			
+			public function addFormAndModify():void{
+				workbench.addFormAndModify();
+			}
+			
+			public function renameForm(formId:String, value:String):void{
+				workbench.renameForm(formId, value);
+			}
+			
+			public function removeForm(formId:String):void{
+				workbench.removeForm(formId);
+			}
+			
+			public function addProcess():void{
+				workbench.addProcess();
+			}
+			
+			public function renameProcess(value:String):void{
+				workbench.renameProcess(value);
+			}
+			
+			public function removeProcess():void{
+				workbench.removeProcess();
+			}
+			
+			public function checkIn():void{
+				workbench.checkIn();
+			}
+			
+			public function checkOut():void{
+				workbench.checkOut();
+			}
+			
+			public function processCallbackHandler(event:Event):void{
+				ExternalInterface.call("processCallback");
+			}
+			
+			public function formCallbackHandler(event:MISPackageEvent):void{
+				if (event.mode=="add") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				} else if (event.mode=="addAndModify") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				} else if (event.mode=="remove") {
+					ExternalInterface.call("formCallback", "", "", event.mode);
+				} else if (event.mode=="rename") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				}
+			}
+			
+			public function loadCallbackHandler(event:Event):void{
+				currentStatus = workbench.swPackage.pkgStatus;
+				ExternalInterface.call("loadCallback", workbench.swPackage.pkgStatus);
+			}
+			
+			public function checkCallbackHandler(event:Event):void{
+				reload(packId, packVer, packName, categoryName);
+				ExternalInterface.call("checkCallback2");
+			}
+        	
+        	private function workBeanchLoad():void {
+        		load(this.packId, Number(this.packVer));
+        	}
+        	
+			/**
+			 * 환경을 설정하는 메소드
+			 * @userId:String : 유저 아이디
+			 * @serviceUrl : 서버에서 모델러와 관련된 서비스를 하는 url
+			 **/
+			public function config(userId:String, serviceUrl:String):void {
+				WorkbenchConfig.userId = userId;
+				WorkbenchConfig.basePath = serviceUrl + "smartserver";
+				WorkbenchConfig.serviceUrl = serviceUrl + "smartserver/services/builder/builderService.jsp";
+				
+				FormEditorConfig.userId = userId;
+				FormEditorConfig.baseUrl = serviceUrl;				
+			}
+			
+			
+        	/**
+        	 * 패키지를 로드하는 메소드
+        	 * @packId : 패키지 아이디
+         	 * @packVer : 패키지 버전
+        	 **/
+            public function load(packId:String, packVer:int):void { 
+            	this.packId = packId;
+            	this.packVer = packVer;
+            	if(packId!=null && packId!="" && packId!="null"){
+	            	workbench = new WorkBenchBuilder2;
+	            	workbench.x=0;
+	            	workbench.y=0;
+	            	workbench.percentWidth = 100;
+	            	workbench.percentHeight = 100;
+	            	workbench.addEventListener("formCallback", formCallbackHandler);
+	            	workbench.addEventListener("processCallback", processCallbackHandler);
+	            	workbench.addEventListener("loadCallback", loadCallbackHandler);
+	            	workbench.addEventListener("checkCallback", checkCallbackHandler);
+					workbench.load(packId, packVer, packName, categoryName);
+					this.addChild(workbench);
+            	}
+        	}
+        	
+        	public function reload(packId:String, packVer:int, packName:String, catName:String):void {
+    			this.packId = packId;
+    			this.packVer = packVer;
+    			this.packName = packName;
+    			this.categoryName = catName;
+        		this.removeAllChildren();
+				workbench = new WorkBenchBuilder2;
+            	workbench.x=0;
+            	workbench.y=0;
+            	workbench.percentWidth = 100;
+            	workbench.percentHeight = 100;
+            	workbench.addEventListener("formCallback", formCallbackHandler);
+            	workbench.addEventListener("processCallback", processCallbackHandler);
+            	workbench.addEventListener("loadCallback", loadCallbackHandler);
+            	workbench.addEventListener("checkCallback", checkCallbackHandler);
+				workbench.load(packId, packVer, packName, catName);
+				this.addChild(workbench);
+        	}
+        	
+        	public function processEditorReload(xml:String):void{
+        		workbench.processEditorReload(xml);
+        	}
+	 	]]>
+	 </mx:Script>
+	 <mx:Style>
+	 	@font-face { 
+		 	src:url("./assets//font/맑은 고딕.swf");
+			fontFamily: "맑은 고딕";
+		}	
+		/*ScrollBar{
+			upArrowSkin: ClassReference(null);
+			downArrowSkin: ClassReference(null);
+		    upArrowSkin: Embed(source="/assets/scroll/scroll.swf", symbol="point");
+		    downArrowSkin: Embed(source="/assets/scroll/scroll.swf", symbol="point");
+    		thumbDownSkin: Embed(source="/assets/scroll/scroll.swf", symbol="bar");
+			thumbOverSkin: Embed(source="/assets/scroll/scroll.swf", symbol="bar");
+			thumbUpSkin: Embed(source="/assets/scroll/scroll.swf", symbol="bar");
+		 	trackSkin: Embed("/assets/scroll/scroll_track.PNG");
+	    } */
+	 </mx:Style>
+	 <!--
+	<ns1:WorkBenchBuilder2 id="workbench" x="0" y="0" width="100%" height="100%" formCallback="formCallbackHandler(event)" processCallback="processCallbackHandler(event)">
+	</ns1:WorkBenchBuilder2>
+	-->
+</mx:Application>

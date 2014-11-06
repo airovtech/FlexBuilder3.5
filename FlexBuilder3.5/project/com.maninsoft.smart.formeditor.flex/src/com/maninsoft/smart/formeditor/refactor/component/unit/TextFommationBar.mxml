@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" >
+	<mx:Metadata>
+        [Event("dataChange")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ItemClickEvent;
+			import mx.controls.Button;
+			
+//			[Bindable] public var bold:Boolean = false;
+//			[Bindable] public var italic:Boolean = false;
+//			[Bindable] public var underline:Boolean = false;
+
+			public function set bold(bold:Boolean):void{
+				Button(this.fomattingBar.getChildAt(0)).selected = bold;
+			}
+			public function set italic(italic:Boolean):void{
+				Button(this.fomattingBar.getChildAt(1)).selected = italic;
+			}
+			public function set underline(underline:Boolean):void{
+				Button(this.fomattingBar.getChildAt(2)).selected = underline;
+			}
+			
+			public function get bold():Boolean{
+				return Button(this.fomattingBar.getChildAt(0)).selected;
+			}
+			public function get italic():Boolean{
+				return Button(this.fomattingBar.getChildAt(1)).selected;
+			}
+			public function get underline():Boolean{
+				return Button(this.fomattingBar.getChildAt(2)).selected;
+			}
+			
+			private function initFomattingBar():void {
+	           		Button(this.fomattingBar.getChildAt(0)).setStyle('fontWeight', 'bold');
+	           		Button(this.fomattingBar.getChildAt(0)).toggle = true;
+	           		
+	           		Button(this.fomattingBar.getChildAt(1)).setStyle('fontWeight', 'normal');
+	           		Button(this.fomattingBar.getChildAt(1)).setStyle('fontStyle', 'italic');
+	           		Button(this.fomattingBar.getChildAt(1)).toggle = true;
+	           		
+	           		Button(this.fomattingBar.getChildAt(2)).setStyle('fontWeight', 'normal');
+	           		Button(this.fomattingBar.getChildAt(2)).setStyle('textDecoration', 'underline');
+	           		Button(this.fomattingBar.getChildAt(2)).toggle = true;
+			}
+			
+			private function dispatchDataChangeEvent():void {
+                this.dispatchEvent( new Event("dataChange") );
+            }
+            
+           private function clickHandler(event:ItemClickEvent):void {
+//				if(event.index == 0) bold = (bold)?false:true;
+//				if(event.index == 1) italic = (italic)?false:true;
+//				if(event.index == 2) underline = (underline)?false:true;           	
+
+               dispatchDataChangeEvent();
+           }            
+		]]>
+	</mx:Script>
+	<mx:ButtonBar id="fomattingBar" x="0" y="0" width="100%" height="100%" creationComplete="initFomattingBar()" itemClick="clickHandler(event)">
+		<mx:dataProvider>
+			<mx:Array>
+				<mx:Object label="B" toolTip="{resourceManager.getString('FormEditorETC', 'boldFontText')}" width="{fomattingBar.width / 3}"/>                   
+				<mx:Object label="I" toolTip="{resourceManager.getString('FormEditorETC', 'italicFontText')}" width="{fomattingBar.width / 3}"/>
+				<mx:Object label="U" toolTip="{resourceManager.getString('FormEditorETC', 'underlineFontText')}" width="{fomattingBar.width / 3}"/>
+        	</mx:Array>
+		</mx:dataProvider>
+	</mx:ButtonBar>
+</mx:Canvas>

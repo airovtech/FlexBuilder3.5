@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" >
+<!-- creationComplete="treeDataInit()" -->
+	<mx:Metadata>
+		[Event(name="custormItemClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.events.TreeEvent;
+			import mx.controls.PopUpButton;
+			import mx.managers.PopUpManager;
+			import mx.controls.Alert;
+
+			[Embed("/assets/category/tasktree_1.png")]
+            private var Icon1_:Class;
+
+            [Embed("/assets/category/tasktree_1_1.png")]
+            private var Icon1_1:Class;
+
+            [Embed("/assets/category/tasktree_1_2.png")]
+            private var Icon1_2:Class;
+
+            [Embed("/assets/category/tasktree_1_3.png")]
+            private var Icon1_3:Class;
+
+            [Embed("/assets/category/tasktree_1_4.png")]
+            private var Icon1_4:Class;
+
+            [Embed("/assets/category/tasktree_2.png")]
+            private var Icon2_:Class;
+
+            [Embed("/assets/category/tasktree_2_1.png")]
+            private var Icon2_1:Class;
+
+            [Embed("/assets/category/tasktree_2_3.png")]
+            private var Icon2_2:Class;
+            			
+			[Bindable]
+			public var currentCategoryId:String;
+			[Bindable]
+			public var currentCategoryName:String;
+
+			private var _categoryServiceUrl:String;
+			
+			public function set categoryServiceUrl(categoryServiceUrl:String):void{
+				this._categoryServiceUrl = categoryServiceUrl;
+				
+				treeDataInit();
+			}
+			public function get categoryServiceUrl():String{
+				return this._categoryServiceUrl;	
+			}
+			
+			private var _connUserId:String;
+			
+			public function set connUserId(connUserId:String):void{
+				this._connUserId = connUserId;
+				
+				treeDataInit();
+			}
+			public function get connUserId():String{
+				return this._connUserId;	
+			}
+			
+			private function alert():void{
+				Alert.show(currentCategoryId);
+			}
+			private function treeDataInit():void {
+				if(this.categoryServiceUrl != null && this.connUserId != null){
+					treeInit(catTree, categoryServiceUrl);
+				}
+		    }
+			public function treeDataRefresh():void {
+				tree_status = "init";
+				treeDataInit();
+			}
+			
+			public var dataXML:XML;
+			private var myLoader:URLLoader;
+			
+			public var selectedNode:Object;
+			public var selectedIndex:int;
+			public var xmlURL:String ;
+			public var tree_status:String = "init";
+			public var _tree:Tree;
+			
+			public function treeInit(tree:Tree, url:String):void
+			{	
+				this._tree = tree;
+				this.xmlURL = url;
+				dataCall(this.xmlURL + "?method=retrieveRootCategoryForTree");
+			}
+			
+			public function dataCall(url:String):void
+			{
+				var dataXMLURL:URLRequest = new URLRequest(url);
+				this.myLoader = new URLLoader(dataXMLURL);
+				this.myLoader.addEventListener("complete", this.xmlLoaded);
+			}	
+			
+			public function xmlLoaded(evtObj:Event):void 
+			{ 
+				if(this.tree_status == "init")
+				{
+					this.dataXML = new XML(this.myLoader.data);
+					_tree.dataProvider = this.dataXML;
+				}
+				else if(this.tree_status == "itemClick")
+				{
+					var childNode:XML = new XML(this.myLoader.data);
+					this.expandTree(childNode.item);
+				}
+				else if(this.tree_status == "selCombo")
+				{
+					this.dataXML = new XML(this.myLoader.data);
+					_tree.dataProvider = this.dataXML;
+				}
+			}
+			
+			public function treeOpening(event:TreeEvent):void {
+				var stringTitle:String = XML(event.item).toXMLString();
+				var itemObj:Object = event.item;
+				
+				this.tree_status = "itemClick";
+				this.selectedIndex = this.getSelectItemIndex(itemObj);
+				this.selectedNode = itemObj;
+				var nodeType:String = itemObj.@nodeType;
+				var name:String = itemObj.@name;
+				var isOpened:String = this.isOpenedValue(itemObj);
+				var data:String = itemObj.@id;
+				
+				if(isOpened == "false")
+				{
+					itemObj.@isOpened = "itemOpen";
+					if(nodeType == "Directory")
+					{
+						var tempXmlUrl:String = this.xmlURL + "?method=findChildren4Tree&userId=" + connUserId + "&categoryId=" + data;
+						dataCall(tempXmlUrl);
+					}
+					_tree.expandItem(itemObj,true);	
+				}
+				else if(isOpened == "itemOpen")
+				{
+					itemObj.@isOpened = "itemClose";
+				}
+				else
+				{
+					itemObj.@isOpened = "itemOpen";
+					_tree.expandItem(itemObj,true);	
+				}
+				
+				if(nodeType == "file")
+				{
+				}
+			}
+			
+			//트리를 클릭하여 해당 노드에  맞는 액션을 설정한다.
+			public function treeSelect():void
+			{
+				this.tree_status = "itemClick"
+				this.selectedIndex = _tree.selectedIndex;
+				this.selectedNode = _tree.selectedItem;
+				var nodeType:String = _tree.selectedItem.@nodeType;
+				var name:String = _tree.selectedItem.@name;
+				var isOpened:String = this.isOpenedValue(_tree.selectedItem);
+				var data:String = _tree.selectedItem.@id;
+				currentCategoryId = _tree.selectedItem.@id;
+				currentCategoryName = _tree.selectedItem.@label;
+				
+				if(isOpened == "false")
+				{
+					_tree.selectedItem.@isOpened = "itemOpen";
+					if(nodeType == "Directory")
+					{
+						var tempXmlUrl:String = this.xmlURL + "?method=findChildren4Tree&userId=" + connUserId + "&categoryId=" + data;
+						dataCall(tempXmlUrl);
+					}	
+				}
+				else if(isOpened == "itemOpen")
+				{
+					_tree.selectedItem.@isOpened = "itemClose";
+					dispatchEvent( new Event(TreeEvent.ITEM_CLOSE) ); 	
+				}
+				else
+				{
+					_tree.selectedItem.@isOpened = "itemOpen";
+					_tree.expandItem(_tree.selectedItem,true);	
+				}
+				
+				var eventObj:CustormEvent = new CustormEvent(CustormEvent.CUSTORM_ITEM_CLICK);
+				eventObj.deptId = _tree.selectedItem.@id;
+				dispatchEvent(eventObj);
+			}
+			
+			//해당 인덱스 구하기 
+			public function getSelectItemIndex(selectItem:Object):int
+			{
+				var childNode:XML = new XML(this.myLoader.data);
+				var _dataProvider:XMLList = childNode.item;
+				var selectIndex:int = 0;
+				for(var x:int=0;x< _dataProvider.length();x++)
+				{
+					if(_dataProvider.@id == selectItem.@id)
+					{
+						selectIndex = x;
+						break;
+					}
+				}
+				return selectIndex;
+			}
+			
+			// 해당 폴더 트리 오픈하기 
+			public function expandTree(childNode:XMLList):void
+			{
+				var index:int = this.selectedIndex;
+				var node:XML = this.selectedNode as XML;
+				var parentNode:*;
+				
+				parentNode = node;
+				index = 0;
+				
+				// 하위 노드추가하기 
+				for(var x:int=0;x<childNode.length();x++)
+				{
+					var tag:int = Math.abs(childNode.length()-x)-1;
+					var childData:XML = new XML(childNode[tag]);
+					_tree.setItemIcon(childData, this[childData.@icon], this[childData.@icon]);	
+			 		_tree.dataDescriptor.addChildAt(parentNode,childData,index);
+				}
+			 		
+				_tree.expandItem(this.selectedNode, true, true, true);	
+			}
+			
+			// 한번 오픈되었던 폴더는 더이상 노드를 추가하지 않는다.
+			public function isOpenedValue(itemObj:Object):String
+			{
+				var nodeType:String = itemObj.@nodeType;
+				var isOpenedValue:String = itemObj.@isOpened;
+				var isOpened:String = itemObj.@isOpened;
+				
+				if(isOpened == "" || isOpened == "false" || isOpened == null)
+				{
+					isOpenedValue = "false";
+				}
+				else
+				{
+					isOpenedValue = isOpened;
+				}
+				return isOpenedValue;
+			}
+		]]>
+	</mx:Script>
+    <mx:Metadata>
+        [Event(name="custormItemClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>	
+	<mx:Tree id="catTree" x="0" y="0" width="100%" height="100%" labelField="@label" 
+		alternatingItemColors="[#FFFFFF,#EEEEEE]" showRoot="false"  
+		itemClick="this.treeSelect()"  itemOpening="this.treeOpening(event)"/>	
+</mx:Canvas>

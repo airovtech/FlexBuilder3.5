@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()" dataChange="init()" horizontalGap="0">
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.DateBase;
+		
+			public static var date:String = "1979-01-01 13:30";
+			
+			private function init():void{
+				setFormat();
+				setText();
+			}
+			private function setFormat():void{
+				DateDisplay.formatString = data.formatString;
+			}
+			private function setText():void{
+				formTypeLabel.text = DateDisplay.format(date);
+			}
+		]]>
+	</mx:Script>
+	<mx:DateFormatter id="DateDisplay"/>
+	<mx:Text id="formTypeLabel" fontSize="11"/>		
+	<!---->
+</mx:HBox>

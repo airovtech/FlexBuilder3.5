@@ -1,0 +1,1014 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * 
+ *  Package: 		com.maninsoft.smart.workbench
+ *  Class: 			SmartWorkbench
+ * 					extends Canvas
+ * 					implements None
+ *  Author:			Maninsoft, Inc.
+ *  Description:	SmartWorks Workbench의 메인 화면 클래스
+ * 				
+ *  History:		Created by Maninsoft, Inc.
+ *					2009.12.1 Modified by Y.S. Jung for GanttChart Builder
+ * 					2010.2.26 Modified by Y.S. Jung for SWV20002: SAAS버전을 위해 모든 서비스호출에 compId 추가
+ * 
+ *  Copyright (C) 2007-2010 Maninsoft, Inc. All Rights Reserved.
+ *  
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"  borderStyle="none" borderThickness="1" xmlns:common="com.maninsoft.smart.common.*" 
+	verticalScrollPolicy="off" horizontalScrollPolicy="off" backgroundColor="#ffffff"
+	xmlns:xpdl="com.maninsoft.smart.modeler.xpdl.*" xmlns:view="com.maninsoft.smart.formeditor.refactor.simple.view.*"
+	xmlns:view1="com.maninsoft.smart.formeditor.refactor.view.*" creationComplete="init();"  xmlns:simple="com.maninsoft.smart.formeditor.refactor.simple.*" 
+	xmlns:pack="com.maninsoft.smart.workbench.pack.*" xmlns:mxml="com.maninsoft.smart.modeler.xpdl.mxml.*" xmlns:toolTipMenu="com.maninsoft.smart.modeler.toolTipMenu.*"
+	xmlns:ganttchart="com.maninsoft.smart.workbench.ganttchart.*"
+	xmlns:editor="com.maninsoft.smart.modeler.editor.*" xmlns:process="com.maninsoft.smart.workbench.process.*" xmlns:formeditor="com.maninsoft.smart.formeditor.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ResizeEvent;
+			import mx.core.Application;
+			import mx.core.ScrollPolicy;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskService;
+			import com.maninsoft.smart.modeler.xpdl.model.SubFlow;
+			import com.maninsoft.smart.modeler.xpdl.model.base.Activity;
+			import mx.containers.Form;
+			import com.maninsoft.smart.modeler.xpdl.model.XPDLDiagram;
+			import com.maninsoft.smart.ganttchart.model.GanttChartGrid;
+			import com.maninsoft.smart.workbench.service.IRepositoryService;
+			import com.maninsoft.smart.workbench.command.CloneFormCommand;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.workbench.util.NameGenerator;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import com.maninsoft.smart.workbench.event.MISProcessEvent;
+			import com.maninsoft.smart.workbench.event.MISFormEvent;
+			import com.maninsoft.smart.workbench.event.MISPackageEvent;
+			import com.maninsoft.smart.workbench.common.preloader.SquaresSpinnerPreloadingWindow;
+			import com.maninsoft.smart.workbench.common.preloader.CustomPreloadEvent;
+			import com.maninsoft.smart.workbench.common.resource.MsgConf;
+			import com.maninsoft.smart.workbench.common.meta.IProcessMetaModel;
+			import com.maninsoft.smart.workbench.common.meta.SmartModelConstant;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWPackage;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWGanttProcess;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWProcess;
+			import com.maninsoft.smart.workbench.common.event.FormEditorEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.workbench.common.editor.EditDomain;
+			import com.maninsoft.smart.workbench.command.UpdateProcessCommand;
+			import com.maninsoft.smart.workbench.command.UpdateGanttProcessCommand;
+			import com.maninsoft.smart.workbench.command.CheckOutPackageCommond;
+			import com.maninsoft.smart.workbench.command.CheckInPackageCommond;
+			import com.maninsoft.smart.workbench.command.RemoveProcessCommand;
+			import com.maninsoft.smart.workbench.command.RemoveGanttProcessCommand;
+			import com.maninsoft.smart.workbench.command.AddProcessCommand;
+			import com.maninsoft.smart.workbench.command.AddGanttProcessCommand;
+			import com.maninsoft.smart.workbench.command.UpdateFormCommand;
+			import com.maninsoft.smart.workbench.command.AddFormCommand;
+			import com.maninsoft.smart.workbench.command.RemoveFormCommand;
+
+			import com.maninsoft.smart.workbench.common.property.PropertyInfo;
+			import com.maninsoft.smart.workbench.common.property.TextPropertyInfo;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskApplication;
+			import com.maninsoft.smart.modeler.xpdl.model.base.XPDLNode;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskForm;
+			import com.maninsoft.smart.modeler.xpdl.property.FormIdPropertyInfo;
+			import com.maninsoft.smart.workbench.assets.WorkbenchAssets;
+
+			import flash.utils.setTimeout;
+			import mx.containers.TitleWindow;
+			import mx.managers.PopUpManager;
+			import mx.preloaders.Preloader;
+			import mx.core.UIComponent;
+			import mx.core.IFlexDisplayObject;
+			import mx.collections.ArrayCollection;
+			
+			private static const GANTT_MOVE_LEFT:String 		= "MOVE_LEFT";
+			private static const GANTT_MOVE_RIGHT:String 		= "MOVE_RIGHT";
+			private static const GANTT_VIEW_SCOPE_DAY:String 	= "DAY";
+			private static const GANTT_VIEW_SCOPE_WEEK:String 	= "WEEK";
+			private static const GANTT_VIEW_SCOPE_MONTH:String 	= "MONTH";
+			private static const GANTT_VIEW_SCOPE_YEAR:String 	= "YEAR"; 
+
+			private static const EDITMODE_FULLSCREEN:String 	= "FullScreen";
+			private static const EDITMODE_NORMALSCREEN:String 	= "NormalScreen";
+					
+			/**
+			 *	로드할 패키지에 대한 기본 변수들.
+			 */
+			[Bindable]
+			private var packId:String;			
+			[Bindable]
+			private var packVer:int;
+			[Bindable]
+			private var packName:String;
+			[Bindable]
+			private var categoryName:String;
+			[Bindable]
+			public var swPackage:SWPackage;
+			[Bindable]
+			private var editDomain:EditDomain;
+			
+			/**
+			 * 	프로그레스바와 팝업메시지에 관한 변수들.
+			 */
+			[Bindable]
+			private var popupMsg:String;
+			private var timer:Timer;
+			private var repeatCount:Number;
+			private var timeoutId:uint;
+			private var _popupWindow:SquaresSpinnerPreloadingWindow = null;
+			private var _popupWindowCenterWindow:UIComponent = null;
+			private var fieldLoaded:Boolean = true;
+
+			/**
+			 *	워크벤치 오픈시에 나타나는 프로그레스바에 관한 처리
+			 */
+			public function openProgressHandler(event:CustomPreloadEvent):void {
+				timer = new Timer(1000, repeatCount);
+				timer.addEventListener(TimerEvent.TIMER, timerEventHandler);
+				timer.start();
+				
+				if (_popupWindowCenterWindow == null) {
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(this, SquaresSpinnerPreloadingWindow, true));
+					_popupWindow.popupMsg = popupMsg;
+				}
+				else
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(_popupWindowCenterWindow, SquaresSpinnerPreloadingWindow));
+				}
+				PopUpManager.centerPopUp(_popupWindow);
+			}
+			public function timerEventHandler(event:TimerEvent):void {
+				repeatCount ++;
+			}
+			
+			/**
+			 *	워크벤치에서 나갈때 나타나는 프로그레스바에 관한 처리
+			 */
+			public function closeProgressHandler(event:CustomPreloadEvent):void {
+				if(_popupWindow)
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+				 }	
+			}
+
+			/**
+			 * 	워크벤치 실행시 초기화 처리
+			 */
+			private function init():void{
+
+				if(processEditor){
+					formEditor.addEventListener(FormEditorEvent.FORM_RENAME, processEditor.formRename, true);	
+					formEditor.addEventListener(FormEditorEvent.FORM_FIELD_RENAME, processEditor.formFieldRename, true);
+					formEditor.addEventListener(FormEditorEvent.FORM_FIELD_ADD, processEditor.formFieldAdd, false);
+					formEditor.addEventListener(FormEditorEvent.FORM_FIELD_REMOVE, processEditor.formFieldRemove, false);
+				}
+				formEditor.addEventListener("saveFormComplete", fieldLoadedFalse);
+				
+				/**
+				 *  워크벤트 오픈과 종료시 프리로드 이벤트 처리
+				 */
+				this.addEventListener(CustomPreloadEvent.OPEN_PROGRESS_IMG, openProgressHandler);
+				this.addEventListener(CustomPreloadEvent.CLOSE_PROGRESS_IMG, closeProgressHandler);
+				
+				/**
+				 * 	다국어 지원을 위해 아래의 값들을 설정 한다.
+				 */
+				WorkbenchConfig.PROCESS_NAME = resourceManager.getString("WorkbenchETC", "processNameText");
+				WorkbenchConfig.GANTTPROCESS_NAME = resourceManager.getString("WorkbenchETC", "ganttProcessNameText");
+				WorkbenchConfig.FORM_NAME_PREFIX = resourceManager.getString("WorkbenchETC", "formNamePrefixText");
+				MsgConf.MESSAGE_CHECKINPROGRESS = resourceManager.getString("WorkbenchMessages", "WBI002");
+				MsgConf.MESSAGE_CHECKOUTPROGRESS = resourceManager.getString("WorkbenchMessages", "WBI003");
+				MsgConf.MESSAGE_SAVEPROGRESS = resourceManager.getString("WorkbenchMessages", "WBI004");
+			}
+
+			/**
+			 * 	워크벤트에서 작업할 패키지를 서버로 서비스 호출하여 로드 한다.
+			 */
+			public function load(packId:String, packVer:int, packName:String, catName:String):void{
+				this.packId = packId;
+				this.packVer = packVer;
+				this.packName = packName;
+				this.categoryName = catName;
+				this.editDomain = new EditDomain();
+				/**
+				 *  서버에서 해당 패키지를 불러오는 서비스를 호출한다.
+				 * 	받은 메시지는, LoadHandler에서 처리하며, 서비스호출에 문제가 생겼으면 serviceFault에서 처리 한다.
+				 */
+				WorkbenchConfig.repoService.retrievePackage(this.packId, this.packVer, loadHandler, serviceFault);
+			}
+
+			/**
+			 * 	서버에 패키지로드 서비스를 호출하여 받은 값을 처리 한다.
+			 */
+			public function loadHandler(event:MISPackageEvent):void{
+
+				this.swPackage = event.packMetaModel;
+				
+				/**
+				 * 	로드할 패키지가 "배치" 상태이면, 편집기능들을 보이지 않게 한다. 
+				 */
+				if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_DEPLOYED) {
+					processEditor.toolBox.visible = false;
+					processEditor.toolBox.width = 0;
+					processEditor.xpdleditor.readOnly=true;
+					formEditor.formEditorToolbar.visible = false;
+					formEditor.formEditorToolbar.width = 0;
+					if(GanttChartGrid.DEPLOY_MODE){
+						ganttChartEditor.ganttChart.readOnly=false;
+						ganttChartEditor.ganttToolBox.visible = true;
+						ganttChartEditor.ganttToolBox.width = 30;
+						ganttChartEditor.toolBarSaveBtn.enabled = false;						
+						ganttChartEditor.toolBarSaveBtn.mouseEnabled = false;						
+					}else{
+						ganttChartEditor.ganttChart.readOnly=true;
+						ganttChartEditor.ganttToolBox.visible = false;
+						ganttChartEditor.ganttToolBox.width = 0;
+					}
+				}
+				
+				/**
+				 * 	패키지에 프로세스 리소스가 존재하지 않으면 정보관리업무임으로, 프로세스편집기로 가는 버튼을 보이지 않게하고,
+				 * 	폼에디터로 받은 패키지를 오픈한다.
+				 */
+				if (swPackage.type == SmartModelConstant.SINGLE_PACKAGE_TYPE){				
+					processEditor=null;
+					diagramStage=null;
+					ganttChartEditor=null;
+					ganttChartStage=null;
+					toProcessStageButton.visible=false;
+					formEditor.isWorkForm = false;
+					openForm(swPackage.getFormResource(0).id);
+					
+				/**
+				 * 	프로세스리소스 타입이 PROCESS_TYPE이면 프로세스업무임으로,
+				 *  폼에디터는 프로세스 태스크의 업무화면 편집에 사용될 수 있으므로, toProcessStageButton을 보이게 하고, 폼편집기는 보이지만 않게 한다.
+				 * 	반면, 간트차트편집기는 사용할 수 없으므로 간트차트편집기는 지워버린다.
+				 * 	그리고, 프로세스에디터로 서버에서 받은 패키지를 오픈한다.
+				 */
+				} else if (swPackage.type== SmartModelConstant.PROCESS_PACKAGE_TYPE) {
+					formStage.visible=false;
+					formStage.height=0;
+					formEditor.isWorkForm = true;
+
+					diagramStage.visible=true;
+					diagramStage.percentHeight=100;
+
+					toProcessStageButton.visible=true;
+					
+					processEditor.serverLoad(packId, packVer, swPackage, editDomain, true);
+					processEditor.resetExtents();
+					etcInfo(null);
+
+					/**
+					 * 	패키지가 체크아웃 상태이면 편집되게 하고, 체크인 상태이면 조회가 가능하게 한다.
+					 */
+					if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_CHECKED_OUT) {
+						processEditor.toolBox.visible = true;
+						processEditor.toolBox.width=30;
+					} else if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_CHECKED_IN) {
+						processEditor.toolBox.visible = false;
+						processEditor.toolBox.width = 0;
+						processEditor.xpdleditor.readOnly=true;
+						formEditor.formEditorToolbar.visible = false;
+					}
+
+					/**
+ 					 * 	프로세스업무인 경우에는 간트차트 에디터로의 전환이 필요 없기때문에 간트차트스테이지를 제거한다. 
+ 					 */
+ 					ganttChartEditor=null;
+					ganttChartStage=null;
+					
+				/**
+				 * 	프로세스리소스 타입이 GANTTPROCESS TYPE이면 일정계획업무임으로,
+				 *  폼에디터는 일정들의 업무화면 편집에 사용될 수 있으므로, toProcessStageButton을 보이게 하고, 폼편집기는 보이지만 않게 한다.
+				 * 	반면, 프로세스편집기는 사용할 수 없으므로 프로세스편집기는 지워버린다.
+				 * 	그리고, 간트차트편집기로 서버에서 받은 패키지를 오픈한다.
+				 */
+				} else if (swPackage.type== SmartModelConstant.GANTT_PACKAGE_TYPE) {
+					formStage.visible=false;
+					formStage.height=0;
+					formEditor.isWorkForm = true;
+
+					ganttChartStage.visible=true;
+					ganttChartStage.percentHeight=100;
+
+					toProcessStageButton.visible=true;
+
+					ganttChartEditor.serverLoad(packId, packVer, swPackage, editDomain, true);
+					//간트차트에 필요한 추가구현이 필요한지 확인이 필요하다.
+					//processEditor.resetExtents();
+					etcInfo(null);
+
+					/**
+					 * 	패키지가 체크아웃 상태이면 편집되게 하고, 체크인 상태이면 조회가 가능하게 한다.
+					 */
+					if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_CHECKED_OUT) {
+						ganttChartEditor.ganttToolBox.visible = true;
+						ganttChartEditor.ganttToolBox.width=30;
+					} else if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_CHECKED_IN) {
+						ganttChartEditor.ganttToolBox.visible = false;
+						ganttChartEditor.ganttToolBox.width = 0;
+						ganttChartEditor.ganttChart.readOnly=true;
+						formEditor.formEditorToolbar.visible = false;
+					}
+					/**
+ 					 * 	간트차트인 경우에는 다이어그램 에디터로의 전환이 필요 없기때문에 다이그램스테이지를 제거한다. 
+ 					 */
+ 					processEditor=null;
+					diagramStage=null;
+				}
+			}
+			
+			/**
+			 * 	폼에디터로 폼정의 정보를 오픈한다.
+			 */
+			public function openForm(formId:String):void{
+				
+				if(diagramStage){
+					diagramStage.visible = false;
+					diagramStage.height = 0;
+				}
+				if(ganttChartStage){
+					ganttChartStage.visible = false;
+					ganttChartStage.height = 0;					
+				}
+				
+				formStage.visible = true;
+				formStage.percentHeight = 100;
+				
+				formEditor.packageId = this.packId;
+
+				/**
+				 * 	패키지가 체크아웃 상태이면 편집되게 하고, 체크인 상태이면 조회가 가능하게 한다.
+				 */
+				if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_CHECKED_OUT) {
+					formEditor.formEditorToolbar.visible = true;
+/*					if(swPackage.getProcessResource()){
+						if(swPackage.type== SmartModelConstant.PROCESS_PACKAGE_TYPE){
+							processEditor.toolBox.visible = true;
+							processEditor.toolBox.width = 30;
+						}else if(swPackage.type== SmartModelConstant.GANTT_PACKAGE_TYPE){
+							ganttChartEditor.ganttToolBox.visible = true;
+							ganttChartEditor.ganttToolBox.width = 30;
+						}
+					}
+*/				} else if (swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_CHECKED_IN) {
+					formEditor.formEditorToolbar.visible = false;
+					formEditor.formEditorToolbar.width = 0;
+/*					if(processEditor){
+						processEditor.toolBox.visible = false;
+						processEditor.toolBox.width = 0;
+						processEditor.xpdleditor.readOnly=true;
+					}
+					if(ganttChartEditor){
+						ganttChartEditor.ganttToolBox.visible = false;
+						ganttChartEditor.ganttToolBox.width = 0;
+						ganttChartEditor.ganttChart.readOnly=true;
+					}
+*/				}
+				
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var form:SWForm = null
+				for(var i:int; i<arr.length; i++){
+					if(formId == SWForm(arr.getItemAt(i)).id){
+						form = SWForm(arr.getItemAt(i));
+						formEditor.openForm(form.id, form.version, form.name);
+						break;
+					} 
+				}
+				etcInfo(formId);
+			}
+						
+			//프로세스 오픈(화면 전환)
+			public function openProcess():void{
+				if(!diagramStage){
+				 	openGanttChart();
+				 	return;	
+				}
+
+				diagramStage.visible = true;
+				diagramStage.percentHeight = 100;
+				
+				if(ganttChartStage){
+					ganttChartStage.visible=false;
+					ganttChartStage.height=0;
+				}
+				if(formStage){
+					formStage.visible = false;
+					formStage.height = 0;
+					formEditor.formModelEditPartViewer.height = 0;
+				}
+								
+				if (!fieldLoaded) {
+					reloadFields();
+					fieldLoaded = true;
+				}
+				processEditor.resizeWorkbench();
+			}
+			
+			public function openGanttChart():void{
+				ganttChartStage.visible = true;
+				ganttChartStage.percentHeight = 100;
+				
+				if(diagramStage){
+					diagramStage.visible=false;
+					diagramStage.height=0;
+				}
+				if(formStage){
+					formStage.visible = false;
+					formStage.height = 0;
+					formEditor.formModelEditPartViewer.height = 0;
+				}
+				
+				if (!fieldLoaded) {
+					reloadFields();
+					fieldLoaded = true;
+				}
+				ganttChartEditor.resizeWorkbench();
+			}
+			
+			public function processEditorReload(xml:String):void{
+				var swForm:SWForm = SWForm.parseXML(XML(xml).Form[0]);
+				this.swPackage.addFormResource(swForm, this.swPackage.getFormResources().length);
+				processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+			}
+						
+			public function ganttChartEditorReload(xml:String):void{
+				var swForm:SWForm = SWForm.parseXML(XML(xml).Form[0]);
+				this.swPackage.addFormResource(swForm, this.swPackage.getFormResources().length);
+				ganttChartEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+			}
+			
+			public function serviceFault(event:MISPackageEvent):void{
+				MsgUtil.showError(event.msg);	
+			}
+			
+			// 폼 화면으로 전환
+			public function goForm():void {
+				if(swPackage.getProcessResource() == null){
+					return;
+				}else if(swPackage.type== SmartModelConstant.PROCESS_PACKAGE_TYPE){
+					processEditor.goForm(null);
+				}
+				else if(swPackage.type== SmartModelConstant.GANTT_PACKAGE_TYPE){
+					ganttChartEditor.goForm(null);
+				}
+			}
+			
+			/**************************리소스 창 제어***********************************/
+			[Bindable]
+			public var isClosed:Boolean = false;
+			
+			
+			private function getScale(parent:DisplayObject, child:DisplayObject):Number{
+				var scale:Number = 1;
+				if(parent != null && child != null){
+					if(scale > parent.width/(child.width + 100)){
+						scale = parent.width/(child.width + 100);
+					}
+					
+					if(scale > parent.height/(child.height + 100)){
+						scale = parent.height/(child.height + 100);
+					}
+				}
+				
+				return scale;
+			}    
+            
+            private function faultHandler(event:MISPackageEvent):void{
+				//TODO 에러처리
+				MsgUtil.showError(event.msg);
+            }
+            
+            
+            // 배치
+            private function deployPackage():void
+            {
+            	WorkbenchConfig.repoService.deploy(this.swPackage, deployResultHandler, faultHandler); 
+            }
+            
+            private function deployResultHandler(e:MISPackageEvent):void{
+            	MsgUtil.showMsg(e.msg);
+            }
+            
+            private function formEditorMoveHandler(evnet:MISProcessEvent):void{
+            	openForm(evnet.formId);
+            }	
+            
+            public function checkIn():void{
+            	// dispatch Progress Event Point
+            	popupMsg = MsgConf.MESSAGE_CHECKINPROGRESS;
+            	dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.OPEN_PROGRESS_IMG));
+				editDomain.getCommandStack().execute(new CheckInPackageCommond(packId, packVer, checkHandler));
+			}
+			
+			public function checkOut():void{
+				popupMsg = MsgConf.MESSAGE_CHECKOUTPROGRESS;				
+				dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.OPEN_PROGRESS_IMG));
+				editDomain.getCommandStack().execute(new CheckOutPackageCommond(packId, packVer, checkHandler));
+			}
+			
+			public function checkHandler(event:MISPackageEvent):void{
+				timerCheck();
+				dispatchEvent(new Event("checkCallback"));
+			}
+			
+			public function timerCheck():void {
+				if (timer != null && timer.currentCount >= 1) {
+					closePreload();
+				} else if (timer != null) {
+					this.timeoutId = setTimeout(closePreload, 1500);
+				}
+			}
+			
+			public function closePreload():void {
+				timer.stop();
+				timer.removeEventListener(TimerEvent.TIMER, timerEventHandler);
+				this.dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.CLOSE_PROGRESS_IMG));
+			}
+            
+            public function addProcess():void{  //추가
+				if(this.swPackage.getProcessResource() == null){
+					editDomain.getCommandStack().execute(new AddProcessCommand(this.swPackage, NameGenerator.generateProcessName(this.swPackage), 
+															addProcessHandler, faultHandler, removeProcessHandler));	
+				}else{
+					MsgUtil.showError(resourceManager.getString("WorkbenchMessages", "WBE001"));
+				}
+			}
+			
+			public function addProcessHandler(event:MISPackageEvent):void{
+				this.swPackage.setProcessResource(event.swProcess);
+				dispatchEvent(new Event("processCallback"));
+			}
+			
+			public function removeProcess():void{ //삭제
+				var swPrc:SWProcess = SWProcess(this.swPackage.getProcessResource());
+			    editDomain.getCommandStack().execute(new RemoveProcessCommand(this.swPackage, swPrc, removeProcessHandler, faultHandler, addProcessHandler));
+			}
+			
+			public function removeProcessHandler(event:MISPackageEvent):void{
+				if(this.swPackage.children.length == 1){
+					//packResourceTree.expandItem(this.swPackage, false); //Tree에 반영(?)
+				}
+				this.swPackage.setProcessResource(null);
+				dispatchEvent(new Event("processCallback"));	
+			}
+            	
+            public function renameProcess(newName:String):void{
+            	var process:SWProcess = this.swPackage.getProcessResource() as SWProcess;
+            	if(process!=null){
+            		editDomain.getCommandStack().execute(new UpdateProcessCommand(this.swPackage, process, "name", newName,
+            												renameProcessHandler, faultHandler, renameFormHandler));
+            	}
+            }
+            
+            private function renameProcessHandler(event:MISPackageEvent):void{
+				dispatchEvent(new Event("processCallback"));
+			}  
+
+            public function deployGanttPackage():void
+            {
+            	if(swPackage.pkgStatus == SWPackage.SWPACKAGE_STATUS_DEPLOYED && GanttChartGrid.DEPLOY_MODE && !WorkbenchConfig.readOnly)
+            		ganttChartEditor.deployGanttDiagram(deployGanttPackageHandler);
+            	else
+            		MsgUtil.showError(resourceManager.getString("GanttChartMessages", "GCE004"));
+            }
+            
+            private function deployGanttPackageHandler(e:MISPackageEvent):void{
+            	var event:MISPackageEvent = new MISPackageEvent("ganttProcessCallback", e.packMetaModel);
+            	event.mode = e.mode;
+            	event.msg = e.msg;
+				dispatchEvent(event);
+            }
+            
+			public function moveGanttPage(direction:String):void{
+				if(direction == GANTT_MOVE_LEFT)
+					ganttChartEditor.ganttChart.chartMoveToLeftPage()
+				else if(direction == GANTT_MOVE_RIGHT)
+					ganttChartEditor.ganttChart.chartMoveToRightPage()
+			}
+			
+			public function changeGanttViewScope(viewScope:String):void{
+				if(viewScope == GANTT_VIEW_SCOPE_DAY)
+					ganttChartEditor.ganttChart.setChartLevel(GanttChartGrid.VIEWSCOPE_ONEDAY);
+				else if(viewScope == GANTT_VIEW_SCOPE_WEEK)
+					ganttChartEditor.ganttChart.setChartLevel(GanttChartGrid.VIEWSCOPE_ONEWEEK);
+				else if(viewScope == GANTT_VIEW_SCOPE_MONTH)
+					ganttChartEditor.ganttChart.setChartLevel(GanttChartGrid.VIEWSCOPE_ONEMONTH);
+				else if(viewScope == GANTT_VIEW_SCOPE_YEAR)
+					ganttChartEditor.ganttChart.setChartLevel(GanttChartGrid.VIEWSCOPE_ONEYEAR);
+				
+			}
+            
+            //form 관련된 메소드
+			public function addForm():void{  // 추가
+				editDomain.getCommandStack().execute(new AddFormCommand(this.swPackage, NameGenerator.generateFormName(this.swPackage), 
+														addFormHandler, faultHandler, removeFormHandler));
+			}
+			
+			public function cloneForm(formId:String, swForm:SWForm=null):void{  // 추가				
+				var form:SWForm= swForm;
+				if(!form){
+					var arr:ArrayCollection = this.swPackage.getFormResources();
+					for(var i:int; i<arr.length; i++){
+						if(formId == SWForm(arr.getItemAt(i)).id){
+							form = SWForm(arr.getItemAt(i));
+							break;
+						}
+					}
+				}
+				if(form!=null){
+					editDomain.getCommandStack().execute(new CloneFormCommand(this.swPackage, form, resourceManager.getString("WorkbenchETC", "cloneNamePrefixText") + form.name, 
+														cloneFormHandler, faultHandler, removeFormHandler));
+				}
+			}
+			
+			private function addFormHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm, this.swPackage.getFormResources().length);
+				if(processEditor)
+					processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+				else if(ganttChartEditor)
+					ganttChartEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "add";
+				dispatchEvent(ev);
+			}    
+			
+			private function cloneFormHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm, this.swPackage.getFormResources().length);
+				if(processEditor)
+					processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+				else if(ganttChartEditor)
+					ganttChartEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "clone";
+				dispatchEvent(ev);
+			}    
+			
+			/**
+			 * 기존 addForm을 따른다.
+			 * index.jsp에서 폼추가 요청(addFormAndModify)을 받으면 실행한다.
+			 * addFormAndModify는 callBack으로서 NewWorkbenchEditor에 등록되어 있다.(이 말은 index.jsp에게서 메시지를 받을 준비가 되어 있다는 것을 의미한다.)
+			 * execute의 처리결과는 addFormAndModifyHandler에서 수행한다.
+			 * 2009.02.02 sjyoon
+			 */
+			public function addFormAndModify():void{  // 추가
+				var taskAppName: String = "";
+				var propertyInfos: Array;
+				if(processEditor)
+					propertyInfos = processEditor.propertyPage.propSource.getPropertyInfos();
+				else if(ganttChartEditor)
+					propertyInfos = ganttChartEditor.propertyPage.propSource.getPropertyInfos();
+				for each (var propertyInfo: PropertyInfo in propertyInfos) {
+					if (propertyInfo as FormIdPropertyInfo) {
+						var formIdPropertyInfo: FormIdPropertyInfo = propertyInfo as FormIdPropertyInfo;
+						var taskApp: TaskApplication = formIdPropertyInfo.task;
+						taskAppName = taskApp.name;
+					}
+				}
+			
+				editDomain.getCommandStack().execute(new AddFormCommand(this.swPackage, taskAppName + resourceManager.getString("FormEditorETC", "formText"), 
+														addFormAndModifyHandler, faultHandler, removeFormHandler));
+			}
+			
+			/**
+			 * 기존 addFormHandler를 따른다.
+			 * 기존 addFormHandler와 다른 점은 추가한 폼으로 이동시키는 것이다.
+			 * serverLoad를 통해 동기화가 되면 setTask에서 폼이동 및 프로퍼티에 Form정보를 update한다.
+			 * 처리를 수행하고 메시지를 index.jsp의 formCallback함수에 전송한다.
+			 * 폼이 추가된 것을 카테고리상에 표시해주기 위함이다.
+			 * 2009.02.02 sjyoon
+			 */
+			private function addFormAndModifyHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm, this.swPackage.getFormResources().length);
+				if(processEditor)
+					processEditor.serverLoad(packId, packVer, swPackage, editDomain, false, setTask, event.swForm.id);
+				else if(ganttChartEditor)
+					ganttChartEditor.serverLoad(packId, packVer, swPackage, editDomain, false, setTask, event.swForm.id);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "addAndModify";
+				dispatchEvent(ev);
+			} 
+			
+			/**
+			 * serverLoad에서 서버측 http통신을 하여 결과처리시 setTask를 호출하게 된다.
+			 * 폼이동 및 프로퍼티의 Form정보 update를 처리한다.
+			 * 2009.02.02 sjyoon
+			 */
+			public function setTask(forms: Array, formId: String):void {
+				this.openForm(formId);
+				for each (var taskForm: TaskForm in forms) {
+					if (taskForm.formId == formId) {
+						var propertyInfos: Array;
+						if(processEditor)
+							propertyInfos = processEditor.propertyPage.propSource.getPropertyInfos();
+						else
+							propertyInfos = ganttChartEditor.propertyPage.propSource.getPropertyInfos();
+						for each (var propertyInfo: PropertyInfo in propertyInfos) {
+							if (propertyInfo as FormIdPropertyInfo) {
+								var formIdPropertyInfo: FormIdPropertyInfo = propertyInfo as FormIdPropertyInfo;
+								formIdPropertyInfo.updateTask(taskForm);
+							}
+						}
+					}
+				}
+			}
+			
+			
+			//form 관련된 메소드
+			public function renameForm(formId:String, newName:String):void{  // 추가
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var form:SWForm=null;
+				for(var i:int; i<arr.length; i++){
+					if(formId == SWForm(arr.getItemAt(i)).id){
+						form = SWForm(arr.getItemAt(i));
+						break;
+					} 
+				}
+				if(form!=null){
+					editDomain.getCommandStack().execute(new UpdateFormCommand(this.swPackage, form, "name", newName,
+															renameFormHandler, faultHandler, renameFormHandler));
+				}
+			}
+			
+			private function renameFormHandler(event:MISPackageEvent):void{
+				if(processEditor)
+					processEditor.formRename2(event.swForm.id, event.swForm.name);
+				else if(ganttChartEditor)
+					ganttChartEditor.formRename2(event.swForm.id, event.swForm.name);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "rename";
+				dispatchEvent(ev);
+			}      
+			             
+			public function removeForm(formId:String):void{  // 삭제      
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var form:SWForm=null;
+				for(var i:int; i<arr.length; i++){
+					if(formId == SWForm(arr.getItemAt(i)).id){
+						form = SWForm(arr.getItemAt(i));
+						break;
+					}
+				}
+				if(form!=null){
+					editDomain.getCommandStack().execute(new RemoveFormCommand(this.swPackage, form, removeFormHandler, faultHandler, addFormHandler));
+				}
+			}
+					
+			private function removeFormHandler(event:MISPackageEvent):void{
+				this.swPackage.removeFormResource(event.swForm);
+				if(processEditor){
+					processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+					openProcess();
+				}else if(ganttChartEditor){
+					ganttChartEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+					openGanttChart()
+				}
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "remove";
+				dispatchEvent(ev);
+			}	
+			
+			private function saveCallbackHandler(event:Event):void{
+				ExternalInterface.call("saveCallback");
+			}
+			
+			private function etcInfo(formId:String):void{
+				var swProcess:SWProcess = SWProcess(this.swPackage.getProcessResource());
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var swForm:SWForm=null;
+			}
+			
+			private function fieldLoadedFalse(event:Event = null):void {
+				fieldLoaded = false;
+			}
+
+			private function reloadFields():void {
+				if(processEditor)
+					processEditor.loadTaskFormFields();
+				else if(ganttChartEditor)
+					ganttChartEditor.loadTaskFormFields();
+			}
+			
+	
+			public var requestSubFlowId:String;		
+			public function get processFormalParameters():Array{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return null;
+
+				if(!requestSubFlowId){
+					return XPDLDiagram(processEditor.xpdleditor.diagram).xpdlPackage.process.formalParameters;
+				}else{
+					for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+						if(activity is SubFlow && activity.id.toString()==requestSubFlowId){
+							if(SubFlow(activity).subProcessDiagram){
+								return SubFlow(activity).subProcessDiagram.xpdlPackage.process.formalParameters;
+							}
+							break;
+						}
+					}
+					return null;
+				}
+			}
+			
+			public var requestActivityId:String;		
+			public function get isApplicationService():Boolean{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return false;
+
+				if(!requestActivityId){
+					return false;
+				}else{
+					for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+						if(activity is TaskApplication && activity.id.toString()==requestActivityId){
+							if(TaskApplication(activity).isCustomForm && TaskApplication(activity).applicationService){
+								return true;
+							}
+							break;
+						}
+					}
+					return false;
+				}
+			}
+			
+			public var requestTaskApplicationId:String;		
+			public function get applicationServiceReturnParams():Array{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return null;
+
+				if(!requestTaskApplicationId){
+					return null;
+				}else{
+					for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+						if(activity is TaskApplication && activity.id.toString()==requestTaskApplicationId){
+							if(TaskApplication(activity).applicationService){
+								return TaskApplication(activity).applicationService.returnParams;
+							}
+							break;
+						}
+					}
+					return null;
+				}
+			}
+			
+			public var requestTaskServiceId:String;		
+			public function get systemServiceMessageOut():Array{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return null;
+
+				if(!requestTaskServiceId){
+					return null;
+				}else{
+					for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+						if(activity is TaskService && activity.id.toString()==requestTaskServiceId){
+							if(TaskService(activity).systemService){
+								return TaskService(activity).systemService.messageOut;
+							}
+							break;
+						}
+					}
+					return null;
+				}
+			}
+			
+			public function get processSubProcesses():Array{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return null;
+
+				var subProcesses:Array = [];
+				for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+					if(activity is SubFlow && SubFlow(activity).subProcessDiagram){
+						subProcesses.push(activity);
+					}
+				}
+				return subProcesses;
+			}
+
+			public function get processTaskServices():Array{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return null;
+
+				var taskServices:Array = [];
+				for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+					if(activity is TaskService && TaskService(activity).systemService){
+						taskServices.push(activity);
+					}
+				}
+				return taskServices;
+			}
+			
+			public function get processApplicationServices():Array{
+				if(!processEditor || !processEditor.xpdleditor || !processEditor.xpdleditor.diagram) return null;
+
+				var applicationServices:Array = [];
+				for each(var activity: Activity in  XPDLDiagram(processEditor.xpdleditor.diagram).activities){
+					if(activity is TaskApplication && TaskApplication(activity).applicationService && TaskApplication(activity).applicationService.returnParams){
+						applicationServices.push(activity);
+					}
+				}
+				return applicationServices;
+			}
+			
+			public function workbench_resize(event: ResizeEvent):void{
+				if(Application.application.verticalScrollPolicy == ScrollPolicy.OFF){
+					stageBox.percentWidth = 100;
+					return;
+				}
+				stageBox.width = Application.application.width - verticalScrollBarWidth;
+			}
+			
+			public function get verticalScrollBarWidth():Number{
+				if(Application.application.verticalScrollPolicy == ScrollPolicy.ON && Application.application.verticalScrollBar)
+					return Application.application.verticalScrollBar.width;
+				return 0;
+			} 
+			
+			public function fullNormalEditMode():void{
+				if(processEditor){
+					if(processFullBtn.styleName == "fullBtn"){
+						processFullBtn.styleName = "normalBtn";
+						processFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'normalEditModeTTip');
+						formFullBtn.styleName = "normalBtn";
+						formFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'normalEditModeTTip');
+						Application.application.verticalScrollPolicy = ScrollPolicy.ON;
+						ExternalInterface.call("fullScreenCallback", EDITMODE_FULLSCREEN );
+					}else{
+						processFullBtn.styleName = "fullBtn";
+						processFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'fullEditModeTTip');
+						formFullBtn.styleName = "fullBtn";
+						formFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'fullEditModeTTip');				
+						Application.application.verticalScrollPolicy = ScrollPolicy.OFF;
+						ExternalInterface.call("fullScreenCallback", EDITMODE_NORMALSCREEN );
+					}
+				}else if(ganttChartEditor){
+					if(ganttFullBtn.styleName == "fullBtn"){
+						ganttFullBtn.styleName = "normalBtn";
+						ganttFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'normalEditModeTTip');
+						formFullBtn.styleName = "normalBtn";
+						formFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'normalEditModeTTip');
+						Application.application.verticalScrollPolicy = ScrollPolicy.ON;
+						ExternalInterface.call("fullScreenCallback", EDITMODE_FULLSCREEN );
+					}else{
+						ganttFullBtn.styleName = "fullBtn";
+						ganttFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'fullEditModeTTip');
+						formFullBtn.styleName = "fullBtn";
+						formFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'fullEditModeTTip');					
+						Application.application.verticalScrollPolicy = ScrollPolicy.OFF;
+						ExternalInterface.call("fullScreenCallback", EDITMODE_NORMALSCREEN );
+					}					
+				}else{
+					if(formFullBtn.styleName == "fullBtn"){
+						formFullBtn.styleName = "normalBtn";
+						formFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'normalEditModeTTip')
+						Application.application.verticalScrollPolicy = ScrollPolicy.ON;
+						ExternalInterface.call("fullScreenCallback", EDITMODE_FULLSCREEN );
+					}else{
+						formFullBtn.styleName = "fullBtn";
+						formFullBtn.toolTip = resourceManager.getString('WorkbenchETC', 'fullEditModeTTip')						
+						Application.application.verticalScrollPolicy = ScrollPolicy.OFF;
+						ExternalInterface.call("fullScreenCallback", EDITMODE_NORMALSCREEN );
+					}					
+					
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="formCallback",  type="com.maninsoft.smart.workbench.event.MISPackageEvent")]
+        [Event(name="processCallback",  type="flash.events.Event")]
+        [Event(name="ganttProcessCallback",  type="flash.events.Event")]
+        [Event(name="loadCallback",  type="flash.events.Event")]
+        [Event(name="fullScreenCallback",  type="flash.events.Event")]
+        [Event(name="checkCallback",  type="flash.events.Event")]
+        [ResourceBundle("CommonETC")]
+        [ResourceBundle("WorkbenchMessages")]
+        [ResourceBundle("WorkbenchETC")]
+        [ResourceBundle("ProcessEditorMessages")]
+        [ResourceBundle("ProcessEditorETC")]
+        [ResourceBundle("FormEditorMessages")]
+        [ResourceBundle("FormEditorETC")]
+        [ResourceBundle("GanttChartMessages")]
+        [ResourceBundle("GanttChartETC")]
+    </mx:Metadata>
+	<mx:VBox id="stageBox" width="100%" height="100%"  horizontalGap="0" verticalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="off" backgroundColor="#ffffff" borderStyle="none" borderColor="#999999">
+		<mx:Canvas id="diagramStage" width="100%" height="0"  cornerRadius="5" verticalScrollPolicy="off" horizontalScrollPolicy="off" visible="false" backgroundColor="#ffffff">
+			<process:ProcessEditor id="processEditor" top="3" width="100%" height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off"  backgroundColor="#ffffff" formEditorMove="formEditorMoveHandler(event)"/>
+			<mx:LinkButton  id="fullBtn" styleName="overview" click="processEditor.fitMap()" right="{processFullBtn.width+10+diagramScale.width+2+4}" top="10" visible="true" toolTip="{resourceManager.getString('WorkbenchETC', 'fitToScreenTTip')}"/>
+			<mx:HSlider id="diagramScale" styleName="PSlider" minimum="20" maximum="100" showDataTip="false" liveDragging="true" width="60" right="{processFullBtn.width+10+4}" top="0" value="100" change="processEditor.sliderChange()" visible="true"/>
+			<mx:LinkButton  id="processFullBtn" styleName="fullBtn" click="fullNormalEditMode()" right="4" top="4" visible="true" toolTip="{resourceManager.getString('WorkbenchETC', 'fullEditModeTTip')}"/>
+		</mx:Canvas>
+		<mx:Canvas id="ganttChartStage" width="100%" height="0" verticalScrollPolicy="off" horizontalScrollPolicy="off" cornerRadius="5" visible="false" backgroundColor="#ffffff">
+			<ganttchart:GanttChartEditor id="ganttChartEditor" top="3" width="100%" height="100%"  formEditorMove="formEditorMoveHandler(event)" />
+			<mx:LinkButton  id="ganttFullBtn" styleName="fullBtn" click="fullNormalEditMode()" right="4" top="4" visible="true" toolTip="{resourceManager.getString('WorkbenchETC', 'fullEditModeTTip')}"/>
+		</mx:Canvas>
+		<mx:Canvas id="formStage" width="100%" height="0" verticalScrollPolicy="off" horizontalScrollPolicy="off" cornerRadius="5" visible="false" backgroundColor="#ffffff">
+			<mx:Box width="100%" height="100%" top="3">
+				<formeditor:FormEditorBase id="formEditor" width="100%" height="100%" />
+			</mx:Box>
+			<mx:LinkButton id="toProcessStageButton" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" visible="true" icon="{WorkbenchAssets.toProcessIcon}" toolTip="{resourceManager.getString('WorkbenchETC', 'processEditorTTip')}" right="{formFullBtn.width+10+4}" top="4" click="openProcess()"/>
+			<mx:LinkButton  id="formFullBtn" styleName="fullBtn" click="fullNormalEditMode()" right="4" top="4" visible="true" toolTip="{resourceManager.getString('WorkbenchETC', 'fullEditModeTTip')}"/>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:Canvas>

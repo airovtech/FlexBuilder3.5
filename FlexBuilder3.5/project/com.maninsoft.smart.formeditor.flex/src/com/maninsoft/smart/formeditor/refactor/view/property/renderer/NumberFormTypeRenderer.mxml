@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="init()" dataChange="init()" horizontalGap="0">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			import mx.formatters.Formatter;
+			
+			public static var useThousandsSeparator:Boolean = false;
+			public static var precision:Number = 0;
+			
+			private function init():void{
+//				setFormat();
+				setColor();
+				setText();
+			}
+			
+//			private function setFormat():void{
+//				numberDisplay.useNegativeSign = (data.minus == 'y');
+//				numberDisplay.useThousandsSeparator = useThousandsSeparator;
+//				numberDisplay.precision = precision;
+//			}
+			
+			private function setColor():void{
+				formTypeLabel.setStyle("color",(FormItemType(data).red)?"#FF000C":"#000000");
+			}
+			
+			private function setText():void{
+				if(data.plus)
+					formTypeLabel.text = getFormatter().format(Math.abs(FormItemType(data).data));
+				else
+					formTypeLabel.text = getFormatter().format(FormItemType(data).data);
+			}
+			
+			protected function getFormatter():Formatter{
+				return numberDisplay;
+			}
+		]]>
+	</mx:Script>
+	<mx:NumberFormatter id="numberDisplay" 
+		precision="{FormItemType(data).precision}" useThousandsSeparator="{FormItemType(data).thousandsSeparator}" 
+		useNegativeSign="{FormItemType(data).minus}"/>
+	<mx:Text id="formTypeLabel" fontSize="11"/>		
+	<!---->
+</mx:HBox>

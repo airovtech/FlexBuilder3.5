@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" backgroundColor="#ffffff" borderColor="#ffffff"
+	 verticalScrollPolicy="off" horizontalScrollPolicy="off" fontFamily="Tahoma" fontSize="12" >
+	<mx:Script>
+		<![CDATA[
+			import portalAs.Properties;
+			import mx.rpc.events.ResultEvent;
+			import mxmlComponet.gadget.chart.*;
+			
+			public var chart:SmartChart=null;
+			private var chartType:String=null;
+			private var viewType:String="CHART";
+			private var acumData:Boolean=false;
+			private var fillColor:uint=0;
+			
+			public function load(par_GadgetId:String, xmlData:String=null, chartType:String=null, viewType:String=null, acumData:Boolean=false, fillColor:uint=0):void{
+				this.chartType = chartType;
+				this.viewType = viewType;
+				this.acumData = acumData;
+				this.fillColor = fillColor;
+				if(xmlData!=null && xmlData!="" && xmlData!="null"){
+					var xmlResult:XML = XML(xmlData);
+					goToChart(this.chartType, this.viewType, this.acumData, this.fillColor, xmlResult);									
+				}else{
+					var reqParameter:Object = new Object();
+					reqParameter["method"] = "getGadgetData";
+					reqParameter["compId"] = Properties.compId;
+					reqParameter["userId"] = Properties.userId;
+					reqParameter["gadgetId"] = par_GadgetId;
+					if(Properties.serviceUrl != "" && Properties.serviceUrl != "null" && Properties.serviceUrl != null)
+						srv.url = Properties.basePath + Properties.serviceUrl;
+					else
+						srv.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+					srv.send(reqParameter);
+				}
+			}
+			
+			private function addSeries(event:ResultEvent):void{
+				var xmlResult:XML = XML(event.result);
+				goToChart(chartType?chartType:xmlResult.@type, this.viewType, this.acumData, this.fillColor, xmlResult);				
+			}
+			
+			public function goToChart(type:String, viewType:String=null, acumData:Boolean=false, fillColor:uint=0, chartXml:XML=null):void{				
+				if(chart && contains(chart)){					
+					this.removeChild(chart);
+					chartXml = chart.chartXml;
+				}				
+				chart = null;
+				if(this.viewType!=viewType) this.viewType = viewType;
+				if(this.acumData!=acumData) this.acumData = acumData;
+				
+				if(type == ChartTypes.columnChartType.data){
+					chart = new SmartColumnChart();
+				}else if(type == ChartTypes.barChartType.data){
+					chart = new SmartBarChart();
+				}else if(type == ChartTypes.lineChartType.data){
+					chart = new SmartLineChart();
+				}else if(type == ChartTypes.pieChartType.data){
+					chart = new SmartPieChart();
+				}else if(type == ChartTypes.areaChartType.data){
+					chart = new SmartAreaChart();
+				}else if(type == ChartTypes.plotChartType.data){
+					chart = new SmartPlotChart();
+				}else if(type == ChartTypes.bubbleChartType.data){
+					chart = new SmartBubbleChart();
+				}else if(type == ChartTypes.GRID_REPORT){
+					chart = new SmartGrid();
+				}else if(type == ChartTypes.MATRIX_REPORT){
+					chart = new MatrixChart();
+				}
+
+				if(chart!=null){
+					this.addChild(chart);
+					chart.displayStackedData = this.acumData;
+					chart.percentWidth = 100;
+					chart.percentHeight = 100;
+					chart.chartType = ChartTypes.getChartType(type);
+					chart.chartViewType = this.viewType;
+					chart.fillColor = this.fillColor;
+					chart.chartXml = chartXml;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="srv" resultFormat="e4x" result="addSeries(event)" method="post">
+		
+	</mx:HTTPService>
+</mx:Canvas>

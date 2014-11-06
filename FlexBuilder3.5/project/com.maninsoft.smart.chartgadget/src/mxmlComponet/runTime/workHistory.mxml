@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:common="mxmlComponet.common.*" xmlns:smart="com.maninsoft.smart.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.rpc.events.ResultEvent;
+			import portalAs.Properties;
+			
+			[Bindable]
+			public var workItemId:String
+			[Bindable]
+			public var prcInstId:String; 
+			
+			public function monitorDiagramCreate(prcInstId:String): void {
+				if(prcInstId!=null && prcInstId!="" && prcInstId!="null"){
+					this.prcInstId = prcInstId;
+					viewMain.serviceUrl = Properties.basePath + "smartserver/services/runtime/searchingService.jsp";
+					viewMain.userId = Properties.userId;
+					viewMain.prcInstId = prcInstId 
+					viewMain.load();
+				}
+			}						
+			public function getWorkHostory():void {
+				if(workItemId!=null && workItemId!="" && workItemId!="null"){
+					getWorkHistoryService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp";
+					getWorkHistoryService.send();
+				}
+			}
+			public function getWorkHistoryResult(event:ResultEvent):void {
+				workHistoryGrid.dataProvider = event.result.WorkItemInfo;
+				workHistoryGrid.rowHeight = 22;
+			}			
+			private function getWorkHistoryContent():void{
+				var eventObj:CustormEvent = new CustormEvent("custormItemDoubleClick");
+				eventObj.workId = workHistoryGrid.selectedItem.id;
+				dispatchEvent(eventObj);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="getWorkHistoryService"  resultFormat="e4x" useProxy="false" result="getWorkHistoryResult(event)" method="post">
+		<mx:request>
+			<workItemId>{workItemId}</workItemId>
+			<userId>{Properties.userId}</userId>
+			<method>getProcessWorkItemList</method>
+		</mx:request>
+	</mx:HTTPService>	
+	<mx:TabNavigator width="100%" height="100%" creationPolicy="all" tabStyleName="normalLabel" selectedTabTextStyleName="boldLabel" 
+    	paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0">
+        <mx:Canvas label="업무이력보기" width="100%" height="100%">
+			<mx:DataGrid width="100%" height="100%" id="workHistoryGrid" 
+				doubleClickEnabled="true" itemDoubleClick="getWorkHistoryContent()">
+				<mx:columns>
+					<mx:DataGridColumn headerText="제목" 	dataField="title" 			textAlign="center"/>                    
+					<mx:DataGridColumn headerText="업무타입"	dataField="workTypeName" 	textAlign="center"/>
+					<mx:DataGridColumn headerText="처리상태"	dataField="statusName" 		textAlign="center"/>                  
+					<mx:DataGridColumn headerText="이전수행자" dataField="assignerName" 	textAlign="center"/>       
+					<mx:DataGridColumn headerText="업무수행자" dataField="assigneeName" 	textAlign="center"/>      
+					<mx:DataGridColumn headerText="업무생성시간"	dataField="createdTime" textAlign="center"/>         
+					<mx:DataGridColumn headerText="업무완료시간 "	dataField="completedTime" textAlign="center"/>        
+					<mx:DataGridColumn headerText="지연"		dataField="isOverDue" 		textAlign="center"/>
+
+					<mx:DataGridColumn headerText="workTypeId" dataField="workTypeId" visible="false"/>           
+					<mx:DataGridColumn headerText="workTypeType" dataField="workTypeType" visible="false"/>      
+					<mx:DataGridColumn headerText="workTypeStepCount" dataField="workTypeStepCount" visible="false"/>
+					<mx:DataGridColumn headerText="id" dataField="id" visible="false"/>                       
+					<mx:DataGridColumn headerText="status" dataField="status" visible="false"/>                  
+					<mx:DataGridColumn headerText="step" dataField="step" visible="false"/>
+					<mx:DataGridColumn headerText="type" dataField="type" visible="false"/>                   
+					<mx:DataGridColumn headerText="assignerId" dataField="assignerId" visible="false"/>            
+					<mx:DataGridColumn headerText="assigneeType" dataField="assigneeType" visible="false"/>        
+					<mx:DataGridColumn headerText="assigneeId" dataField="assigneeId" visible="false"/>            
+					<mx:DataGridColumn headerText="importance" dataField="importance" visible="false"/>          
+					<mx:DataGridColumn headerText="priority" dataField="priority" visible="false"/>                
+					<mx:DataGridColumn headerText="refType" dataField="refType" visible="false"/>
+					<mx:DataGridColumn headerText="groupId" dataField="groupId" visible="false"/>
+				</mx:columns>
+			</mx:DataGrid>
+        </mx:Canvas>
+        <mx:Canvas label="프로세스 보기" width="100%" height="100%">
+        	<smart:InstanceViewer id="viewMain" width="100%" height="100%"/>
+        </mx:Canvas>
+    </mx:TabNavigator>
+	
+</mx:Canvas>	

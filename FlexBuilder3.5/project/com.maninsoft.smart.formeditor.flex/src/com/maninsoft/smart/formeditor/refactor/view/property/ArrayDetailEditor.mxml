@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		height="55" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.property.FormArrayInfo;
+			
+			[Bindable]
+			public var formArrayInfo:FormArrayInfo;
+			
+			[Bindable]
+			public var formItem:FormEntity;
+			
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+			private function updateArrayInfo():void{
+//				var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(formItem.name);
+//				command.formEntityModel = formItem;
+//				command.newValue = new FormArrayInfo(maxArraySelected.selected, maxArraySize.value, presentArraySelected.selected, presentArraySize.value);
+//				command.type = FormEntity.PROP_ARRAY_INFO;
+//				
+//				editDomain.getCommandStack().execute(command);
+			}
+		]]>
+	</mx:Script>
+	<mx:Box width="20"/>		
+	<mx:Box>
+		<mx:HBox>
+			<mx:CheckBox id="presentArraySelected" label="표시크기" selected="{formArrayInfo.presentArrayUse}" change="{updateArrayInfo()}"/>
+			<mx:NumericStepper id="presentArraySize" visible="{presentArraySelected.selected}"
+				value="{formArrayInfo.presentArraySize}" change="{updateArrayInfo()}"/>
+		</mx:HBox>
+		<mx:HBox>
+			<mx:CheckBox id="maxArraySelected" label="최대크기" selected="{formArrayInfo.maxArrayUse}"/>
+			<mx:NumericStepper id="maxArraySize"  visible="{maxArraySelected.selected}"
+				value="{formArrayInfo.maxArraySize}" change="{updateArrayInfo()}"/>
+		</mx:HBox>				
+	</mx:Box>	
+</mx:HBox>

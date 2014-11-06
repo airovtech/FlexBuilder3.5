@@ -1,0 +1,174 @@
+/* CSS file */
+
+
+.formBase{
+	backgroundColor: #FCFEFF;
+}
+
+.formBaseLabel{
+	fontSize: 20; 
+	fontWeight: bold;
+	color: #217C7D;
+}
+
+.formTextInputLabel{
+	fontWeight: bold; 
+	fontSize: 12; 
+	color: #3C3C3C; 
+	textAlign: left;
+}
+
+.formTextInput{
+	borderColor: #339999;
+	fontSize: 12;
+}
+
+.formDateLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formDate{
+	borderColor: #339999;
+	cornerRadius: 5;
+}
+
+.formNumericLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formNumeric{
+	borderColor: #339999;
+	fontSize: 12;
+}
+
+.formRadioLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formRadio{
+	color: #979797;
+	fontSize: 12;
+	borderColor: #339999;
+	themeColor: #96C8E6;
+}
+
+.formComboLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formCombo{
+	themeColor: #96C8E6;
+	borderColor: #339999;
+	fontSize: 12;
+}
+
+.formListLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formList{
+}
+
+.formDataGridLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formDataGrid{
+	borderColor:#339999;  
+	themeColor:#96C8E6;
+	alternatingItemColors: #FFFFCC, #FFFFFF; 
+	headerColors:#339999, #339999;
+	textAlign:center;
+	color:#FFFFFF;
+}
+
+.formDataGridHeader{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formFileLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formFile{
+	borderColor:#339999;  
+	themeColor:#96C8E6;
+	alternatingItemColors: #FFFFCC, #FFFFFF; 
+	headerColors:#339999, #339999;
+	textAlign:center;
+	color:#FFFFFF;
+}
+
+.formFileHeader{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formFileButton{
+}
+
+.formOrgLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formOrg{
+	borderColor: #339999;
+	fontSize: 12;
+}
+
+.formOrgButton{
+}
+
+.formCheckBoxLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formCheckBox{
+}
+
+.formRefFormLabel{
+	color: #3C3C3C; 
+	fontSize: 12; 
+	fontWeight: bold;
+	textAlign: left;
+}
+
+.formRefForm{
+	borderColor: #339999;
+	fontSize: 12;
+}
+
+.formRefFormButton{
+}

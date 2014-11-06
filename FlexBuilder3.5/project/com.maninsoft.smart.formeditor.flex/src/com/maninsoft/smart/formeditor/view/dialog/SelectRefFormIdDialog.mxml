@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractSimpleDialog xmlns="com.maninsoft.smart.common.dialog.*" xmlns:mx="http://www.adobe.com/2006/mxml"	height="100%" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.workbench.common.assets.WorkbenchIconLibrary;
+			import com.maninsoft.smart.workbench.common.model.WorkPackage;
+			import com.maninsoft.smart.workbench.common.model.WorkCategory;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			import com.maninsoft.smart.formeditor.model.FormRef;
+			import com.maninsoft.smart.formeditor.FormEditorBase;
+			import com.maninsoft.smart.workbench.common.assets.TreeAssets;
+			import mx.controls.Button;
+			import mx.collections.ArrayCollection;
+
+			import flash.display.DisplayObject;
+			import flash.events.Event;
+			import flash.events.FocusEvent;
+
+			import mx.collections.ArrayCollection;
+			import mx.controls.Tree;
+			import mx.core.Application;
+			import mx.core.Container;
+			import mx.core.UIComponent;
+			import mx.events.ListEvent;
+			import mx.events.TreeEvent;
+			import mx.managers.PopUpManager;
+
+			//----------------------------------------------------------------------
+			// Class Variables
+			//----------------------------------------------------------------------
+
+			private static var _dialog: SelectRefFormIdDialog;
+
+			//----------------------------------------------------------------------
+			// Variables
+			//----------------------------------------------------------------------
+
+			[Bindable]
+			private var _refFormIds: ArrayCollection;
+
+			private var _acceptFunc: Function;
+			private var _openingItem: WorkCategory;
+			private var _formEditor:FormEditorBase;
+			private var _singleOnly:Boolean=false;
+			private var _emptyWork:Boolean=false;
+
+			public function get singleOnly():Boolean{
+				return _singleOnly;
+			}
+			public function set singleOnly(value:Boolean):void{
+				_singleOnly=value;
+			}
+
+			//----------------------------------------------------------------------
+			// Class methods
+			//----------------------------------------------------------------------
+
+			public static function execute(formEditorBase:FormEditorBase, current:Object, acceptFunc: Function, position:Point=null, width:Number=0, height:Number=0, singleOnly:Boolean=false, emptyWork:Boolean=false): void {
+				if (!formEditorBase)
+					return;
+					
+				_dialog = PopUpManager.createPopUp(formEditorBase as DisplayObject, SelectRefFormIdDialog, false) as SelectRefFormIdDialog;
+
+				_dialog._formEditor = formEditorBase;
+				_dialog._acceptFunc = acceptFunc;
+				_dialog._singleOnly = singleOnly;
+				_dialog._emptyWork = emptyWork;
+				if(position){
+					_dialog.x = position.x;
+					_dialog.y = position.y;
+				}else{
+					PopUpManager.centerPopUp(_dialog);	
+				}
+	
+				if(width) _dialog.width = width;
+				if(height) _dialog.height = height;
+
+				_dialog.getRefFormIds();
+
+				_dialog.load(current);
+				_dialog.addEventListener(FocusEvent.MOUSE_FOCUS_CHANGE, _dialog.dialogFocusChange);
+				
+				_dialog.refFormIdTree.setFocus();
+	
+			}
+
+			//----------------------------------------------------------------------
+			// Internal methods
+			//----------------------------------------------------------------------
+			private function getRefFormIds():void{
+				this._refFormIds = new ArrayCollection();
+			 	_formEditor.editDomain.serviceClient.formService.getRootCategory(getRootCategoryResult);
+
+			 	function getRootCategoryResult(event:FormPersistenceEvent):void{
+			 		if(event.resultXML && event.resultXML.category[0]){
+			 			if(_emptyWork){
+			 				var emptyWork:WorkPackage = new WorkPackage();
+							emptyWork.id = FormEntity.EMPTY_FORMID;
+							emptyWork.name = FormEntity.EMPTY_FORMNAME;
+							emptyWork.type = WorkPackage.PACKAGE_TYPE_SINGLE;
+			 				_refFormIds.addItem(emptyWork);					
+			 			}
+			 			var category:WorkCategory = new WorkCategory();
+			 			category.parseXML(event.resultXML.category[0]);
+			 			_refFormIds.addItem(category);
+			 			if(!category.id) return;
+			 			_formEditor.editDomain.serviceClient.formService.getChildrenByCategoryId(category.id, getChildrenByCategoryIdResult);
+			 			function getChildrenByCategoryIdResult(event:FormPersistenceEvent):void{
+			 				if(event.resultXML && event.resultXML.category.length()>0){
+			 					var categories:Array = new Array();
+			 					for(var i:int=0; i<event.resultXML.category.length(); i++){
+			 						var category:WorkCategory = new WorkCategory();
+			 						category.parseXML(event.resultXML.category[i]);
+			 						if(category.id){
+			 							categories.push(category);
+			 						}
+			 					}
+								if(_emptyWork){
+			 						WorkCategory(_refFormIds[1]).addItems(categories);
+			 						WorkCategory(_refFormIds[1]).loaded=true;
+			 					}else{
+			 						WorkCategory(_refFormIds[0]).addItems(categories);
+			 						WorkCategory(_refFormIds[0]).loaded=true;			 						
+			 					}
+								refFormIdTree.expandItem(_refFormIds[0], true);
+			 				}
+			 			}	
+			 		}
+			 	}
+			}
+
+			private function load(current: Object): void {
+/*				if (current) {
+					if(String(current).indexOf("@")>=0){
+						var selectedItem:User = findInDepartment(_dialog._organization as Department, String(current));
+						var selectedObject:DisplayObject = _dialog.organizationTree.getChildByName(selectedItem.name);
+						var selectedIndex:int = 1;
+						_dialog.organizationTree.selectedIndex = selectedIndex;
+						function findInDepartment(children:Department, id:String):User{
+							var item:Object;
+							if(children.children.length>0){
+								for each(item in children.children){
+									if(item is User && User(item).id == id){
+										return item as User;
+									}else if(item is Department){
+										var foundItem:User = findInDepartment(item as Department, id);
+										if(foundItem){
+											return foundItem;
+										}
+									}
+								}
+							}
+							return null;
+						}
+						_dialog.organizationTree.expandItem(_dialog.organizationTree.selectedItem, true);
+						_dialog.organizationTree.setFocus();
+					}else{
+						_dialog.tn.selectedIndex=1;
+						for each(var formField:TaskFormField in _dialog._formFields){
+							if(formField.id == current){
+								_dialog.formFieldDG.selectedItem=formField;								
+							}
+						}
+						_dialog.formFieldDG.setFocus();
+					}
+				}else{
+					organizationTree.setFocus();
+					organizationTree.expandChildrenOf(organizationTree.dataProvider[0], true);
+				}
+*/			}
+
+			private function closeDialog(accept: Boolean = true): void {
+				if (accept && (_acceptFunc != null) && refFormIdTree.selectedItem)
+					_acceptFunc(refFormIdTree.selectedItem);
+		
+				PopUpManager.removePopUp(this);
+			}
+
+			//----------------------------------------------------------------------
+			// Event handlers
+			//----------------------------------------------------------------------
+
+			private function dialogFocusChange(event: FocusEvent): void {
+				if(	(event.relatedObject == _dialog) ||
+					((event.relatedObject is UIComponent) && (UIComponent(event.relatedObject).parentDocument == _dialog)) ||
+					(_dialog.refFormIdTree && _dialog.refFormIdTree.contains(event.relatedObject))){
+						return;
+				}		
+				closeDialog(false);
+			}
+
+			//------------------------
+			// Dialog
+			//------------------------
+
+			private function dlg_keyDown(event: KeyboardEvent): void {
+				if (event.keyCode == Keyboard.ESCAPE){
+					closeDialog(false);
+				}
+			}	
+
+			//------------------------
+			// refFormIdTree
+			//------------------------
+
+			private function refFormIdIcon(item:Object): Class{
+				return item.icon;
+			}
+
+			private function refFormIdTree_itemClick(event:ListEvent): void {
+				if(Tree(event.target).selectedItem is WorkPackage){
+					closeDialog(true);
+				}
+				return;
+			}
+
+			private function refFormIdTree_itemOpening(event: TreeEvent): void {
+				if (event.item is WorkCategory) {
+					_openingItem = event.item as WorkCategory;
+		
+					if (!_openingItem.loaded) {
+						event.preventDefault();
+						var childrenLoaded:Boolean=false;
+						var packageLoaded:Boolean=false;						
+			 			_formEditor.editDomain.serviceClient.formService.getChildrenByCategoryId(_openingItem.id, getChildrenByCategoryIdResult);
+			 			function getChildrenByCategoryIdResult(event:FormPersistenceEvent):void{
+			 				if(event.resultXML && event.resultXML.category.length()>0){
+			 					var categories:Array = new Array();
+			 					for(var i:int=0; i<event.resultXML.category.length(); i++){
+			 						var category:WorkCategory = new WorkCategory();
+			 						category.parseXML(event.resultXML.category[i]);
+			 						if(category.id){
+			 							categories.push(category);
+			 						}
+			 					}	
+	 							_openingItem.addItems(categories);
+			 				}
+			 				childrenLoaded=true;
+			 				if(packageLoaded){
+			 					_openingItem.loaded=true;
+			 					refFormIdTree_childrenLoaded()
+			 				}
+			 			}	
+			 			_formEditor.editDomain.serviceClient.formService.getPackagesByCategoryId(_openingItem.id, getPackageByCategoryIdResult);
+			 			function getPackageByCategoryIdResult(event:FormPersistenceEvent):void{
+			 				if(event.resultXML && event.resultXML.workPackage.length()>0){
+			 					var packages:Array = new Array();
+			 					for(var i:int=0; i<event.resultXML.workPackage.length(); i++){
+			 						var workPackage:WorkPackage = new WorkPackage();
+			 						workPackage.parseXML(event.resultXML.workPackage[i]);
+			 						if(workPackage.id){
+			 							if(singleOnly){
+			 								if(workPackage.type == WorkPackage.PACKAGE_TYPE_SINGLE){
+			 									packages.push(workPackage);			 									
+			 								}
+			 							}else{
+			 								packages.push(workPackage);
+			 							}
+			 						}
+			 					}	
+	 							_openingItem.addItems(packages);
+			 				}
+			 				packageLoaded=true;
+			 				if(childrenLoaded){
+			 					_openingItem.loaded=true;
+			 					refFormIdTree_childrenLoaded()
+			 				}
+			 			}	
+					}
+				}
+			}
+			
+
+			private function refFormIdTree_childrenLoaded(): void {
+				refFormIdTree.expandItem(_openingItem, true);
+			}
+		]]>
+	</mx:Script>
+    <mx:Tree id="refFormIdTree" styleName="selectRefFormIdTree" showRoot="false" width="100%" wordWrap="false" showDataTips="true"
+		disclosureClosedIcon="{TreeAssets.plusIcon}" disclosureOpenIcon="{TreeAssets.minusIcon}"
+        iconFunction="refFormIdIcon" verticalScrollPolicy="auto" horizontalScrollPolicy="off" borderStyle="none"
+		itemClick="refFormIdTree_itemClick(event)" dataProvider="{_refFormIds}" itemOpening="refFormIdTree_itemOpening(event)">
+	</mx:Tree>
+</AbstractSimpleDialog>

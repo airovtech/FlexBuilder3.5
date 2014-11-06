@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NumberFormTypeRenderer xmlns="com.maninsoft.smart.formeditor.refactor.view.property.renderer.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			import mx.formatters.Formatter;
+			
+			protected override function getFormatter():Formatter{
+				return moneyDisplay;
+			}
+		]]>
+	</mx:Script>
+	<mx:CurrencyFormatter id="moneyDisplay" 
+		currencySymbol="{FormItemType(data).locale.currencySymbol}" precision="{FormItemType(data).precision}" 
+		useThousandsSeparator="{FormItemType(data).thousandsSeparator}" useNegativeSign="{FormItemType(data).minus}"/>
+</NumberFormTypeRenderer>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:org="mxmlComponet.admin.org.*" xmlns:gadget="mxmlComponet.gadget.*" xmlns:formConfig="mxmlComponet.admin.formConfig.*">
+	<mx:TabBar x="0" y="0" dataProvider="viewstack1" height="28" width="100%">
+	</mx:TabBar>
+	<mx:ViewStack x="0" y="28" id="viewstack1" width="100%" height="100%">
+		<mx:Canvas label="조직관리" width="100%" height="100%">
+			<org:HRManagement width="100%" height="100%" />
+		</mx:Canvas>
+		<mx:Canvas label="단위업무설정" width="100%" height="100%">
+			<formConfig:FormGridConfig width="100%" height="100%" />
+		</mx:Canvas>
+		<!--
+		<mx:Canvas label="기준코드" width="100%" height="100%">
+		</mx:Canvas>
+		-->
+		<mx:Canvas label="권한관리" width="100%" height="100%">
+		</mx:Canvas>
+		<mx:Canvas label="부재관리" width="100%" height="100%">
+		</mx:Canvas>
+		<mx:Canvas label="결재선관리" width="100%" height="100%">
+		</mx:Canvas>
+	</mx:ViewStack>
+</mx:Canvas>

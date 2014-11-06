@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:pack="com.maninsoft.smart.workbench.pack.*" 
+	xmlns:view="com.maninsoft.smart.formeditor.refactor.view.*" 
+	xmlns:formeditor="com.maninsoft.smart.formeditor.*"
+	xmlns:pde="com.maninsoft.smart.modeler.xpdl.*"
+	width="100%" height="100%" 
+	creationComplete="init()" xmlns:view1="com.maninsoft.smart.formeditor.refactor.simple.view.*" xmlns:custormObj="smartWork.custormObj.*">
+	<mx:states>
+		<mx:State name="Form">
+			<mx:RemoveChild target="{formEditorBox}"/>
+			<mx:AddChild relativeTo="{mainStage}" position="lastChild" target="{formEditorBox}"/>
+			<mx:RemoveChild target="{diagramEditor}"/>
+			<mx:AddChild relativeTo="{diagramHiddenStage}" position="lastChild" target="{diagramEditor}"/>
+			<mx:RemoveChild target="{infoPackage}"/>
+			<mx:AddChild relativeTo="{infoHiddenStage}" position="lastChild" target="{infoPackage}"/>
+			<mx:SetProperty target="{grdProblem}" name="height" value="0"/>
+			<mx:SetProperty target="{workbenchMenuBar}" name="selectedIndex" value="1"/>
+			<mx:SetProperty target="{workbenchToolBar}" name="selectedIndex" value="1"/>
+		</mx:State>
+		
+		<mx:State name="Diagram">
+			<mx:RemoveChild target="{diagramEditor}"/>
+			<mx:AddChild relativeTo="{mainStage}" position="lastChild" target="{diagramEditor}"/>
+			<mx:RemoveChild target="{formEditorBox}"/>
+			<mx:AddChild relativeTo="{formHiddenStage}" position="lastChild" target="{formEditorBox}"/>
+			<mx:RemoveChild target="{infoPackage}"/>
+			<mx:AddChild relativeTo="{infoHiddenStage}" position="lastChild" target="{infoPackage}"/>
+		</mx:State>
+		
+		<mx:State name="info">
+			<mx:RemoveChild target="{infoPackage}"/>
+			<mx:AddChild relativeTo="{mainStage}" position="lastChild" target="{infoPackage}"/>
+			<mx:RemoveChild target="{formEditorBox}"/>
+			<mx:AddChild relativeTo="{formHiddenStage}" position="lastChild" target="{formEditorBox}"/>
+			<mx:RemoveChild target="{diagramEditor}"/>
+			<mx:AddChild relativeTo="{diagramHiddenStage}" position="lastChild" target="{diagramEditor}"/>
+		</mx:State>
+	</mx:states>
+	<mx:Script source="Workbench_pde.as"/>
+	<mx:Script source="Workbench_fe.as"/>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.meta.IPackageMetaModel;
+			import mx.core.Application;
+			import com.maninsoft.smart.workbench.command.RemoveFormCommand;
+			import com.maninsoft.smart.workbench.command.AddFormCommand;
+			import com.maninsoft.smart.workbench.command.RemoveProcessCommand;
+			import com.maninsoft.smart.workbench.command.AddProcessCommand;
+			import mx.containers.Form;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.workbench.common.editor.EditDomain;
+			import mx.collections.XMLListCollection;
+			import mx.events.MenuEvent;
+			import com.maninsoft.smart.workbench.util.NameGenerator;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWPackage;
+			import com.maninsoft.smart.workbench.event.MISPackageEvent;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import mx.automation.codec.ArrayPropertyCodec;
+			import com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWProcess;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.workbench.event.MISFormEvent;
+			import com.maninsoft.smart.workbench.event.MISProcessEvent;
+			import mx.core.Container;
+			
+			[Bindable]
+			private var packId:String;
+			[Bindable]
+			private var packVer:int;
+			
+			[Bindable]
+			public var categoryName:String;
+			
+			[Bindable]
+			private var swForm:SWForm;
+			
+			[Bindable]
+			private var swProcess:SWProcess;
+			
+			[Bindable]
+			private var swPackage:SWPackage;
+			
+			[Bindable]
+			private var editDomain:EditDomain;
+			
+			[Bindable]
+			private var diagramEditorPropertyStatus:Boolean = true; //다이어그램 속성창 상태.
+			
+			[Bindable]
+			private var formEditorPropertyStatus:Boolean = false; //폼 속성창 상태.
+			
+			[Bindable]
+			private var miniDiagramStatus:Boolean = false; //다이어그램 미니창상태.
+			
+			[Bindable]
+			private var miniFormStatus:Boolean = true; //폼 미니창 상태.
+		
+			private var diagramEditorPropertyStatus2:Boolean = true; 
+			private var formEditorPropertyStatus2:Boolean = true; 
+			private var miniDiagramStatus2:Boolean = true; 
+			private var miniFormStatus2:Boolean = true; 
+
+			private function init():void{
+				registerEvent();
+				var workHeight:int = this.height - topArea.height - workbenchToolBar.height - grdProblem.height;
+				var diagramStartX:int = topArea.height + workbenchToolBar.height;
+				
+				diagramEditorPropertyStage.width = mainStage.width*0.2; 
+				formEditorPropertyStage.width = mainStage.width*0.2; 
+				miniForm.width = mainStage.width*0.2;
+				miniDiagram.width = mainStage.width*0.2;
+				
+				diagramEditorPropertyStage.height = workHeight*0.5-11; 
+				formEditorPropertyStage.height = workHeight*0.5-11; 
+				miniForm.height = workHeight*0.5-11;
+				miniDiagram.height = workHeight*0.5-11;
+				
+				miniForm.x = this.width - miniForm.width - 20;
+				miniForm.y = diagramStartX;
+				miniDiagram.x = this.width - miniForm.width - 20;
+				miniDiagram.y = this.height - miniDiagram.height - formEditorPropertyStage.height;
+				
+				diagramEditorPropertyStage.x = this.width - diagramEditorPropertyStage.width - 20;
+				diagramEditorPropertyStage.y = diagramStartX + diagramEditorPropertyStage.height;
+				formEditorPropertyStage.x = this.width - formEditorPropertyStage.width - 20;
+				formEditorPropertyStage.y = this.height - formEditorPropertyStage.height;
+			}
+			
+			private function registerEvent():void{
+				registerFormEvent();					
+			}
+			
+			/***********************데이터 처리****************************/			
+			// 패키지를 로드 
+			public function load(packId:String, packVer:int):void{
+				this.packId = packId;
+				this.packVer = packVer;
+				this.editDomain = new EditDomain();
+				loadPackage();
+			}
+			
+			private function loadPackage():void{
+				WorkbenchConfig.repoService.retrievePackage(this.packId, this.packVer, loadHandler, serviceFault);
+			}
+			
+			public function loadHandler(event:MISPackageEvent):void{
+				this.packId = packId;
+				this.swPackage = event.packMetaModel;
+				openPackage(packId, packVer.toString());
+			}
+			
+			public function serviceFault(event:MISPackageEvent):void{
+			}
+
+			private function openPackage(packId: String, packVer: String):void{
+				openPackageTree(packId, packVer, swPackage.name, true);
+				this.currentState = "info";
+			}
+			
+			// 폼 오픈 
+			public function openForm(formId:String):void{
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				for(var i:int; i<arr.length; i++){
+					this.swForm = SWForm(arr.getItemAt(i));
+					if(formId == swForm.id){
+						break;
+					} 
+				}
+				formEditor.load(this.swForm);
+				this.currentState = "Form";
+				if(formEditorPropertyStatus2){
+					formEditorPropertyStatus = true;
+				}
+				if(miniDiagramStatus2){
+					miniDiagramStatus = true;
+				}
+				diagramEditorPropertyStatus = false;
+				miniFormStatus = false;
+			}
+			
+			//프로세스 오픈
+			public function openProcess():void{
+				this.currentState = "Diagram";
+				if(diagramEditorPropertyStatus2){
+					diagramEditorPropertyStatus = true;
+				}
+				if(miniFormStatus2){
+					miniFormStatus = true;
+				}
+				formEditorPropertyStatus = false;
+				miniDiagramStatus = false;
+			}
+			
+			//프로세스 오픈
+			public function openInfo():void{
+				this.currentState = "info";
+				
+				diagramEditorPropertyStatus = false;
+				miniFormStatus = false;
+				formEditorPropertyStatus = false;
+				miniDiagramStatus = false;
+			}
+
+			// 폼 정보 업데이트 
+			private function updateForm(swForm:SWForm):void{
+				// TODO 폼정보 업데이트 처리
+			}
+			// 프로세스 정보 업데이트 
+			private function updateProcess(swProcess:SWProcess):void{
+				// TODO 프로세스 정보 업데이트 처리
+			}
+			
+			/**************************리소스 창 제어***********************************/
+			[Bindable]
+			public var isClosed:Boolean = false;
+			
+			public function discloseView():void {
+				if (isClosed == false) {
+					resTreeShrink.end();
+					resTreeShrink.play();
+					isClosed = true;
+				} else {
+					resTreeGrow.end();
+					resTreeGrow.play();
+					isClosed = false;
+				}
+			}			
+			
+			private function getScale(parent:DisplayObject, child:DisplayObject):Number{
+				var scale:Number = 1;
+				if(parent != null && child != null){
+					if(scale > parent.width/(child.width + 100)){
+						scale = parent.width/(child.width + 100);
+					}
+					
+					if(scale > parent.height/(child.height + 100)){
+						scale = parent.height/(child.height + 100);
+					}
+				}
+				
+				return scale;
+			}
+			
+			private function goTestForm():void{
+				var swForm:SWForm;
+				swForm = SWForm(this.swPackage.getFormResources().getItemAt(0));
+				openForm(swForm.id);
+			}
+			
+			/*********프로세스***********/
+			private function addProcess():void{  //추가
+            	if(this.swPackage.getProcessResource() == null){
+            		editDomain.getCommandStack().execute(new AddProcessCommand(this.swPackage, NameGenerator.generateProcessName(this.swPackage), 
+            												addProcessHandler, faultHandler, removeProcessHandler));	
+            	}else{
+            		MsgUtil.showMsg(this, "패키지에는 하나의 프로세스만 존재할 수 있습니다.", "프로세스 생성 결과");
+            	}
+            }
+            
+            private function addProcessHandler(event:MISPackageEvent):void{
+				this.swPackage.setProcessResource(event.swProcess);
+
+				// 트리를 갱신한다.
+				refreshPackageTree();
+            }
+            
+            private function removeProcess():void{ //삭제
+            	var swPrc:SWProcess = SWProcess(this.swPackage.getProcessResource());
+                editDomain.getCommandStack().execute(new RemoveProcessCommand(this.swPackage, swPrc, removeProcessHandler, faultHandler, addProcessHandler));
+            }
+            
+            private function removeProcessHandler(event:MISPackageEvent):void{
+            	if(this.swPackage.children.length == 1){
+            		//packResourceTree.expandItem(this.swPackage, false); //Tree에 반영(?)
+            	}
+				this.swPackage.setProcessResource(null);
+
+				// 트리를 갱신한다.
+				refreshPackageTree();
+            }
+            
+            /*********폼***********/
+            private function addForm():void{  // 추가
+				editDomain.getCommandStack().execute(new AddFormCommand(this.swPackage, NameGenerator.generateFormName(this.swPackage), 
+														addFormHandler, faultHandler, removeFormHandler));
+            }
+            
+            private function addFormHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm);
+														
+				// 폼트리 영역을 갱신한다.
+				refreshFormTree();
+            }     
+                         
+            private function removeForm(formId:String):void{  // 삭제      
+            	var arr:ArrayCollection = this.swPackage.getFormResources();
+            	var swForm:SWForm;
+				for(var i:int; i<arr.length; i++){
+					swForm = SWForm(arr.getItemAt(i));
+					if(formId == swForm.id){
+						break;
+					}
+				}
+            	editDomain.getCommandStack().execute(new RemoveFormCommand(this.swPackage, swForm, removeFormHandler, faultHandler, addFormHandler));
+            }
+            
+            private function removeFormHandler(event:MISPackageEvent):void{
+  				if(this.swPackage.children.length == 1){
+            		//packResourceTree.expandItem(this.packModel, false); //Tree에 반영(?)
+      			}
+				this.swPackage.removeFormResource(event.swForm);
+														
+				// 폼트리 영역을 갱신한다.
+				refreshFormTree();
+            }
+            
+            private function faultHandler(event:MISPackageEvent):void{
+				//TODO 에러처리
+				MsgUtil.showMsg(this, event.msg);
+            }
+            
+            // 배치
+            private function deployPackage():void
+            {
+            	WorkbenchConfig.repoService.deploy(this.swPackage, deployResultHandler, faultHandler); 
+            }
+            
+            private function deployResultHandler(e:MISPackageEvent):void{
+            	MsgUtil.showMsg(Application.application.document, e.msg, "배치결과");
+            }
+            
+            private function diagramProPanel(status:Boolean):void{
+            	diagramEditorPropertyStatus = status;
+            	diagramEditorPropertyStatus2 = status;
+            }
+            
+            private function formEditorProPanel(status:Boolean):void{
+            	formEditorPropertyStatus = status;
+            	formEditorPropertyStatus2 = status;
+            }
+            
+            private function miniDiagramPanel(status:Boolean):void{
+            	miniDiagramStatus = status;
+            	miniDiagramStatus2 = status;
+            }
+            
+            private function miniFormPanel(status:Boolean):void{
+            	miniFormStatus = status;
+            	miniFormStatus2 = status;
+            }
+            
+            private function miniFormLoad(formId:String):void{
+            	var form:SWForm;
+            	var arr:ArrayCollection = this.swPackage.getFormResources();
+				for(var i:int; i<arr.length; i++){
+					form = SWForm(arr.getItemAt(i));
+					if(formId == form.id){
+						break;
+					} 
+				}
+            	miniFormEditor.load(form);
+            }
+		]]>
+	</mx:Script>
+    <mx:Style>
+        .accHeader {
+            fontSize: 11;
+        }
+    </mx:Style>
+	<mx:Resize id="resTreeShrink" widthTo="{20}" target="{workbenchResourceCanvas}" duration="1000"/>
+	<mx:Resize id="resTreeGrow" widthTo="{stageBox.width * 0.15}" target="{workbenchResourceCanvas}" duration="1000"/>
+	<!--<mx:Resize id="mainStageShrink" widthTo="{stageBox.width * 0.60}" target="{mainStage}" duration="1000"/>
+	<mx:Resize id="mainStageGrow" widthTo="{stageBox.width * 0.75}" target="{mainStage}" duration="1000"/>-->
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="0">
+		<mx:HBox x="0" y="0" width="100%" height="30" horizontalGap="0" borderColor="#4F81BD" borderStyle="solid" id="topArea">
+				<mx:Text text="SMARTWorks" fontSize="18" fontFamily="Arial" fontWeight="bold" textAlign="center" width="155" 
+					color="#8EB4E3" buttonMode="true" click="{(currentState=='Form')?currentState='Diagram':currentState='Form'}"/>
+				<mx:ViewStack id="workbenchMenuBar" width="100%" height="100%" selectedIndex="0">					
+					<mx:Box id="diagramEditorBox" width="100%" height="100%" backgroundColor="#132895">
+						<!--Diagram Editor Menu Bar-->
+						<mx:MenuBar id="diagramEditorMenuBar" height="100%" borderColor="#4F81BD" ></mx:MenuBar>
+					</mx:Box>
+					<mx:Box id="formEditorMenuBox" width="100%" height="100%" backgroundColor="#7DAEEB">
+						<!--Form Editor Menu Bar-->
+						<mx:MenuBar id="formEditorMenuBar" height="100%" width="100%" 
+							labelField="@label" dataProvider="{formMenuBarCollection}" 
+							creationComplete="initFormMenuBar()"
+							itemClick="selectFormMenu(event)"  fontSize="12" fontFamily="Arial">
+						</mx:MenuBar>							
+					</mx:Box>
+				</mx:ViewStack>					
+		</mx:HBox>
+		<mx:ViewStack id="workbenchToolBar" width="100%" height="30" selectedIndex="0">
+			<!--Diagram Editor Tool Bar-->
+			<mx:HBox id="diagramEditorToolBar" width="100%" height="100%" horizontalGap="8" 
+				borderColor="#4F81BD" borderStyle="solid" >
+			<!-- backgroundColor="#161695" -->
+				<mx:ToggleButtonBar id="tbarDiagram" horizontalGap="1"
+					buttonWidth="29" buttonHeight="25" 
+					itemClick="tbarDiagram_itemClick(event);">
+					<mx:Array>
+						<mx:Object label="S" toolTip="다이어그램 저장"/>
+					</mx:Array>
+				</mx:ToggleButtonBar>
+				<mx:ToggleButtonBar id="tbarPDEPalette" horizontalGap="1"
+					buttonWidth="29" buttonHeight="25" itemClick="tbarPDEPalette_itemClick(event);">
+					<mx:Array>
+						<mx:Object label="select" icon="@Embed(source='assets/pde/palette/select.png')" toolTip="select"/>
+						<mx:Object label="sequence" icon="@Embed(source='assets/pde/palette/sequence.png')" toolTip="SequenceFlow"/>
+						<mx:Object label="annotation" icon="@Embed(source='assets/pde/palette/annotation.png')" toolTip="Annotation"/>
+					</mx:Array>
+				</mx:ToggleButtonBar>
+				<mx:ButtonBar id="tbarPDEEdit" horizontalGap="1" labelField="label"
+					buttonWidth="29" buttonHeight="25"  itemClick="tbarPDEEdit_itemClick(event);"
+					fontSize="8">
+					<mx:Array>
+						<mx:Object label="U" toolTip="Undo"/>
+						<mx:Object label="R" toolTip="Redo"/>
+						<mx:Object label="?" toolTip="Orientation"/>
+						<mx:Object label="+" toolTip="Zoom-in"/>
+						<mx:Object label="-" toolTip="Zoom-out"/>
+					</mx:Array>
+				</mx:ButtonBar>
+				<mx:ButtonBar id="tbarPDEAlign" horizontalGap="1" labelField="label"  itemClick="tbarPDEAlign_itemClick(event);"
+					buttonWidth="29" buttonHeight="25"
+					fontSize="8">
+					<mx:Array>
+						<mx:Object label="align_left" icon="@Embed(source='assets/pde/palette/align_left.png')" toolTip="left align"/>
+						<mx:Object label="align_hcenter" icon="@Embed(source='assets/pde/palette/align_hcenter.png')" toolTip="hcenter align"/>
+						<mx:Object label="align_right" icon="@Embed(source='assets/pde/palette/align_right.png')" toolTip="right align"/>
+						<mx:Object label="align_top" icon="@Embed(source='assets/pde/palette/align_top.png')" toolTip="top align"/>
+						<mx:Object label="align_vcenter" icon="@Embed(source='assets/pde/palette/align_vcenter.png')" toolTip="vcenter align"/>
+						<mx:Object label="align_bottom" icon="@Embed(source='assets/pde/palette/align_bottom.png')" toolTip="bottom align"/>
+						<mx:Object label="align_lanecenter" icon="@Embed(source='assets/pde/palette/align_lanecenter.png')" toolTip="lane center"/>
+					</mx:Array>
+				</mx:ButtonBar>
+				
+				<mx:Button label="프로세스속성" click="{diagramProPanel(true)}" />
+				<mx:Button label="미니폼" click="{miniFormPanel(true)}" />
+			</mx:HBox>
+			<!--Form Editor Tool Bar-->
+			<mx:HBox id="formEditorToolBar" width="100%" height="100%" horizontalGap="0" borderColor="#4F81BD" borderStyle="solid" backgroundColor="#7DAEEB">
+				<mx:Button label="폼속성" click="{formEditorProPanel(true)}" />
+				<mx:Button label="미니다이어그램" click="{miniDiagramPanel(true)}" />
+			</mx:HBox>
+		</mx:ViewStack>		
+		
+		<mx:HBox id="stageBox" width="100%" height="100%" horizontalGap="0">
+			<mx:Canvas id="workbenchResourceCanvas" width="15%" height="100%">
+				<mx:Image source="{isClosed == false?(IconLibrary.closeNav):IconLibrary.openNav}" useHandCursor="true" buttonMode="true" mouseChildren="false"
+			 		click="discloseView()" id="closeSchemaBtnRight" right="5" top="5" />
+				<pde:PackageNavigator id="dnavMain" visible="{!isClosed}" width="100%" height="100%" left="0" top="20"
+					menuItemSelect="dnavMain_menuItemSelect(event);" 
+					doubleClickEnabled="true" doubleClick="dnavMain_doubleClick(event);"
+					dragEnabled="true" dropEnabled="true" 
+					dragEnter="dnavMain_dragEnter(event);" 
+					dragOver="dnavMain_dragOver(event);" 
+					dragDrop="dnavMain_dragDrop(event);"/>
+			</mx:Canvas>
+			
+			
+			<!--PackageInfo, Diagram Editor, Form Editor 영역-->
+			<mx:Canvas id="mainStage" width="100%" height="100%">
+			</mx:Canvas>
+			
+			
+			<mx:VBox width="0" height="0" verticalGap="0">
+				<!--Form Editor-->
+				<mx:Canvas id="formHiddenStage">
+					<mx:HBox width="100%" height="100%" id="formEditorBox" >
+						<view1:SimpleSchemaEditor label="폼" id="formResourceTree"  width="15%" height="100%" editDomain="{this.formEditor.editDomain}" 
+							formDocument="{this.formEditor.formModel}" swForm="{this.swForm}">
+						</view1:SimpleSchemaEditor>
+						<view1:FormDocumentViewer id="formEditor" width="85%" height="100%"  miniMode="true" saveFormComplete="refreshFormTree()"/>
+					</mx:HBox>
+				</mx:Canvas>
+				
+				<mx:Canvas id="diagramHiddenStage">
+					<mx:VDividedBox id="diagramEditor" width="100%" height="100%" verticalGap="4">
+						<pde:XPDLEditor id="deMain" width="100%" height="100%" borderStyle="solid" borderColor="#000000"
+									creationComplete="deMain_creationComplete(event);"
+									createNodeRequest="deMain_createNodeRequest(event);" 
+									selectionChanged="deMain_selectionChanged(event);"
+									laneSelectionChanged="deMain_laneSelectionChanged(event);"
+									toolInitialized="deMain_toolInitialized(event);"
+									diagramNodeAdded="deMain_diagramChanged(event);"
+									diagramNodeRemoved="deMain_diagramChanged(event);"
+									diagramNodeReplaced="deMain_diagramChanged(event);"
+									diagramLinkAdded="deMain_diagramChanged(event);"
+									diagramLinkRemoved="deMain_diagramChanged(event);"
+									diagramPropChanged="deMain_diagramChanged(event);"
+								/>
+						<mx:DataGrid id="grdProblem" width="100%" height="120" 
+							creationComplete="grdProblem_creationComplete(event);" click="grdProblem_click(event);"
+							doubleClickEnabled="true"  doubleClick="grdProblem_doubleClick(event);">
+							<mx:columns>
+								<mx:DataGridColumn dataField="level" headerText="Level" width="50"/>
+								<mx:DataGridColumn dataField="label" headerText="이름" width="150"/>
+								<mx:DataGridColumn id="colHint" dataField="hasHint" headerText="힌트" width="45"/>
+								<mx:DataGridColumn id="colFixUp" dataField="canFixUp" headerText="처리" width="45"/>
+								<mx:DataGridColumn dataField="message" headerText="요약" width="500"/>
+							</mx:columns>
+						</mx:DataGrid>
+					</mx:VDividedBox>
+				</mx:Canvas>
+				
+				<mx:Canvas id="infoHiddenStage">
+					<mx:Canvas id="infoPackage" />
+				</mx:Canvas>
+				
+			</mx:VBox>
+		</mx:HBox>
+	</mx:VBox>		
+	
+	<!--diagram Editor MINI-->
+	<custormObj:MovePanel id="miniDiagram" width="0" height="0" showControls="true" enableResize="true" visible="{miniDiagramStatus}" 
+		panelClose="{miniDiagramPanel(false)}" pTitleBarHeight="3">
+		<pde:XPDLEditor id="miniXPDLEditor" width="100%" height="100%" borderStyle="solid" borderColor="#000000"/>
+	</custormObj:MovePanel>
+	
+	<!--Form Editor MINI-->
+	<custormObj:MovePanel id="miniForm" width="0" height="0" showControls="true" enableResize="true" visible="{miniFormStatus}" 
+		panelClose="{miniFormPanel(false)}" pTitleBarHeight="3">
+		<view1:FormDocumentViewer id="miniFormEditor" width="100%" height="100%"  miniMode="true"/>
+	</custormObj:MovePanel>
+				
+	<!--Diagram Editor Property Editor-->
+	<custormObj:MovePanel id="diagramEditorPropertyStage" width="0" height="0" backgroundColor="#ED1111" showControls="true" 
+			panelClose="{diagramProPanel(false)}" visible="{diagramEditorPropertyStatus}" enableResize="true" pTitleBarHeight="3">
+		<pde:PDEPropertyPage id="diagramPropertyPage" width="100%" height="100%" fontSize="10" 
+			verticalScrollPolicy="on" horizontalScrollPolicy="off"
+			sourceChanged="diagramPropertyPage_sourceChanged(event);"
+			selectionChanged="diagramPropertyPage_selectionChanged(event);"
+		    />
+	</custormObj:MovePanel>
+	<!--Form Editor Property Editor-->
+	<custormObj:MovePanel id="formEditorPropertyStage" width="0" height="0" showControls="true" panelClose="{formEditorProPanel(false)}" 
+		visible="{formEditorPropertyStatus}" enableResize="true" pTitleBarHeight="3">
+		<view:FormPropertyEditor id="formPropertyEditor" x="0" y="0" width="100%" height="100%" 
+			editDomain="{this.formEditor.editDomain}" verticalScrollPolicy="on">							
+		</view:FormPropertyEditor>
+	</custormObj:MovePanel>
+</mx:Canvas>

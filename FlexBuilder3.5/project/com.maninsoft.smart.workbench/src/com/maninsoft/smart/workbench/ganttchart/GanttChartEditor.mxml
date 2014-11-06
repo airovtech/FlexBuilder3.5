@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" borderStyle="none" borderThickness="0"
+    horizontalScrollPolicy="off" verticalScrollPolicy="off" backgroundColor="#ffffff"
+	xmlns:gantt="com.maninsoft.smart.ganttchart.editor.*" xmlns:ganttview="com.maninsoft.smart.ganttchart.view.*" 
+    creationComplete="init()"
+	>
+
+	<mx:Script source="GanttChartEditor_mxml.as"/>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.assets.DialogAssets;
+			import com.maninsoft.smart.workbench.common.resource.MsgConf;
+			import com.maninsoft.smart.workbench.common.preloader.SquaresSpinnerPreloadingWindow;
+			import com.maninsoft.smart.ganttchart.model.GanttChartGrid;
+			import com.maninsoft.smart.workbench.event.MISProcessEvent;
+			import com.maninsoft.smart.workbench.common.util.LocaleUtil;
+			import com.maninsoft.smart.workbench.common.property.page.PropertyPage;
+			import com.maninsoft.smart.ganttchart.server.CalendarInfo;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import mx.events.CloseEvent;
+			import mx.messaging.events.MessageEvent;
+			import mx.collections.XMLListCollection;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.ganttchart.util.CalendarUtil;
+			import com.maninsoft.smart.workbench.assets.WorkbenchAssets;
+//			import com.maninsoft.smart.ganttchart.editor.window.WriteHistoryWindow;
+			
+			private var _ganttChartMsg:XMLList;
+			private var _ganttChartStartDate:Date; 
+			private var _gcItemDetailColl:XMLListCollection;
+			private var _lastId:int;
+			private var _baseURL:String;
+			private var _dirtyFlag:Boolean;
+            
+			[Bindable]
+			public var ganttChartId:String;
+			[Bindable]
+			public var comment:String;
+			[Bindable]
+			public var taskId:String;
+			[Bindable]
+			public var userId:String;
+			
+			public var propertyPage:PropertyPage = new PropertyPage();
+
+			public var popupMsg:String;
+			public var timer:Timer;
+			public var repeatCount:Number;
+			public var timeoutId:uint;
+			private var _popupWindow:SquaresSpinnerPreloadingWindow = null;
+			private var _popupWindowCenterWindow:UIComponent = null;
+			
+			private function init():void{
+				registerEvent();
+				CalendarInfo.locale = LocaleUtil.locale;			
+				propertyPage.width = 350;
+				propertyPage.labelWidth = 110;
+				propertyPage.valueWidth = 210;
+				if(WorkbenchConfig.readOnly == true){
+					ganttChart.readOnly = true;
+					GanttChartGrid.readOnly = true;
+				}else{
+					ganttChart.readOnly = false;
+					GanttChartGrid.readOnly = false;
+				}
+			}
+			
+			private function registerEvent():void{
+				this.addEventListener(CustomPreloadEvent.SAVE_PROGRESS_IMG, openProgressHandler);
+				this.addEventListener(CustomPreloadEvent.CLOSE_PROGRESS_IMG, closeProgressHandler);
+			}
+	
+			public function openProgressHandler(event:CustomPreloadEvent):void {
+				timer = new Timer(1000, repeatCount);
+				timer.addEventListener(TimerEvent.TIMER, timerEventHandler);
+				timer.start();
+				
+				onOpen(MsgConf.MESSAGE_SAVEPROGRESS);
+			}
+
+			public function timerEventHandler(event:TimerEvent):void {
+				repeatCount ++;
+			}
+			
+			public function closeProgressHandler(event:CustomPreloadEvent):void {
+				onComplete();
+			}
+			
+			public function onOpen(textInput:String):void {
+				if (_popupWindowCenterWindow == null) {
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(this, SquaresSpinnerPreloadingWindow, true));
+					_popupWindow.popupMsg = textInput;
+				}
+				else
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(_popupWindowCenterWindow, SquaresSpinnerPreloadingWindow));
+				}
+				PopUpManager.centerPopUp(_popupWindow);
+			}
+			
+  			public function onComplete():void {
+  				
+				if(_popupWindow)
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+				 }	
+			}  
+
+			public function initMsg2ItemColl():void{
+				ganttChart.gcItemColl.source = ganttChartMsg.item;
+				gcItemDetailColl.source = ganttChartMsg.itemDetail;
+			}
+			
+			public function set ganttChartMsg(ganttChartMsg:XMLList):void {
+				this._ganttChartMsg = ganttChartMsg;
+			}
+			
+			[Bindable]
+			public function get ganttChartMsg():XMLList {
+				return this._ganttChartMsg;
+			}
+			
+			public function set ganttChartStartDate(startDate:Date):void{
+				_ganttChartStartDate = startDate;
+			}
+			
+			public function get ganttChartStartDate():Date{
+				return _ganttChartStartDate;
+			}
+			
+			public function set gcItemDetailColl(gcItemDetailColl:XMLListCollection):void {
+				this._gcItemDetailColl = gcItemDetailColl;
+			}
+			
+			public function get gcItemDetailColl():XMLListCollection {
+				return this._gcItemDetailColl;
+			}
+			
+			public function set lastId(lastId:int):void {
+				this._lastId = lastId;
+			}
+			
+			public function get lastId():int {
+				return this._lastId;
+			}
+			
+			public function set baseURL(baseURL:String):void {
+				this._baseURL = baseURL;
+			}
+			
+			public function get baseURL():String {
+				return this._baseURL
+			}
+						
+			public function get dirtyFlag():Boolean {
+    			return this._dirtyFlag;
+    		}
+
+			public function set dirtyFlag(dirtyFlag:Boolean):void {
+				this._dirtyFlag = dirtyFlag;
+			}
+			
+			private function makeItemColl2Msg():void {
+				
+				var tmpGanttChartMsg:XML = new XML(ganttChartMsg.toXMLString());
+								
+				//이전의 item들 삭제하기
+				delete tmpGanttChartMsg.item;
+				tmpGanttChartMsg.appendChild(ganttChart.gcItemColl.source);
+				
+				delete tmpGanttChartMsg.itemDetail;
+				tmpGanttChartMsg.appendChild(gcItemDetailColl.source);
+				
+				//msg에 업뎃하기
+				ganttChartMsg = new XMLList(tmpGanttChartMsg);
+				
+			}
+
+			private function openDivision(mode: String): void {
+				if (mode == "newTask") {
+					parentApplication.workbench.addFormAndModify();				
+				} else if (mode == "exsistingTask") {
+					var propertyInfos: Array = propertyPage.propSource.getPropertyInfos();
+					for each (var propertyInfo: PropertyInfo in propertyInfos) {
+						if (propertyInfo as FormIdPropertyInfo) {
+							var formIdPropertyInfo: FormIdPropertyInfo = propertyInfo as FormIdPropertyInfo;
+							formIdPropertyInfo.doClick();
+						}
+					}
+				}
+			}
+			
+			private function openForm(formId:String):void{
+				var eventObj:MISProcessEvent = new MISProcessEvent("formEditorMove");
+				eventObj.formId = formId;
+				dispatchEvent(eventObj);
+			}
+
+
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="formEditorMove", type="com.maninsoft.smart.workbench.event.MISProcessEvent")]
+    </mx:Metadata>
+	<mx:XML id="testGanttXPDLSource">
+		<xpdl:Package Id="pkg_c92190b6c044426c895a2b6a8f4a5559" Name="일정계획업무테스트" xmlns:xpdl="http://www.wfmc.org/2004/XPDL2.0alpha">
+  			<xpdl:PackageHeader>
+			<xpdl:XPDLVersion>2.0</xpdl:XPDLVersion>
+    		<xpdl:Vendor>ManInSoft</xpdl:Vendor>
+    		<xpdl:Created>null</xpdl:Created>
+    		<xpdl:Description>null</xpdl:Description>
+  		</xpdl:PackageHeader>
+  		<xpdl:RedefinableHeader>
+  			<xpdl:Author>null</xpdl:Author>
+    		<xpdl:Version>1</xpdl:Version>
+    		<xpdl:Codepage>UTF-8</xpdl:Codepage>
+    		<xpdl:Countrykey>KR</xpdl:Countrykey>
+  		</xpdl:RedefinableHeader>
+  		<xpdl:Script Type="null" Version="null" Grammar="null"/>
+  		<xpdl:Pools>
+    		<xpdl:Pool BufferRows="24" ChartBaseDate="1968-01-01 24:00:00" Orientation="HORIZONTAL" Process="null" BoundaryVisible="false" Id="0" Name="간트차트">
+      		<xpdl:Lanes>
+        		<xpdl:Lane Id="0" Name="주관부서" ParentLane="0">
+          		<xpdl:NodeGraphicsInfos>
+            		<xpdl:NodeGraphicsInfo Height="1024" Width="1024"/>
+          		</xpdl:NodeGraphicsInfos>
+        		</xpdl:Lane>
+      		</xpdl:Lanes>
+      		<xpdl:NodeGraphicsInfos>
+        		<xpdl:NodeGraphicsInfo/>
+      		</xpdl:NodeGraphicsInfos>
+			</xpdl:Pool>
+  		</xpdl:Pools>
+ 		<xpdl:WorkflowProcesses>
+    		<xpdl:WorkflowProcess Id="prc_551814d2f64b46588e6a5012dcc8215f" Name="일정계획업무테스트" ParentId="" AccessLevel="null" Status="null">
+	  		<xpdl:ProcessHeader DurationUnit="null">
+        		<xpdl:Created>null</xpdl:Created>
+        		<xpdl:Description>null</xpdl:Description>
+      		</xpdl:ProcessHeader>
+	  		<xpdl:RedefinableHeader>
+        		<xpdl:Author>null</xpdl:Author>
+        		<xpdl:Version>null</xpdl:Version>
+        		<xpdl:Codepage>null</xpdl:Codepage>
+        		<xpdl:Countrykey>null</xpdl:Countrykey>
+      		</xpdl:RedefinableHeader>
+      		<xpdl:Activities>
+	  		</xpdl:Activities>
+	  		<xpdl:Transitions>
+	  		</xpdl:Transitions>
+			</xpdl:WorkflowProcess>
+  		</xpdl:WorkflowProcesses>
+  		<xpdl:Artifacts/>
+		</xpdl:Package>
+	</mx:XML>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalAlign="center" backgroundColor="#FFFFFF" verticalAlign="middle" 
+		horizontalScrollPolicy="off" verticalScrollPolicy="off" borderStyle="none" borderThickness="0">
+
+		<!--Tool Box-->
+		<mx:Box id="editorHeaderToolBar" visible="true" width="100%" height="27" backgroundColor="#e6e7ed" x="0" y="0" horizontalGap="0" paddingLeft="4" paddingTop="4" verticalGap="0" borderColor="#ffffff" borderSides="bottom" borderStyle="solid" borderThickness="4">
+			<mx:LinkButton id="formListBtn" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{DialogAssets.workFormListIcon}"  click="formListEdit()"/>
+			<mx:Spacer width="100" />
+			<mx:Label id="workNameLabel" fontFamily="Tahoma" visible="false" fontSize="12" fontWeight="bold" color="#000000" textAlign="center"/>
+		</mx:Box>
+		
+		<mx:HBox width="100%" height="100%" id="gnattChartEditorBox" horizontalGap="4" borderStyle="none" backgroundColor="#FFFFFF"
+			    horizontalScrollPolicy="off" verticalScrollPolicy="off"
+				paddingLeft="4" paddingRight="4" paddingTop="0" paddingBottom="4"  dragEnter="{doToolBoxDragEnter(event)}" dragDrop="{doToolBoxDragDrop(event)}">
+			<gantt:GanttChart id="ganttChart" width="100%" height="100%" borderThickness="0" backgroundColor="#ffffff"
+				creationComplete="ganttChart_creationComplete(event);"
+				createNodeRequest="ganttChart_createNodeRequest(event);" 
+				selectionChanged="ganttChart_selectionChanged(event);"
+				laneSelectionChanged="ganttChart_laneSelectionChanged(event);"
+				toolInitialized="ganttChart_toolInitialized(event);"
+				diagramNodeAdded="ganttChart_diagramChanged(event);"
+				diagramNodeRemoved="ganttChart_diagramChanged(event);"
+				diagramNodeReplaced="ganttChart_diagramChanged(event);"
+				diagramLinkAdded="ganttChart_diagramChanged(event);"
+				diagramLinkRemoved="ganttChart_diagramChanged(event);"
+				diagramPropChanged="ganttChart_diagramChanged(event);"
+				diagramSelected="ganttChart_selected(event);"
+				editorWidth="{parentApplication.width-ganttToolBox.width-20}"				 
+				resize="ganttChart_resize(event);" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			</gantt:GanttChart>
+
+			<mx:VBox id="ganttToolBox" visible="true" width="30" height="210" y="{toolBoxY}" backgroundColor="#FFFFFF" borderStyle="solid" borderColor="#8B8B8B" borderThickness="2" verticalAlign="top" verticalGap="0" cornerRadius="3"
+						 paddingLeft="3" paddingRight="3"  paddingTop="3" paddingBottom="10">
+				<mx:HBox paddingLeft="1" paddingRight="1" paddingTop="0" paddingBottom="0" horizontalGap="0">
+					<mx:Box width="3" paddingLeft="1" paddingRight="1"/>
+					<mx:Image id="toolBoxDragger" source="{WorkbenchAssets.defaultDragerIcon}" mouseDown="{doToolBoxDragging(event)}"/>
+				</mx:HBox>
+				<mx:Box width="100%" height="10"/>
+				<mx:VBox id="processToolBar1" width="20" height="100%" horizontalAlign="middle" verticalAlign="top" paddingLeft="1" paddingRight="1" paddingTop="2" paddingBottom="0" verticalGap="8">			
+					<mx:LinkButton id="toolBarSaveBtn" paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{WorkbenchAssets.saveIcon}" click="{processTBarBtnClick('SAVE')}" toolTip="{resourceManager.getString('WorkbenchETC', 'saveTTip')}"/>
+					<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{WorkbenchAssets.undoIcon}" click="{processTBarBtnClick('UNDO')}" toolTip="{resourceManager.getString('WorkbenchETC', 'undoTTip')}"/>
+					<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" icon="{WorkbenchAssets.redoIcon}" click="{processTBarBtnClick('REDO')}" toolTip="{resourceManager.getString('WorkbenchETC', 'redoTTip')}"/>			
+					<mx:Image width="100%" source="{WorkbenchAssets.dividerIcon}"/>
+					<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" id="newConstraintLine" icon="{WorkbenchAssets.sequenceIcon}" click="{chartTBarBtnClick('LINE')}" toolTip="{resourceManager.getString('GanttChartETC', 'newLineTTip')}"/>
+					<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" id="newTaskBtn" icon="{WorkbenchAssets.taskIcon}" click="{chartTBarBtnClick('TASK')}" toolTip="{resourceManager.getString('GanttChartETC', 'newTaskTTip')}"/>
+					<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" id="newTaskGroupBtn" icon="{WorkbenchAssets.taskGroupIcon}" click="{chartTBarBtnClick('TASKGROUP')}" toolTip="{resourceManager.getString('GanttChartETC', 'newGroupTaskTTip')}"/>
+					<mx:LinkButton paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" id="newMilestoneBtn" icon="{WorkbenchAssets.milestoneIcon}" click="{chartTBarBtnClick('MILESTONE')}" toolTip="{resourceManager.getString('GanttChartETC', 'newMilestoneTTip')}"/>
+				</mx:VBox>
+			</mx:VBox>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:Label text="" id="selectObjectType" visible="false" height="0" width="0"/>
+	
+</mx:Canvas>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TypeDetailView 
+	xmlns="com.maninsoft.smart.formeditor.refactor.view.property.detail.type.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="백분율">
+	<mx:Script>
+		<![CDATA[
+			private function change():void{
+				changeFormItemType = formItemType.clone();
+				changeFormItemType.precision = precision.value;
+				dispatchEvent(new Event(Event.CHANGE));				
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox height="100%" width="100%">
+		<mx:HBox>
+			<mx:Text text="소수 자릿수:" fontSize="12"/>
+			<mx:NumericStepper id="precision" fontSize="10" value="{formItemType.precision}"  change="{change()}"/>	
+		</mx:HBox>
+	</mx:VBox>
+</TypeDetailView>

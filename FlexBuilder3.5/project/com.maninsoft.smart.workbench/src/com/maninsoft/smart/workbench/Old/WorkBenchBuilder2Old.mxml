@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:common="com.maninsoft.smart.common.*" 
+	xmlns:xpdl="com.maninsoft.smart.modeler.xpdl.*" xmlns:view="com.maninsoft.smart.formeditor.refactor.simple.view.*" xmlns:custormObj="smartWork.custormObj.*" 
+	xmlns:view1="com.maninsoft.smart.formeditor.refactor.view.*" creationComplete="init();"  xmlns:simple="com.maninsoft.smart.formeditor.refactor.simple.*" 
+	xmlns:pack="com.maninsoft.smart.workbench.pack.*" xmlns:mxml="com.maninsoft.smart.modeler.xpdl.mxml.*" xmlns:toolTipMenu="com.maninsoft.smart.modeler.toolTipMenu.*"
+	xmlns:editor="com.maninsoft.smart.modeler.editor.*" xmlns:process="com.maninsoft.smart.workbench.process.*" xmlns:formeditor="com.maninsoft.smart.formeditor.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.preloader.SquaresSpinnerPreloadingWindow;
+			import com.maninsoft.smart.workbench.common.resource.MsgConf;
+			import com.maninsoft.smart.workbench.common.preloader.CustomPreloadEvent;
+			import flash.utils.setTimeout;
+			import mx.containers.TitleWindow;
+			import mx.managers.PopUpManager;
+			import mx.preloaders.Preloader;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskApplication;
+			import com.maninsoft.smart.modeler.xpdl.model.base.XPDLNode;
+			import com.maninsoft.smart.modeler.property.TextPropertyInfo;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskForm;
+			import com.maninsoft.smart.modeler.property.PropertyInfo;
+			import com.maninsoft.smart.modeler.xpdl.property.FormIdPropertyInfo;
+			import com.maninsoft.smart.workbench.event.MISFormEvent;
+			import com.maninsoft.smart.workbench.common.meta.IProcessMetaModel;
+			import com.maninsoft.smart.workbench.command.UpdateProcessCommand;
+			import com.maninsoft.smart.workbench.command.CheckOutPackageCommond;
+			import com.maninsoft.smart.workbench.command.CheckInPackageCommond;
+			import com.maninsoft.smart.workbench.command.RemoveProcessCommand;
+			import com.maninsoft.smart.workbench.command.AddProcessCommand;
+			import com.maninsoft.smart.workbench.command.UpdateFormCommand;
+			import com.maninsoft.smart.workbench.util.NameGenerator;
+			import com.maninsoft.smart.workbench.command.AddFormCommand;
+			import com.maninsoft.smart.workbench.command.RemoveFormCommand;
+			import com.maninsoft.smart.workbench.common.event.FormEditorEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import mx.core.UIComponent;
+			import mx.core.IFlexDisplayObject;
+			import com.maninsoft.smart.workbench.common.editor.EditDomain;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWPackage;
+			import com.maninsoft.smart.workbench.event.MISPackageEvent;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWProcess;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.workbench.event.MISProcessEvent;
+			
+			[Bindable]
+			private var packId:String;
+			
+			[Bindable]
+			private var packVer:int;
+			
+			[Bindable]
+			private var packName:String;
+			
+			[Bindable]
+			private var categoryName:String;
+			
+			[Bindable]
+			public var swPackage:SWPackage;
+			
+			[Bindable]
+			private var editDomain:EditDomain;
+			
+			[Bindable]
+			private var popupMsg:String;
+			private var timer:Timer;
+			private var repeatCount:Number;
+			private var timeoutId:uint;
+
+
+//			[Bindable]
+//			public var _preloadWindow:Class = SquaresSpinnerPreloadingWindow;
+//			private var _popupWindowClass:Class = null;
+			private var _popupWindow:SquaresSpinnerPreloadingWindow = null;
+			private var _popupWindowCenterWindow:UIComponent = null;
+			
+			private var fieldLoaded:Boolean = true;
+
+			private function init():void{
+				registerEvent();
+			}
+
+			private function registerEvent():void{
+				formEditor.addEventListener(FormEditorEvent.FORM_RENAME, processEditor.formRename, true);	
+				formEditor.addEventListener(FormEditorEvent.FORM_FIELD_RENAME, processEditor.formFieldRename, true);
+				formEditor.addEventListener(FormEditorEvent.FORM_FIELD_ADD, processEditor.formFieldAdd, false);
+				formEditor.addEventListener(FormEditorEvent.FORM_FIELD_REMOVE, processEditor.formFieldRemove, false);
+				formEditor.addEventListener("saveFormComplete", fieldLoadedFalse);
+				
+				// 체크인, 체크 아웃 시  preload 이벤트 관련 
+				this.addEventListener(CustomPreloadEvent.OPEN_PROGRESS_IMG, openProgressHandler);
+				this.addEventListener(CustomPreloadEvent.CLOSE_PROGRESS_IMG, closeProgressHandler);
+			}
+			
+			public function openProgressHandler(event:CustomPreloadEvent):void {
+				timer = new Timer(1000, repeatCount);
+				timer.addEventListener(TimerEvent.TIMER, timerEventHandler);
+				timer.start();
+				
+				onOpen(popupMsg);
+			}
+
+			public function timerEventHandler(event:TimerEvent):void {
+				repeatCount ++;
+			}
+			
+			public function closeProgressHandler(event:CustomPreloadEvent):void {
+				onComplete();
+			}
+
+			public function onOpen(textInput:String):void {
+				if (_popupWindowCenterWindow == null) {
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(this, SquaresSpinnerPreloadingWindow, true));
+					_popupWindow.popupMsg = textInput;
+				}
+				else
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+					_popupWindow = SquaresSpinnerPreloadingWindow(PopUpManager.createPopUp(_popupWindowCenterWindow, SquaresSpinnerPreloadingWindow));
+				}
+				PopUpManager.centerPopUp(_popupWindow);
+			}
+			
+  			public function onComplete():void {
+				if(_popupWindow)
+				{
+					PopUpManager.removePopUp(_popupWindow);
+					_popupWindow = null;
+				 }	
+			}  
+			
+			// 패키지를 로드 
+			public function load(packId:String, packVer:int, packName:String, catName:String):void{
+				this.packId = packId;
+				this.packVer = packVer;
+				this.packName = packName;
+				this.categoryName = catName;
+				this.editDomain = new EditDomain();
+				loadPackage();
+			}
+			
+			private function loadPackage():void{
+				WorkbenchConfig.repoService.retrievePackage(this.packId, this.packVer, loadHandler, serviceFault);
+			}
+			
+			public function loadHandler(event:MISPackageEvent):void{
+				this.packId = packId;
+				this.swPackage = event.packMetaModel;
+				openPackage(packId, packVer);
+			}
+			
+			public function processEditorReload(xml:String):void{
+				var swForm:SWForm = SWForm.parseXML(XML(xml).Form[0]);
+				this.swPackage.addFormResource(swForm, this.swPackage.getFormResources().length);
+				processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+			}
+			
+			public function serviceFault(event:MISPackageEvent):void{
+			}
+
+			private function openPackage(packId: String, packVer: int):void{
+				var currentPkgStatus:String;
+				currentPkgStatus = String(this.swPackage.pkgStatus);
+				
+				if (currentPkgStatus == "DEPLOYED") {
+					processEditor.toolBox.visible = false;
+					processEditor.toolBox.height = 0;
+					formEditor.formEditorToolbar.visible = false;
+					formEditor.variableTopSize = 0;
+					formEditor.variableHeight = 52;
+				}
+				
+				dispatchEvent(new Event("loadCallback"));
+				
+				if (swPackage.getProcessResource()==null) {
+					toDiagramStageButton.visible = false;
+					openForm(swPackage.getFormResource(0).id);
+				} else {
+					toDiagramStageButton.visible = true;
+					processEditor.serverLoad(packId, packVer, swPackage, editDomain, true);
+					processEditor.resetExtents();
+					etcInfo(null);
+
+					if (currentPkgStatus == "CHECKED-OUT") {
+						processEditor.toolBox.visible = true;
+						formEditor.variableTopSize = 52;
+						formEditor.variableHeight = 0;
+						//formEditor.formEditorToolbar.visible = true;
+					} else if (currentPkgStatus == "CHECKED-IN") {
+						processEditor.toolBox.visible = false;
+						processEditor.toolBox.height = 0;
+						formEditor.variableTopSize = 0;
+						formEditor.variableHeight = 26;
+						formEditor.formEditorToolbar.visible = false;
+						//formEditor.palletEdit.visible = false;
+						//formEditor.palletEdit.width = 0;
+					}
+				}
+			}
+			
+			// 폼 화면으로 전환
+			private function goForm():void {
+				if (processEditor.selectedForm == null)
+					return;
+				processEditor.goForm(null);
+//				diagramStage.visible = false;
+//				diagramStage.height = 0;
+//				formStage.visible = true;
+//				formStage.percentHeight = 100;
+			}
+			
+			// 폼 오픈
+			public function openForm(formId:String):void{
+				var currentPkgStatus:String;
+				currentPkgStatus = String(this.swPackage.pkgStatus);
+				
+				diagramStage.visible = false;
+				diagramStage.height = 0;
+				formStage.visible = true;
+				formStage.percentHeight = 100;
+				
+				formEditor.packageId = this.packId;
+				
+				if (currentPkgStatus == "DEPLOYED") {
+					processEditor.toolBox.visible = false;
+					processEditor.toolBox.height = 0;
+					formEditor.formEditorToolbar.visible = false;
+					formEditor.variableTopSize = 0;
+					formEditor.variableHeight = 52;
+				}
+				
+				if (currentPkgStatus == "CHECKED-OUT") {
+					formEditor.formEditorToolbar.visible = true;
+					formEditor.variableTopSize = 52;
+					formEditor.variableHeight = 0;
+					processEditor.toolBox.visible = true;
+					//formEditor.palletEdit.visible = true;
+				} else if (currentPkgStatus == "CHECKED-IN") {
+					formEditor.formEditorToolbar.visible = false;
+					formEditor.variableTopSize = 0;
+					formEditor.variableHeight = 52;
+					processEditor.toolBox.visible = false;
+					processEditor.toolBox.height = 0;
+					//formEditor.palletEdit.visible = false;
+					//formEditor.palletEdit.width = 0;
+				}
+				
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var form:SWForm = null
+				for(var i:int; i<arr.length; i++){
+					if(formId == SWForm(arr.getItemAt(i)).id){
+						//formEditor.openForm(SWForm(arr.getItemAt(i)));
+						form = SWForm(arr.getItemAt(i));
+						formEditor.openForm(form.id, form.version, form.name);
+						break;
+					} 
+				}
+				etcInfo(formId);
+			}
+			
+			
+			//프로세스 오픈(화면 전환)
+			public function openProcess():void{
+				diagramStage.visible = true;
+				diagramStage.percentHeight = 100;
+				formStage.visible = false;
+				formStage.height = 0;
+				processEditor.selectModel(processEditor.selectedObject);
+				
+				if (!fieldLoaded) {
+					reloadFields();
+					fieldLoaded = true;
+				}
+			}
+			
+			/**************************리소스 창 제어***********************************/
+			[Bindable]
+			public var isClosed:Boolean = false;
+			
+			
+			private function getScale(parent:DisplayObject, child:DisplayObject):Number{
+				var scale:Number = 1;
+				if(parent != null && child != null){
+					if(scale > parent.width/(child.width + 100)){
+						scale = parent.width/(child.width + 100);
+					}
+					
+					if(scale > parent.height/(child.height + 100)){
+						scale = parent.height/(child.height + 100);
+					}
+				}
+				
+				return scale;
+			}    
+            
+            private function faultHandler(event:MISPackageEvent):void{
+				//TODO 에러처리
+				MsgUtil.showError(event.msg);
+            }
+            
+            
+            // 배치
+            private function deployPackage():void
+            {
+            	WorkbenchConfig.repoService.deploy(this.swPackage, deployResultHandler, faultHandler); 
+            }
+            
+            private function deployResultHandler(e:MISPackageEvent):void{
+            	MsgUtil.showMsg(e.msg);
+            }
+            
+            private function formEditorMoveHandler(evnet:MISProcessEvent):void{
+            	openForm(evnet.formId);
+            }	
+            
+            public function checkIn():void{
+            	// dispatch Progress Event Point
+            	popupMsg = MsgConf.MESSAGE_CHECKINPROGRESS;
+            	dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.OPEN_PROGRESS_IMG));
+				editDomain.getCommandStack().execute(new CheckInPackageCommond(packId, packVer, checkHandler));
+			}
+			
+			public function checkOut():void{
+				popupMsg = MsgConf.MESSAGE_CHECKOUTPROGRESS;				
+				dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.OPEN_PROGRESS_IMG));
+				editDomain.getCommandStack().execute(new CheckOutPackageCommond(packId, packVer, checkHandler));
+			}
+			
+			public function checkHandler(event:MISPackageEvent):void{
+				timerCheck();
+				dispatchEvent(new Event("checkCallback"));
+			}
+			
+			public function timerCheck():void {
+				if (timer != null && timer.currentCount >= 1) {
+					closePreload();
+				} else if (timer != null) {
+					this.timeoutId = setTimeout(closePreload, 1500);
+				}
+			}
+			
+			public function closePreload():void {
+				timer.stop();
+				timer.removeEventListener(TimerEvent.TIMER, timerEventHandler);
+				this.dispatchEvent(new CustomPreloadEvent(CustomPreloadEvent.CLOSE_PROGRESS_IMG));
+			}
+            
+            public function addProcess():void{  //추가
+				if(this.swPackage.getProcessResource() == null){
+					editDomain.getCommandStack().execute(new AddProcessCommand(this.swPackage, NameGenerator.generateProcessName(this.swPackage), 
+															addProcessHandler, faultHandler, removeProcessHandler));	
+				}else{
+					MsgUtil.showError("패키지에는 하나의 프로세스만 존재할 수 있습니다.");
+				}
+			}
+			
+			public function addProcessHandler(event:MISPackageEvent):void{
+				this.swPackage.setProcessResource(event.swProcess);
+				dispatchEvent(new Event("processCallback"));
+			}
+			
+			public function removeProcess():void{ //삭제
+				var swPrc:SWProcess = SWProcess(this.swPackage.getProcessResource());
+			    editDomain.getCommandStack().execute(new RemoveProcessCommand(this.swPackage, swPrc, removeProcessHandler, faultHandler, addProcessHandler));
+			}
+			
+			public function removeProcessHandler(event:MISPackageEvent):void{
+				if(this.swPackage.children.length == 1){
+					//packResourceTree.expandItem(this.swPackage, false); //Tree에 반영(?)
+				}
+				this.swPackage.setProcessResource(null);
+				dispatchEvent(new Event("processCallback"));	
+			}
+            	
+            public function renameProcess(newName:String):void{
+            	var process:SWProcess = this.swPackage.getProcessResource() as SWProcess;
+            	if(process!=null){
+            		editDomain.getCommandStack().execute(new UpdateProcessCommand(this.swPackage, process, "name", newName,
+            												renameProcessHandler, faultHandler, renameFormHandler));
+            	}
+            }
+            
+            private function renameProcessHandler(event:MISPackageEvent):void{
+				dispatchEvent(new Event("processCallback"));
+			}  
+            
+            //form 관련된 메소드
+			public function addForm():void{  // 추가
+				editDomain.getCommandStack().execute(new AddFormCommand(this.swPackage, NameGenerator.generateFormName(this.swPackage), 
+														addFormHandler, faultHandler, removeFormHandler));
+			}
+			
+			private function addFormHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm, this.swPackage.getFormResources().length);
+				processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "add";
+				dispatchEvent(ev);
+			}    
+			
+			/**
+			 * 기존 addForm을 따른다.
+			 * index.jsp에서 폼추가 요청(addFormAndModify)을 받으면 실행한다.
+			 * addFormAndModify는 callBack으로서 NewWorkbenchEditor에 등록되어 있다.(이 말은 index.jsp에게서 메시지를 받을 준비가 되어 있다는 것을 의미한다.)
+			 * execute의 처리결과는 addFormAndModifyHandler에서 수행한다.
+			 * 2009.02.02 sjyoon
+			 */
+			public function addFormAndModify():void{  // 추가
+				var taskAppName: String = "";
+				var propertyInfos: Array = processEditor.diagramPropertyPage.PDEPropertyPage1.propSource.getPropertyInfos();
+				for each (var propertyInfo: PropertyInfo in propertyInfos) {
+					if (propertyInfo as FormIdPropertyInfo) {
+						var formIdPropertyInfo: FormIdPropertyInfo = propertyInfo as FormIdPropertyInfo;
+						var taskApp: TaskApplication = formIdPropertyInfo.task;
+						taskAppName = taskApp.name;
+					}
+				}
+			
+				editDomain.getCommandStack().execute(new AddFormCommand(this.swPackage, taskAppName + " 화면", 
+														addFormAndModifyHandler, faultHandler, removeFormHandler));
+			}
+			
+			/**
+			 * 기존 addFormHandler를 따른다.
+			 * 기존 addFormHandler와 다른 점은 추가한 폼으로 이동시키는 것이다.
+			 * serverLoad2를 통해 동기화가 되면 setTask에서 폼이동 및 프로퍼티에 Form정보를 update한다.
+			 * 처리를 수행하고 메시지를 index.jsp의 formCallback함수에 전송한다.
+			 * 폼이 추가된 것을 카테고리상에 표시해주기 위함이다.
+			 * 2009.02.02 sjyoon
+			 */
+			private function addFormAndModifyHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm, this.swPackage.getFormResources().length);
+				processEditor.serverLoad2(packId, packVer, swPackage, editDomain, false, setTask, event.swForm.id);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "addAndModify";
+				dispatchEvent(ev);
+			} 
+			
+			/**
+			 * serverLoad2에서 서버측 http통신을 하여 결과처리시 setTask를 호출하게 된다.
+			 * 폼이동 및 프로퍼티의 Form정보 update를 처리한다.
+			 * 2009.02.02 sjyoon
+			 */
+			public function setTask(forms: Array, formId: String):void {
+				this.openForm(formId);
+				for each (var taskForm: TaskForm in forms) {
+					if (taskForm.formId == formId) {
+						var propertyInfos: Array = processEditor.diagramPropertyPage.PDEPropertyPage1.propSource.getPropertyInfos();
+						for each (var propertyInfo: PropertyInfo in propertyInfos) {
+							if (propertyInfo as FormIdPropertyInfo) {
+								var formIdPropertyInfo: FormIdPropertyInfo = propertyInfo as FormIdPropertyInfo;
+								formIdPropertyInfo.updateTask(taskForm);
+							}
+						}
+					}
+				}
+			}
+			
+			
+			//form 관련된 메소드
+			public function renameForm(formId:String, newName:String):void{  // 추가
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var form:SWForm=null;
+				for(var i:int; i<arr.length; i++){
+					if(formId == SWForm(arr.getItemAt(i)).id){
+						form = SWForm(arr.getItemAt(i));
+						break;
+					} 
+				}
+				if(form!=null){
+					editDomain.getCommandStack().execute(new UpdateFormCommand(this.swPackage, form, "name", newName,
+															renameFormHandler, faultHandler, renameFormHandler));
+				}
+			}
+			
+			private function renameFormHandler(event:MISPackageEvent):void{
+				processEditor.formRename2(event.swForm.id, event.swForm.name);
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "rename";
+				dispatchEvent(ev);
+			}      
+			             
+			public function removeForm(formId:String):void{  // 삭제      
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var form:SWForm=null;
+				for(var i:int; i<arr.length; i++){
+					if(formId == SWForm(arr.getItemAt(i)).id){
+						form = SWForm(arr.getItemAt(i));
+						break;
+					}
+				}
+				if(form!=null){
+					editDomain.getCommandStack().execute(new RemoveFormCommand(this.swPackage, form, removeFormHandler, faultHandler, addFormHandler));
+				}
+			}
+			
+			private function removeFormHandler(event:MISPackageEvent):void{
+				this.swPackage.removeFormResource(event.swForm);
+				processEditor.serverLoad(packId, packVer, swPackage, editDomain, false);
+				openProcess();
+				var ev:MISPackageEvent = new MISPackageEvent("formCallback", this.swPackage);
+				ev.swForm = event.swForm;
+				ev.mode = "remove";
+				dispatchEvent(ev);
+			}	
+			
+			private function saveCallbackHandler(event:Event):void{
+				ExternalInterface.call("saveCallback");
+			}
+			
+			private function etcInfo(formId:String):void{
+				var swProcess:SWProcess = SWProcess(this.swPackage.getProcessResource());
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				var swForm:SWForm=null;
+			}
+			
+			private function fieldLoadedFalse(event:Event = null):void {
+				fieldLoaded = false;
+			}
+			private function reloadFields():void {
+				processEditor.loadTaskFormFields();
+			}
+		]]>
+	</mx:Script>
+	<mx:Style source="/assets/css/builder.css"/>
+	<mx:Metadata>
+        [Event(name="formCallback",  type="com.maninsoft.smart.workbench.event.MISPackageEvent")]
+        [Event(name="processCallback",  type="flash.events.Event")]
+        [Event(name="loadCallback",  type="flash.events.Event")]
+        [Event(name="checkCallback",  type="flash.events.Event")]
+    </mx:Metadata>
+	<mx:VBox width="100%" height="100%" horizontalGap="0" verticalGap="0" backgroundColor="#E9EEEE" borderStyle="solid" borderColor="#999999">
+		<mx:Canvas id="diagramStage" width="100%" height="100%" cornerRadius="5" visible="true">
+			<process:ProcessEditor id="processEditor" top="3" width="100%" height="100%" formEditorMove="formEditorMoveHandler(event)"/>
+			<!--mx:LinkButton icon="@Embed('/assets/pde/palette/dataobject.png')" right="4" top="6" click="goForm()"/-->
+		</mx:Canvas>
+		<mx:Canvas id="formStage" width="100%" height="0" cornerRadius="5" visible="false">
+			<mx:Box width="100%" height="100%" top="3">
+				<formeditor:FormEditorBase id="formEditor" width="100%" height="100%"/>
+			</mx:Box>
+			<mx:LinkButton id="toDiagramStageButton" icon="@Embed('/assets/pde/palette/pool.png')" toolTip="프로세스편집" right="4" top="5" click="openProcess()"/>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:Canvas>

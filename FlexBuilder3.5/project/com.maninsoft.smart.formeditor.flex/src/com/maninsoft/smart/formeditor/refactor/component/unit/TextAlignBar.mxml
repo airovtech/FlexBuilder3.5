@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="121" height="22" >
+	<mx:Metadata>
+        [Event("dataChange")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.component.model.TextStyleModel;
+			import com.maninsoft.smart.formeditor.refactor.component.TextIconLibrary;
+			import mx.events.ItemClickEvent;
+
+			
+			public static const DEFAULT_ALIGN:String=TextStyleModel.LEFT;			
+
+			
+			[Bindable] public var align:String;
+			
+			private function dispatchDataChangeEvent():void {
+                this.dispatchEvent( new Event("dataChange") );
+            }
+            
+			private function clickHandler(event:ItemClickEvent):void {
+				if(event.index == 0) align = TextStyleModel.LEFT;
+				if(event.index == 1) align = TextStyleModel.CENTER;
+				if(event.index == 2) align = TextStyleModel.RIGHT;           	
+			
+				dispatchDataChangeEvent();
+			}            
+		]]>
+	</mx:Script>
+	<mx:ToggleButtonBar id="alignBar" x="0" y="0" width="100%" height="100%"
+		selectedIndex="{align == TextStyleModel.RIGHT?(2):align == TextStyleModel.CENTER?(1):0}"
+		itemClick="clickHandler(event)">	
+		<mx:dataProvider>
+			<mx:Array>
+				<mx:Object icon="{TextIconLibrary.leftIcon}"  toolTip="{resourceManager.getString('FormEditorETC', 'leftAlignText')}"/>                   
+				<mx:Object icon="{TextIconLibrary.centerIcon}" toolTip="{resourceManager.getString('FormEditorETC', 'centerAlignText')}"/>
+				<mx:Object icon="{TextIconLibrary.rightIcon}" toolTip="{resourceManager.getString('FormEditorETC', 'rightAlignText')}" />
+        	</mx:Array>
+		</mx:dataProvider>
+	</mx:ToggleButtonBar>	
+</mx:Canvas>

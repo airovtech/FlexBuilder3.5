@@ -1,0 +1,141 @@
+		@font-face{
+			fontFamily: "윤고딕350";
+			src:url("assets/font/윤고딕350.ttf");
+		}
+
+		@font-face{
+			fontFamily: "윤고딕340";
+			src:url("assets/font/윤고딕340.ttf");
+		}
+		
+		@font-face{
+			fontFamily: "flexDefaultFont";
+			src:url("assets/font/윤고딕350.ttf");
+		}
+
+		@font-face{
+			fontFamily: "flexDefaultFontThin";
+			src:url("assets/font/윤고딕340.ttf");
+		}
+
+		.uiDefaultFont{
+			fontFamily: "Tahoma";
+		}
+		
+		.normalLabel {
+			fontFamily: "Tahoma";
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+
+		Label{
+			foneStyleName: "normalLabel";
+		}
+
+        .alertTitle{
+        	backgroundColor: #ffffff;
+            backgroundAlpha: 1;
+			color: #000000;
+            fontFamily: "Tahoma";
+            fontSize: 12; 
+            fontWeight:bold;
+        }
+
+        Alert{
+            fontFamily: "Tahoma";
+            fontSize: 12; 
+            backgroundColor:#ffffff;
+            backgroundAlpha: 1;
+            color: #000000;
+            borderColor: #999999;
+            borderThickness: 1;
+            borderThicknessTop: 1;
+            borderThicknessBottom: 1;
+            borderThicknessLeft: 1;
+            borderThicknessRight: 1;
+            cornerRadius: 0;
+            paddingTop: 5;
+            paddingBottom: 5;
+            paddingLeft: 10;
+            paddingRight: 10;
+            borderAlpha: 1;
+            headerHeight: 10;            
+        }
+
+		ToolTip{
+			fontFamily: "Tahoma";
+			fontSize: 11;
+		}
+		
+		.processPlus
+		{
+			disabledSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processPlusDisabled");
+			downSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processPlusDown");
+			overSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processPlusOver");
+			upSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processPlusUp");	
+		}
+		
+		
+		.processMinus
+		{
+			disabledSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processMinusDisabled");
+			downSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processMinusDown");
+			overSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processMinusOver");
+			upSkin: Embed(source="assets/swf/activityStyle.swf", symbol="processMinusUp");	
+		}
+
+/*		
+		.PSlider
+		{
+			thumbDisabledSkin: Embed(source="assets/swf/activityStyle.swf", symbol="PSliderThumb_disabledSkin");
+			thumbDownSkin: Embed(source="assets/swf/activityStyle.swf", symbol="PSliderThumb_downSkin");
+			thumbOverSkin: Embed(source="assets/swf/activityStyle.swf", symbol="PSliderThumb_overSkin");
+			thumbUpSkin: Embed(source="assets/swf/activityStyle.swf", symbol="PSliderThumb_upSkin");
+			trackHighlightSkin: Embed(source="assets/swf/activityStyle.swf", symbol="PSliderHighlight_Skin");
+			trackSkin: Embed(source="assets/swf/activityStyle.swf", symbol="PSliderTrack_Skin");
+		}
+*/		
+		.PSlider
+		{
+			thumbDisabledSkin: Embed(source="assets/button/im_zoombar.png");
+			thumbDownSkin: Embed(source="assets/button/im_zoombar.png");
+			thumbOverSkin: Embed(source="assets/button/im_zoombar.png");
+			thumbUpSkin: Embed(source="assets/button/im_zoombar.png");
+			trackHighlightSkin: Embed(source="assets/button/im_zoom.png");
+			trackSkin: Embed(source="assets/button/im_zoom.png");
+		}
+		
+		.quickPanel
+		{
+			borderSkin: Embed(source="assets/swf/activityStyle.swf", symbol="quick_panel");
+			headerHeight: 0;
+			borderThicknessTop: 2;
+			borderThicknessBottom: 2;
+			borderThicknessLeft: 2;
+			borderThicknessRight: 2;
+		}
+		
+		.overview
+		{
+			disabledSkin: Embed(source="assets/button/btn_size100.png");
+			downSkin: Embed(source="assets/button/btn_size100.png");
+			overSkin: Embed(source="assets/button/btn_size100.png");
+			upSkin: Embed(source="assets/button/btn_size100.png");
+		}
+
+		.fullBtn
+		{
+			disabledSkin: Embed(source="assets/button/btn_fullScreen.png");
+			downSkin: Embed(source="assets/button/btn_fullScreen.png");
+			overSkin: Embed(source="assets/button/btn_fullScreen.png");
+			upSkin: Embed(source="assets/button/btn_fullScreen.png");
+		}		
+		
+		.normalBtn
+		{
+			disabledSkin: Embed(source="assets/button/btn_normalScreen.png");
+			downSkin: Embed(source="assets/button/btn_normalScreen.png");
+			overSkin: Embed(source="assets/button/btn_normalScreen.png");
+			upSkin: Embed(source="assets/button/btn_normalScreen.png");
+		}

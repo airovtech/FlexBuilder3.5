@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import portalAs.Properties;
+			import mx.rpc.http.mxml.HTTPService;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import portalAs.Properties			
+			private var dataRequest:HTTPService;
+			
+			[Bindable]
+			public var deptId:String;
+			
+			public function retrieveEmployeeList(_deptId:String):void {
+				deptId = _deptId;
+				var params:Object = new Object();
+				params.method = "findUserByDept";
+				params.userId = Properties.userId;
+				params.deptId = deptId;
+		
+		    	dataRequest = new HTTPService();
+		    	dataRequest.resultFormat = "e4x";
+		    	dataRequest.url = Properties.basePath + "smartserver/services/common/organizationService.jsp";
+		    	dataRequest.addEventListener(ResultEvent.RESULT, resultHandlerForEmployeeList);
+		    	dataRequest.addEventListener(FaultEvent.FAULT, faultHandler);
+		    	dataRequest.useProxy = false;
+				dataRequest.send(params);
+			}
+			
+    		private function resultHandlerForEmployeeList(event:ResultEvent):void {
+    			employeeList.dataProvider = event.result.User;
+    		}
+    				    
+    		private function faultHandler(event:FaultEvent):void {
+    			Alert.show("Exception occured during read data.\n"+event.fault.message);
+    		}
+		]]>
+	</mx:Script>
+    <mx:Metadata>
+        [Event(name="custormItemDoubleClick", type="portalAs.CustormEvent")]
+    </mx:Metadata>	
+	<mx:DataGrid id="employeeList" x="0" y="0" width="100%" height="100%"
+		dragEnabled="true" dragMoveEnabled="true">
+		<mx:columns>
+			<mx:DataGridColumn headerText="ID" dataField="id" />
+			<mx:DataGridColumn headerText="이름" dataField="name" />
+			<mx:DataGridColumn headerText="부서" dataField="deptId" />
+			<mx:DataGridColumn headerText="직위" dataField="position" />
+			<mx:DataGridColumn headerText="E-MAIL" dataField="email" />
+		</mx:columns>
+	</mx:DataGrid>
+</mx:Canvas>

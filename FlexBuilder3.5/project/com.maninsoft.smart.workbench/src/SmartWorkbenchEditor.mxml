@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * 
+ *  Package: 		com.maninsoft.smart.workbench
+ *  Class: 			SmartWorkbenchEditor
+ * 					extends Application
+ * 					implements IWorkbenchEditor
+ *  Author:			Maninsoft, Inc.
+ *  Description:	SmartWorks WorkbenchEditor를 시작하는 애플리케이션 클래스
+ * 				
+ *  History:		Created by Maninsoft, Inc.
+ * 					2010.2.26 Modified by Y.S. Jung for SWV20002: SAAS버전을 위해 모든 서비스호출에 compId 추가
+ 
+ 
+ * 
+ *  Copyright (C) 2007-2010 Maninsoft, Inc. All Rights Reserved.
+ *   
+-->
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:ns1="com.maninsoft.smart.workbench.*" backgroundColor="#ffffff"
+	implements="com.maninsoft.smart.workbench.common.IWorkbenchEditor" initialize="init()" minHeight="600" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+	creationComplete="workBenchLoad()" xmlns:local="*">
+	<mx:Style source="/assets/css/workbenchEditor.css"/>
+	<mx:Script>
+	 	<![CDATA[
+	 		import com.maninsoft.smart.modeler.xpdl.model.TaskApplication;
+	 		import com.maninsoft.smart.workbench.common.util.MsgUtil;
+	 		import mx.events.ResizeEvent;
+	 		import mx.events.ChildExistenceChangedEvent;
+	 		import com.maninsoft.smart.ganttchart.model.GanttChartGrid;
+	 		import com.maninsoft.smart.workbench.common.event.DateCallbackEvent;
+	 		import com.maninsoft.smart.ganttchart.server.CalendarInfo;
+	 		import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+	 		import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+	 		import mx.controls.Alert;
+	 		import mx.collections.ArrayCollection;
+	 		import com.maninsoft.smart.workbench.event.MISPackageEvent;
+	 		import com.maninsoft.smart.workbench.SmartWorkbench;
+	 		import com.maninsoft.smart.modeler.xpdl.controller.tool.ShowMappingTool;
+	 		import mx.messaging.config.ServerConfig;
+	 		import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+	 		import com.maninsoft.smart.workbench.common.util.LocaleUtil;
+	 		import com.maninsoft.smart.workbench.common.event.LoadCallbackEvent;
+			import com.maninsoft.smart.modeler.editor.events.SelectionEvent;
+	 		
+//	 		[Bindable]
+	 		private var packId:String;
+	 		
+//	 		[Bindable]
+	 		private var packVer:int;
+	 		
+	 		[Bindable]
+			public var categoryId:String;
+			
+			[Bindable]
+			public var categoryName:String;
+			
+			[Bindable]
+			private var packName:String;
+			
+			[Bindable]
+			public var currentStatus:String;
+			
+			public var workbench:SmartWorkbench;
+            private function init():void {
+            	
+            	
+             	/**
+             	 * 	디버그를 위해, 아래와 같이 jsp에서 호출할때 전달하는 파라미터들을 설정하여 실행한다.
+             	 * 	swf파일로 jsp에서 사용하도록 배포를 하기 위해 swf파일로 빌드할 때는 아래의 내용을 주석 처리 한다.
+             	 */				
+
+
+				// 일반기안 프로세스업무
+            	Application.application.parameters.userId = "ysjung@maninsoft.co.kr";
+            	Application.application.parameters.compId = "Hando";
+            	Application.application.parameters.defaultLanguage = "KOR";
+            	Application.application.parameters.serviceUrl = "http://localhost:8080/";
+            	Application.application.parameters.packId = "pkg_16d8dffc373942cfa8d430be50636c48";
+            	Application.application.parameters.packVer = "1";
+/*            	
+				// 게시판 정보관리업무
+            	Application.application.parameters.userId = "kmyu@maninsoft.co.kr";
+            	Application.application.parameters.compId = "Maninsoft";
+            	Application.application.parameters.defaultLanguage = "KOR";
+            	Application.application.parameters.serviceUrl = "http://192.168.0.99:8080/";
+            	Application.application.parameters.packId = "pkg_af2c5abbdc694feab78b2706c31f3bde";//pkg_d3ae55576f9548f6b350d57dc6d0e450 매출매입장
+            	Application.application.parameters.packVer = "1";
+
+				// 간트 프로세스업무
+            	Application.application.parameters.userId = "ysjung@maninsoft.co.kr";
+            	Application.application.parameters.compId = "Semiteq";
+            	Application.application.parameters.defaultLanguage = "KOR";
+            	Application.application.parameters.serviceUrl = "http://dev.smartworks.net/";
+            	Application.application.parameters.packId = "pkg_3e60fecb331849529f517aaf8bfbcdc6";
+            	Application.application.parameters.packVer = "1";
+            	Application.application.parameters.dueDate = "2010-10-01 00:00:00";
+
+				// 모든항목 정보관리업무
+            	Application.application.parameters.userId = "ysjung@maninsoft.co.kr";
+            	Application.application.parameters.compId = "Hando";
+            	Application.application.parameters.defaultLanguage = "KOR";
+            	Application.application.parameters.serviceUrl = "http://localhost:8080/";
+            	Application.application.parameters.packId = "pkg_940a4f9f394e4ae7971733ac8ecb3593";
+            	Application.application.parameters.packVer = "1";
+*/
+            	
+				/**
+				 *  SWV20002: SAAS버전을 위해 모든 서비스호출에 compId 추가
+				 * 	2010.3.2 Added by Y.S. Jung
+				 */
+				WorkbenchConfig.userId = Application.application.parameters.userId;
+				WorkbenchConfig.compId = Application.application.parameters.compId;
+
+				for each(var locale:Object in LocaleUtil.locales){
+					if(locale.lang == Application.application.parameters.defaultLanguage){
+						LocaleUtil.locale = locale.loc;
+						resourceManager.localeChain = [LocaleUtil.locale];
+						break;
+					}
+				}
+				WorkbenchConfig.userName = Application.application.parameters.userName;
+				WorkbenchConfig.toDay = Application.application.parameters.toDay;
+				WorkbenchConfig.basePath = Application.application.parameters.serviceUrl + "smartworksV3";
+				WorkbenchConfig.serviceUrl = Application.application.parameters.serviceUrl + "smartworksV3/services/builder/builderService.jsp";
+        		WorkbenchConfig.dueDate = Application.application.parameters.dueDate;
+
+        		FormEditorConfig.userId = Application.application.parameters.userId;
+        		FormEditorConfig.compId = Application.application.parameters.compId;
+				FormEditorConfig.baseUrl = Application.application.parameters.serviceUrl;	
+        		packId = Application.application.parameters.packId as String;
+        		packVer = Application.application.parameters.packVer;
+        		packName = Application.application.parameters.packName as String;
+        		categoryId = Application.application.parameters.categoryId as String;
+        		categoryName = Application.application.parameters.categoryName as String;
+
+				if(WorkbenchConfig.dueDate)
+					GanttChartGrid.DEPLOY_MODE = true;
+				else
+					GanttChartGrid.DEPLOY_MODE = false;
+				        		
+				ExternalInterface.addCallback("goProcessEditor", goProcessEditor);
+				ExternalInterface.addCallback("goFormEditor", goFormEditor);
+				ExternalInterface.addCallback("goGanttChartEditor", goGanttChartEditor);
+				
+				ExternalInterface.addCallback("addForm", addForm);
+				ExternalInterface.addCallback("addFormAndModify", addFormAndModify);
+				ExternalInterface.addCallback("renameForm", renameForm);
+				ExternalInterface.addCallback("removeForm", removeForm);
+				ExternalInterface.addCallback("cloneForm", cloneForm);
+				
+				ExternalInterface.addCallback("addProcess", addProcess);
+				ExternalInterface.addCallback("renameProcess", renameProcess);
+				ExternalInterface.addCallback("removeProcess", removeProcess);
+				
+				ExternalInterface.addCallback("deployGanttPackage", deployGanttPackage);
+				ExternalInterface.addCallback("moveGanttPage", moveGanttPage);
+				ExternalInterface.addCallback("changeGanttViewScope", changeGanttViewScope);
+				
+				ExternalInterface.addCallback("checkIn", checkIn);
+				ExternalInterface.addCallback("checkOut", checkOut);
+				
+				ExternalInterface.addCallback("reload", reload);
+				ExternalInterface.addCallback("processEditorReload", processEditorReload);
+
+            }
+            
+            public function goProcessEditor():void{
+				workbench.openProcess();
+			}
+			
+			public function goFormEditor(formId:String):void{
+				workbench.openForm(formId);
+			}
+			
+			public function goGanttChartEditor():void{
+				workbench.openGanttChart();
+			}
+			
+			public function addForm():void{
+				workbench.addForm();
+			}
+			
+			public function addFormAndModify():void{
+				workbench.addFormAndModify();
+			}
+			
+			public function renameForm(formId:String, value:String):void{
+				workbench.renameForm(formId, value);
+			}
+			
+			public function removeForm(formId:String):void{
+				workbench.removeForm(formId);
+			}
+			
+			public function cloneForm(formId:String, swForm:SWForm=null):void{
+				workbench.cloneForm(formId, swForm);
+			}
+			
+			public function addProcess():void{
+				workbench.addProcess();
+			}
+			
+			public function renameProcess(value:String):void{
+				workbench.renameProcess(value);
+			}
+			
+			public function removeProcess():void{
+				workbench.removeProcess();
+			}
+			
+			public function deployGanttPackage():void{
+				workbench.deployGanttPackage();
+			}
+			
+			public function moveGanttPage(direction:String):void{
+				workbench.moveGanttPage(direction);
+			}
+			
+			public function changeGanttViewScope(viewScope:String):void{
+				workbench.changeGanttViewScope(viewScope);
+			}
+			
+			public function checkIn():void{
+				workbench.checkIn();
+			}
+			
+			public function checkOut():void{
+				workbench.checkOut();
+			}
+			
+			public function processCallbackHandler(event:MISPackageEvent):void{
+				ExternalInterface.call("processCallback");
+			}
+			
+			public function formCallbackHandler(event:MISPackageEvent):void{
+				if (event.mode=="add") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				} else if (event.mode=="addAndModify") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				} else if (event.mode=="remove") {
+					ExternalInterface.call("formCallback", "", "", event.mode);
+				} else if (event.mode=="rename") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				} else if (event.mode=="clone") {
+					ExternalInterface.call("formCallback", event.swForm.id, event.swForm.name, event.mode);
+				}
+			}
+
+			public function ganttProcessCallbackHandler(event:MISPackageEvent):void{
+				if(event.mode==MISPackageEvent.DEPLOY_GANTT_PACKAGE){
+					ExternalInterface.call("ganttProcessCallback", event.packMetaModel.id, event.packMetaModel.name, event.mode, event.msg);
+				}				
+			}
+			
+			
+			public function loadCallbackHandler(event:LoadCallbackEvent):void{
+				/**
+				 * 	에디터의 세로사이즈를 가변으로 하기 위하여 에디터가 로드나 리로드 되고 나면 화면의 세로사이즈롤 호출한 웹에 전달하여,
+				 * 	웹에서 화면 세로사이즈에 맞게 조정하도록 한다.
+				 */
+				var stageVisible:Boolean = false;
+				
+				workbench.height = event.contentHeight;
+				WorkbenchConfig.contentHeight = event.contentHeight;
+				if(workbench.processEditor && workbench.diagramStage.visible){
+					if(event.stageName == LoadCallbackEvent.STAGENAME_PROCESS)
+						stageVisible = true;				
+					workbench.processEditor.refreshToolbox();
+				}
+				
+				if(workbench.formEditor && workbench.formStage.visible){
+					if(event.stageName == LoadCallbackEvent.STAGENAME_FORM)
+						stageVisible = true;				
+					workbench.formEditor.formEditorToolbar.refreshToolbox();
+				}
+				if(workbench.ganttChartEditor && workbench.ganttChartStage.visible){
+					if(event.stageName == LoadCallbackEvent.STAGENAME_GANTT)
+						stageVisible = true;				
+					workbench.ganttChartEditor.refreshToolbox();
+				}
+				if(stageVisible)
+					ExternalInterface.call(LoadCallbackEvent.LOAD_CALLBACK, "SmartWorkbenchEditor", WorkbenchConfig.contentHeight);
+			}
+			
+			public function dateCallbackHandler(event: DateCallbackEvent):void{
+				/**
+				 * 	간트차트에서, 차트의 시작시간과 끝시간이 변경되면 웹화면에 전달하여 표시하게 한다.
+	 			 *  파라미터는 startDate, endDate 이다. 
+				 */
+				ExternalInterface.call(DateCallbackEvent.DATE_CALLBACK, event.startDate, event.endDate);
+			}
+			
+			public function checkCallbackHandler(event:Event):void{
+				reload(packId, packVer, packName, categoryName);
+				ExternalInterface.call("checkCallback2");
+			}
+        	
+        	private function workBenchLoad():void {
+       		load(this.packId, Number(this.packVer));
+        	}
+        	
+			/**
+			 * 환경을 설정하는 메소드
+			 * @userId:String : 유저 아이디
+			 * @serviceUrl : 서버에서 모델러와 관련된 서비스를 하는 url
+			 * 
+			 *  SWV20002: SAAS버전을 위해 모든 서비스호출에 compId 추가
+			 * 	SAAS버전 지원을 위해, 모든 서비스 호출에  compId를 추가 합니다.
+			 * 	2010.3.2 Added by Y.S. Jung
+			 */
+			public function config(userId:String, compId:String, serviceUrl:String):void {
+				WorkbenchConfig.userId = userId;				
+				WorkbenchConfig.compId = compId;
+				WorkbenchConfig.basePath = serviceUrl + "smartworksV3";
+				WorkbenchConfig.serviceUrl = serviceUrl + "smartworksV3/services/builder/builderService.jsp";
+				
+				FormEditorConfig.userId = userId;
+				FormEditorConfig.compId = compId;
+				FormEditorConfig.baseUrl = serviceUrl;				
+			}			
+			
+        	/**
+        	 * 패키지를 로드하는 메소드
+        	 * @packId : 패키지 아이디
+         	 * @packVer : 패키지 버전
+        	 **/
+            public function load(packId:String, packVer:int):void {
+            	this.packId = packId;
+            	this.packVer = packVer;
+            	if(packId!=null && packId!="" && packId!="null"){
+	            	workbench = new SmartWorkbench();
+	            	workbench.x=0;
+	            	workbench.y=0;
+	            	workbench.percentWidth = 100;
+	            	workbench.percentHeight = 100;
+	            	workbench.addEventListener("formCallback", formCallbackHandler);
+	            	workbench.addEventListener("processCallback", processCallbackHandler);
+	            	workbench.addEventListener("ganttProcessCallback", ganttProcessCallbackHandler);
+	            	workbench.addEventListener(LoadCallbackEvent.LOAD_CALLBACK, loadCallbackHandler);
+	            	workbench.addEventListener(DateCallbackEvent.DATE_CALLBACK, dateCallbackHandler);
+	            	workbench.addEventListener("checkCallback", checkCallbackHandler);
+					workbench.load(packId, packVer, packName, categoryName);
+					this.addChild(workbench);
+					this.addEventListener(ResizeEvent.RESIZE, workbench.workbench_resize);
+            	}
+        	}
+
+        	public function reload(packId:String, packVer:int, packName:String, catName:String):void {
+    			this.packId = packId;
+    			this.packVer = packVer;
+    			this.packName = packName;
+    			this.categoryName = catName;
+        		this.removeAllChildren();
+				workbench = new SmartWorkbench();
+            	workbench.x=0;
+            	workbench.y=0;
+            	workbench.percentWidth = 100;
+            	workbench.percentHeight = 100;
+            	workbench.addEventListener("formCallback", formCallbackHandler);
+            	workbench.addEventListener("processCallback", processCallbackHandler);
+            	workbench.addEventListener("ganttProcessCallback", ganttProcessCallbackHandler);
+            	workbench.addEventListener(LoadCallbackEvent.LOAD_CALLBACK, loadCallbackHandler);
+            	workbench.addEventListener(DateCallbackEvent.DATE_CALLBACK, dateCallbackHandler);
+            	workbench.addEventListener("checkCallback", checkCallbackHandler);
+				workbench.load(packId, packVer, packName, catName);
+				this.addChild(workbench);
+				this.addEventListener(ResizeEvent.RESIZE, workbench.workbench_resize);
+        	}
+        	
+        	public function processEditorReload(xml:String):void{
+        		workbench.processEditorReload(xml);
+        	}
+	 	]]>
+	</mx:Script>
+</mx:Application>

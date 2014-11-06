@@ -1,0 +1,19 @@
+#Sun Jun 20 16:12:48 KST 2010
+eclipse.preferences.version=1
+encoding//src/locale/en_US/FormEditorETC.properties=UTF-8
+encoding//src/locale/en_US/FormEditorMessages.properties=UTF-8
+encoding//src/locale/en_US/GanttChartETC.properties=UTF-8
+encoding//src/locale/en_US/GanttChartMessages.properties=UTF-8
+encoding//src/locale/en_US/ProcessEditorETC.properties=UTF-8
+encoding//src/locale/en_US/ProcessEditorMessages.properties=UTF-8
+encoding//src/locale/en_US/WorkbenchETC.properties=UTF-8
+encoding//src/locale/en_US/WorkbenchMessages.properties=UTF-8
+encoding//src/locale/ko_KR/FormEditorETC.properties=UTF-8
+encoding//src/locale/ko_KR/FormEditorMessages.properties=UTF-8
+encoding//src/locale/ko_KR/GanttChartETC.properties=UTF-8
+encoding//src/locale/ko_KR/GanttChartMessages.properties=UTF-8
+encoding//src/locale/ko_KR/ProcessEditorETC.properties=UTF-8
+encoding//src/locale/ko_KR/ProcessEditorMessages.properties=UTF-8
+encoding//src/locale/ko_KR/WorkbenchETC.properties=UTF-8
+encoding//src/locale/ko_KR/WorkbenchMessages.properties=UTF-8
+encoding/<project>=utf-8

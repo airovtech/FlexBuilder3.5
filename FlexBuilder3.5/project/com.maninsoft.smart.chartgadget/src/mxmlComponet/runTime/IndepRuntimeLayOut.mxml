@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:ns1="smartWork.custormObj.*" xmlns:ns2="mxmlComponet.runTime.*" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mxmlComponet.process.processtInstanceDetail;
+			import smartWork.custormObj.GadgetPanel;
+			import mx.binding.utils.BindingUtils;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			
+			[Bindable]
+			public var workStatus:String=""; //ing:처리할 업무목록, ed:완료한업무목록
+			[Bindable]
+			public var workId:String;
+			private var _prcInstId:String;
+			public var historyStatus:String=""; //"false" 안보임, "true"보임
+			
+			public function set prcInstId(prcInstId:String):void{
+				if(historyStatus=="true"){
+					workHistoryBox.visible = true;
+					workHistoryBox.percentHeight = 50;
+					workExeBox.percentHeight = 50;
+					this._prcInstId = prcInstId;
+					if(workHistory){
+						workHistory.workItemId = workId;
+						workHistory.getWorkHostory();
+						workHistory.monitorDiagramCreate(_prcInstId);
+					}
+				}else{
+					workHistoryBox.visible = false;
+					workExeBox.percentHeight = 100;
+					workHistoryBox.percentHeight = 0;
+				}
+				workPanelExe.activateMode();
+			}
+			
+			private function init():void {
+				workHistory.addEventListener(CustormEvent.CUSTORM_ITEM_DOUBLE_CLICK, moveHistoryFormPage);
+				historyStatus = Application.application.parameters.historyStatus;
+				workId = Application.application.parameters.workId;
+				workStatus = Application.application.parameters.workStatus;
+				prcInstId = Application.application.parameters.instId;
+			}		
+			
+			private function moveHistoryFormPage(event:CustormEvent):void {
+				var pop:processtInstanceDetail = processtInstanceDetail(PopUpManager.createPopUp(this, processtInstanceDetail, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.workId = workId = event.workId; 
+				//PopUpManager.centerPopUp(pop);
+				pop.x = 120;
+				pop.y = 10;
+			}
+			
+			private function workCreateComplete():void {
+			}
+		]]>
+	</mx:Script>
+	<mx:VDividedBox width="100%" height="100%" verticalGap="1">
+		<!-- 업무 실행 영역 -->
+		<mx:VBox id="workExeBox" width="100%" height="100%" verticalGap="0">
+			<mx:VBox width="100%" height="100%" paddingBottom="0" borderStyle="solid" borderColor="#9A9A9A">
+				<ns2:formEditor id="workPanelExe" width="100%" height="100%" workId="{workId}" sucessWorkitemExecute="workCreateComplete()" workStatus="{workStatus}">
+				</ns2:formEditor>
+			</mx:VBox>
+		</mx:VBox>	
+		
+		<!-- 업무 히스토리 영역 -->
+		<mx:HBox width="100%" height="50%" id="workHistoryBox" paddingTop="3" visible="true" horizontalGap="3">
+			<ns2:workHistory id="workHistory" width="100%" height="100%">
+			</ns2:workHistory>
+		</mx:HBox>
+	</mx:VDividedBox>		
+	<!-- 업무 히스토리 팝업 -->	
+	<ns2:formEditor id="workPanelHistory" width="100%" height="100%" workId="{workId}" visible="false"/>			
+</mx:Canvas>
+
+
+

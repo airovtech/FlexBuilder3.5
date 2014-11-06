@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="100%" height="100%" initialize="init()"
+	 verticalScrollPolicy="off" horizontalScrollPolicy="off" creationComplete="complete()" xmlns:smart="com.maninsoft.smart.*" xmlns:gadget="mxmlComponet.gadget.*" borderColor="#ffffff">
+	<mx:Style source="./css/chart.css"/>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.util.LocaleUtil;
+			import portalAs.Properties;
+ 			import mx.controls.Alert;
+			
+			private var fillColor:uint = 0;
+
+			private function init():void {
+
+/*
+				Application.application.parameters.compId 			= "Maninsoft";
+				Application.application.parameters.userId 			= "ysjung@maninsoft.co.kr";
+				Application.application.parameters.basePath			= "http://maninsoft.smartworks.net/";
+				Application.application.parameters.serviceUrl		= "smartserver/services/portal/gadgetService.jsp";
+				Application.application.parameters.defaultLanguage 	= "KOR";
+				Application.application.parameters.chartType 		= "LINE_CHART";
+				Application.application.parameters.viewType			= "";
+				Application.application.parameters.acumData			= "true";
+				Application.application.parameters.fillColor 		= "0x000fff"
+				Application.application.parameters.gadgetId 		= "";//"52fca4b2304867cd013048ae4d980026";
+				Application.application.parameters.xmlData			= xmlData;
+*/
+				Properties.compId = Application.application.parameters.compId; 
+				Properties.userId = Application.application.parameters.userId; 
+				Properties.basePath = Application.application.parameters.basePath;
+				Properties.serviceUrl = Application.application.parameters.serviceUrl;
+				for each(var locale:Object in LocaleUtil.locales){
+					if(locale.lang == Application.application.parameters.defaultLanguage){
+						LocaleUtil.locale = locale.loc;
+						resourceManager.localeChain = [LocaleUtil.locale];
+						break;
+					}
+				}
+				if(Application.application.parameters.fillColor == null || Application.application.parameters.fillColor == "")
+					this.fillColor = 0;
+				else
+					this.fillColor = Application.application.parameters.fillColor;
+
+			}
+			private function complete():void{
+				chartGadgetDisplay(	Application.application.parameters.gadgetId,
+									Application.application.parameters.xmlData,
+									Application.application.parameters.chartType,
+									Application.application.parameters.viewType,
+									Application.application.parameters.acumData,
+									fillColor);
+				ExternalInterface.addCallback("chartGadgetDisplay", chartGadgetDisplay);
+			}
+			
+			public function chartGadgetDisplay(gadgetId:String=null, xmlData:String=null, chartType:String=null, viewType:String=null, acumData:Boolean=false, fillColor:uint=0):void{
+
+				if(viewType==null || viewType=="" || viewType=="null")
+					viewType = "CHART";
+					
+				if(gadgetId!=null && gadgetId!="" && gadgetId!="null"){
+					chartGadget2.load(gadgetId, xmlData, chartType, viewType, acumData, fillColor);
+				}else if(xmlData!=null && xmlData!="" && xmlData!="null"){
+					chartGadget2.load(gadgetId, xmlData, chartType, viewType, acumData, fillColor);					
+				}else if(chartType!=null && chartType!="" && chartType!="null"){
+					chartGadget2.goToChart(chartType, viewType, acumData, fillColor);
+				}
+			}
+		]]>
+	</mx:Script>
+<!--
+	<mx:XML id="xmlData" xmlns="">
+<ChartData type="PIE_CHART" dimension="2">
+ <groupingDefineName><![CDATA[진행상태 별 전체 현황]]></groupingDefineName>
+ <valueInfoDefineName><![CDATA[진행상태]]></valueInfoDefineName>
+ <valueInfoDefineUnit><![CDATA[instStatus]]></valueInfoDefineUnit>
+ <grouping>  
+  <name><![CDATA[진행]]></name>   
+  <value><![CDATA[4]]></value>
+ </grouping>
+</ChartData>
+	</mx:XML>
+
+-->
+
+	<mx:XML id="xmlData" xmlns="">
+<ChartData type="COLUMN_CHART" dimension="2">
+	<groupingDefineName><![CDATA[요청구분]]></groupingDefineName>
+	<valueInfoDefineName><![CDATA[IT담당자]]></valueInfoDefineName>
+	<valueInfoDefineUnit><![CDATA[userField]]></valueInfoDefineUnit>
+	<grouping>
+		<name><![CDATA[계정등록(Mighty,스마트웍스)]]></name>
+		<value><![CDATA[8]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[공장자동화 개발/수정]]></name>
+		<value><![CDATA[18]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[기타]]></name>
+		<value><![CDATA[60]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[기타 프로그램 개발/수정]]></name>
+		<value><![CDATA[20]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[네트워크 유지보수]]></name>
+		<value><![CDATA[12]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[메일 계정 신청]]></name>
+		<value><![CDATA[5]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[스마트웍스 개발/수정]]></name>
+		<value><![CDATA[16]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[장애처리]]></name>
+		<value><![CDATA[10]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[전산기기 요청(PC,모니터,주변기기)]]></name>
+		<value><![CDATA[4]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[퇴사자전산처리]]></name>
+		<value><![CDATA[2]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[홈페이지 유지보수]]></name>
+		<value><![CDATA[2]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[MES 프로그램 개발/수정]]></name>
+		<value><![CDATA[53]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[PC A/S]]></name>
+		<value><![CDATA[15]]></value>
+	</grouping>
+	<grouping>
+		<name><![CDATA[PDA 프로그램 개발/수정]]></name>
+		<value><![CDATA[5]]></value>
+	</grouping>
+</ChartData>
+	</mx:XML>
+
+	<mx:Metadata>
+        [ResourceBundle("ChartGadgetMessages")]
+        [ResourceBundle("ChartGadgetETC")]
+    </mx:Metadata>
+	<gadget:ChartGadget2 id="chartGadget2" width="100%" height="100%" borderColor="#ffffff"/>
+</mx:Application>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:smart="com.maninsoft.smart.workbench.ganttchart.*"
+	creationComplete="doCreationComplete(event);" verticalScrollPolicy="off" horizontalScrollPolicy="off" backgroundColor="#ffffff">
+	<mx:Style source="/assets/css/workbenchEditor.css"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.core.ScrollPolicy;
+			import com.maninsoft.smart.workbench.ganttchart.GanttTaskListViewer;
+			import com.maninsoft.smart.workbench.common.event.MoveGanttStepEvent;
+			import mx.effects.Move;
+			import com.maninsoft.smart.ganttchart.util.CalendarUtil;
+			import com.maninsoft.smart.workbench.common.event.PagingCallbackEvent;
+			import com.maninsoft.smart.workbench.common.event.SelectActivityCallbackEvent;
+			import com.maninsoft.smart.ganttchart.model.process.GanttPackage;
+			import com.maninsoft.smart.ganttchart.model.GanttChartGrid;
+			import com.maninsoft.smart.ganttchart.server.CalendarInfo;
+			import com.maninsoft.smart.workbench.common.event.DateCallbackEvent;
+			import com.maninsoft.smart.workbench.process.DiagramViewer;
+			import com.maninsoft.smart.workbench.common.event.LoadCallbackEvent;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+	 		import com.maninsoft.smart.workbench.common.util.LocaleUtil;
+
+			public var diagramViewer:GanttTaskListViewer;
+
+			private function doCreationComplete(event: Event): void {
+/*
+           		Application.application.parameters.serviceUrl = "http://dev.smartworks.net/";
+           		Application.application.parameters.defaultLanguage = "KOR";
+           		Application.application.parameters.compId = "Maninsoft";
+           		Application.application.parameters.userId = "ysjung@maninsoft.co.kr";
+           		Application.application.parameters.fromDate = "2010-06-28 00:00:00";
+           		Application.application.parameters.viewScope = "MONTH";
+           		Application.application.parameters.conditions = "";
+           		Application.application.parameters.pageSize = "20";
+*/
+           		
+				for each(var locale:Object in LocaleUtil.locales){
+					if(locale.lang == Application.application.parameters.defaultLanguage){
+						LocaleUtil.locale = locale.loc;
+						resourceManager.localeChain = [LocaleUtil.locale];
+						break;
+					}
+				}
+				diagramViewer = new GanttTaskListViewer();
+				diagramViewer.id = "diagramViewer";
+				this.addChild(diagramViewer);
+				diagramViewer.verticalScrollPolicy = ScrollPolicy.OFF;
+				diagramViewer.horizontalScrollPolicy = ScrollPolicy.OFF;
+
+				diagramViewer.addEventListener(LoadCallbackEvent.LOAD_CALLBACK, loadCallbackHandler);
+				diagramViewer.addEventListener(DateCallbackEvent.DATE_CALLBACK, dateCallbackHandler);
+				diagramViewer.addEventListener(PagingCallbackEvent.PAGING_CALLBACK, pagingCallbackHandler);
+				diagramViewer.addEventListener(MoveGanttStepEvent.MOVE_GANTTSTEP, moveGanttStepHandle);
+				diagramViewer.addEventListener(SelectActivityCallbackEvent.SELECT_ACTIVITY_CALLBACK, selectActivityCallbackHandler);
+				diagramViewer.serviceUrl = Application.application.parameters.serviceUrl + "smartworksV3/services/builder/builderService.jsp";
+				diagramViewer.builderServiceUrl = diagramViewer.serviceUrl;
+				diagramViewer.compId = Application.application.parameters.compId;
+				diagramViewer.userId = Application.application.parameters.userId;
+				diagramViewer.fromDateString = Application.application.parameters.fromDate;
+				diagramViewer.fromDate = CalendarUtil.getTaskDate(Application.application.parameters.fromDate);
+
+				diagramViewer.viewScope = Application.application.parameters.viewScope;
+				diagramViewer.conditions = Application.application.parameters.conditions;
+				diagramViewer.pageSize= Application.application.parameters.pageSize;
+				WorkbenchConfig.dueDate = GanttPackage.GANTTCHART_BASEDATE_STRING;
+				WorkbenchConfig.readOnly = true;
+				diagramViewer.percentWidth = 100;
+				diagramViewer.percentHeight = 100;
+/*
+Alert.show( "GanttTaskListView called !!!" + " serviceUrl=" + Application.application.parameters.serviceUrl +
+			", defaultLanguage=" +	Application.application.parameters.defaultLanguage +
+			", compId=" + 	Application.application.parameters.compId + 
+			", userId=" + Application.application.parameters.userId +
+			", fromDate=" + Application.application.parameters.fromDate +
+			", viewScope=" + Application.application.parameters.viewScope + 
+			", conditions=" + Application.application.parameters.conditions);
+*/
+
+				CalendarInfo.locale = LocaleUtil.locale;			
+				diagramViewer.load();
+
+				ExternalInterface.addCallback("moveGanttPage", moveGanttPage);
+				ExternalInterface.addCallback("changeGanttViewScope", changeGanttViewScope);
+				ExternalInterface.addCallback("changeGanttViewConditions", changeGanttViewConditions);
+			}
+
+			public function reload():void{
+				diagramViewer.removeAllChildren();
+				diagramViewer = new GanttTaskListViewer();
+				diagramViewer.id = "diagramViewer";
+				this.addChild(diagramViewer);
+				diagramViewer.verticalScrollPolicy = ScrollPolicy.OFF;
+				diagramViewer.horizontalScrollPolicy = ScrollPolicy.OFF;
+
+				diagramViewer.addEventListener(LoadCallbackEvent.LOAD_CALLBACK, loadCallbackHandler);
+				diagramViewer.addEventListener(DateCallbackEvent.DATE_CALLBACK, dateCallbackHandler);
+				diagramViewer.addEventListener(PagingCallbackEvent.PAGING_CALLBACK, pagingCallbackHandler);
+				diagramViewer.addEventListener(MoveGanttStepEvent.MOVE_GANTTSTEP, moveGanttStepHandle);
+				diagramViewer.serviceUrl = Application.application.parameters.serviceUrl + "smartworksV3/services/builder/builderService.jsp";
+				diagramViewer.compId = Application.application.parameters.compId;
+				diagramViewer.userId = Application.application.parameters.userId;
+				diagramViewer.fromDateString = Application.application.parameters.fromDate;
+				diagramViewer.fromDate = CalendarUtil.getTaskDate(Application.application.parameters.fromDate);
+
+				diagramViewer.viewScope = Application.application.parameters.viewScope;
+				diagramViewer.conditions = Application.application.parameters.conditions;
+				diagramViewer.percentWidth = 100;
+				diagramViewer.percentHeight = 100;
+				diagramViewer.load();				
+			}
+			
+			private function moveGanttStepHandle(event: MoveGanttStepEvent):void{
+				diagramViewer.moveGanttStep(event.direction);
+			}
+
+			public function moveGanttPage(direction:String):void{
+				diagramViewer.moveGanttPage(direction);
+			}
+			
+			public function changeGanttViewScope(viewScope:String):void{
+				Application.application.parameters.viewScope = viewScope;
+//Alert.show( "GanttTaskListView changeGanttViewScope function called !!!" + " viewScope=" + Application.application.parameters.viewScope ); 
+				reload();
+			}
+			
+			public function changeGanttViewConditions(conditions:String):void{
+				Application.application.parameters.conditions = conditions;
+//Alert.show( "GanttTaskListView changeGanttViewCondition function called !!!" + " conditions=" + Application.application.parameters.conditions);
+				reload();
+			}
+			
+			public function loadCallbackHandler(event:LoadCallbackEvent):void{
+				/**
+			 	 * 	에디터의 세로사이즈를 가변으로 하기 위하여 에디터가 로드나 리로드 되고 나면 화면의 세로사이즈롤 호출한 웹에 전달하여,
+			 	 * 	웹에서 화면 세로사이즈에 맞게 조정하도록 한다.
+			 	 */
+				this.height = event.contentHeight;
+				WorkbenchConfig.contentHeight = event.contentHeight;
+				ExternalInterface.call(LoadCallbackEvent.LOAD_CALLBACK, "GanttTaskListViewer", WorkbenchConfig.contentHeight);
+			}	
+
+			public function dateCallbackHandler(event: DateCallbackEvent):void{
+				/**
+				 * 	간트차트에서, 차트의 시작시간과 끝시간이 변경되면 웹화면에 전달하여 표시하게 한다.
+				 *  파라미터는 startDate, endDate 이다. 
+				 */
+				ExternalInterface.call(DateCallbackEvent.DATE_CALLBACK, event.startDate, event.endDate);
+//Alert.show( "GanttTaskListView dateCallback function called !!!" + " startDate=" + event.startDate + ", endDate=" + event.endDate);
+			}
+			
+			public function pagingCallbackHandler(event: PagingCallbackEvent):void{
+				/**
+				 * 	간트차트에서, 차트의 시작시간과 끝시간이 변경되면 웹화면에 전달하여 표시하게 한다.
+				 *  파라미터는 startDate, endDate 이다. 
+				 */
+				ExternalInterface.call(PagingCallbackEvent.PAGING_CALLBACK, event.totalPages, event.currentPage);
+//Alert.show( "GanttTaskListView pagingCallback function called !!!" + " totalPages=" + event.totalPages + ", currentPage=" + event.currentPage);
+			}
+			
+			public function selectActivityCallbackHandler(event: SelectActivityCallbackEvent):void{
+				/**
+				 * 	간트차트에서, 태스크를 선택하면 웹화면에 전달하여 해당 태스크의 상세화면을  표시하게 한다.
+				 *  파라미터는 taskId 이다. 
+				 */
+				ExternalInterface.call(SelectActivityCallbackEvent.SELECT_ACTIVITY_CALLBACK, event.taskId);
+//Alert.show( "GanttTaskListView selectActivityCallback function called !!!" + " taskId=" + event.taskId);
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [ResourceBundle("CommonETC")]
+        [ResourceBundle("WorkbenchMessages")]
+        [ResourceBundle("WorkbenchETC")]
+        [ResourceBundle("ProcessEditorMessages")]
+        [ResourceBundle("ProcessEditorETC")]
+        [ResourceBundle("FormEditorMessages")]
+        [ResourceBundle("FormEditorETC")]
+        [ResourceBundle("GanttChartMessages")]
+        [ResourceBundle("GanttChartETC")]
+    </mx:Metadata>
+</mx:Application>

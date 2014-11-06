@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="smartWork.custormObj.*" xmlns:ns2="mxmlComponet.integrateSearch.*"
+      xmlns:ns3="mxmlComponet.common.*" creationComplete="init()">
+    <mx:Style>
+    	.enableBtn {
+			fontFamily: "맑은 고딕";
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fillColors: #ffffff, #ffffff, #ffffff, #ffffff;
+			color: #cc6600;
+		}
+		.disableBtn {
+			fontFamily: "맑은 고딕";
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fillColors: #666666, #666666, #666666, #666666;
+		}
+    </mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.controls.Button;
+			import mx.controls.Label;
+			import mx.core.IUIComponent;
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.controls.Alert;
+			import mx.containers.VBox;
+			import mx.managers.PopUpManager;
+			import portalAs.Properties;
+			import mx.collections.ArrayCollection;
+			import mx.events.ItemClickEvent;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			private var xmlResultRoot:XML;
+			private var categoryTabIdx:int = 0;
+			private var lastTabIndex:int;
+			private var currCategoryId:String;
+			private var currCategoryName:String
+			private var format:String = "movePackageId";
+			private var moveIndex:int;
+			
+			public function init():void {
+				getRootCategoryService.url = Properties.basePath + "smartserver/services/common/categoryService.jsp?method=retrieveRootCategory";
+				getRootCategoryService.send();
+				getCategoryService.url = Properties.basePath + "smartserver/services/common/categoryService.jsp?method=rootFindChildren";
+				getCategoryService.send();
+			}
+			
+			private function getRootCategoryResult(event:ResultEvent):void {
+				xmlResultRoot = XML(event.result);
+			}
+			
+			private function getCategoryTabResult(event:ResultEvent):void {
+				tabButtonBox.removeAllChildren();
+				categoryTabNavi.removeAllChildren();
+				lastTabIndex = event.result.Category.length();
+				for(var i:int=0; i < (event.result.Category.length()); i++){
+					var childBox:VBox = new VBox();
+					trace("label :"+event.result.Category[i].name);
+					trace("id :"+event.result.Category[i].id);
+					childBox.id = event.result.Category[i].id;
+					childBox.label = "" + event.result.Category[i].name + " ";
+					childBox.percentHeight = 100;
+					childBox.percentWidth = 100;
+					childBox.setStyle("paddingLeft", 10);
+					childBox.setStyle("paddingRight", 10);
+					childBox.setStyle("paddingTop", 10);
+					childBox.setStyle("paddingBottom", 10);
+					childBox.setStyle("backgroundColor", 0xfffff0 + i);
+					categoryTabNavi.addChild(childBox);
+					
+					var btn:Button = new Button();
+					btn.id = i+"";
+					btn.label = "" + event.result.Category[i].name + " ";
+					btn.addEventListener(DragEvent.DRAG_DROP, doDragDrop);
+					btn.addEventListener(DragEvent.DRAG_OVER, doDragOver);
+					btn.addEventListener(DragEvent.DRAG_ENTER, doDragEnter);
+					btn.addEventListener(MouseEvent.CLICK, btnClickHandler);
+					btn.styleName = "disableBtn";
+					tabButtonBox.addChild(btn);
+				}
+				
+				var addbox:VBox = new VBox();
+				addbox.id = "createNewCate";
+				addbox.label = "+";
+				addbox.percentHeight = 100;
+				addbox.percentWidth = 100;
+				addbox.setStyle("paddingLeft", 10);
+				addbox.setStyle("paddingRight", 10);
+				addbox.setStyle("paddingTop", 0);
+				addbox.setStyle("paddingBottom", 10);
+				addbox.setStyle("backgroundColor", 0xffffff);
+				
+				var addBtn:Button = new Button();
+				addBtn.id = tabButtonBox.numChildren+"";
+				addBtn.label = "+";
+				btn.styleName = "disableBtn";
+				addBtn.addEventListener(MouseEvent.CLICK, btnClickHandler);
+				tabButtonBox.addChild(addBtn);
+				
+				categoryTabNavi.addChild(addbox);
+				// 캔버스 안에 패키지 박스 삽입하기 - start
+				getPackage(VBox(categoryTabNavi.getChildAt(categoryTabIdx)).id);
+				currCategoryId = VBox(categoryTabNavi.getChildAt(categoryTabIdx)).id;
+				currCategoryName = VBox(categoryTabNavi.getChildAt(categoryTabIdx)).name;
+				// 캔버스 안에 패키지 박스 삽입하기 - end
+				
+				btnStyleChange();
+			}
+			
+			private function btnClickHandler(event:MouseEvent):void{
+				categoryTabNavi.selectedIndex = event.target.id;
+				btnStyleChange();
+			}
+			
+			private function btnStyleChange():void{
+				for(var i:int=0; i < tabButtonBox.numChildren; i++){
+					var bt:Button = tabButtonBox.getChildAt(i) as Button;
+					if(i==categoryTabNavi.selectedIndex){
+						bt.styleName = "enableBtn";
+					}else{
+						bt.styleName = "disableBtn";
+					}
+				}
+			}
+			
+			private function doDragEnter(event:DragEvent):void{
+				if(event.dragSource.hasFormat(format)){
+					DragManager.acceptDragDrop(IUIComponent(event.target));
+				}
+	        }
+	        
+	        private function doDragOver(event:DragEvent):void{
+	        }
+	        
+	        private function doDragDrop(event:DragEvent):void{
+	        	//trace("===============>>>> " + event.dragSource.dataForFormat(format));
+	        	moveIndex = Number(event.target.id);
+	        	var params:Object = new Object();
+				params.method = "movePackageCategory";
+				params.userId = Properties.userId; 
+				params.packageId = event.dragSource.dataForFormat(format) as String;
+				params.toCategoryId = VBox(categoryTabNavi.getChildAt(Number(event.target.id))).id
+				
+		    	var req:HTTPService = new HTTPService();
+		    	req.resultFormat = "e4x";
+		    	req.url = Properties.basePath + "smartserver/services/builder/builderService.jsp";
+		    	req.addEventListener(FaultEvent.FAULT, moveFaultHandler);
+			    req.addEventListener(ResultEvent.RESULT, moveResultHandler);
+		    	req.useProxy = false;
+				req.send(params);		
+	        }
+	        
+	        private function moveResultHandler(event:ResultEvent):void {
+				categoryTabNavi.selectedIndex = moveIndex;
+				btnStyleChange();
+			}
+	        
+	        private function moveFaultHandler(event:FaultEvent):void {
+    			Alert.show("이동이 실패 하였습니다.");
+    		}	
+			
+			public function getPackage(id:String):void {
+				getPackageService.url = Properties.basePath + "smartserver/services/builder/builderService.jsp?method=getPackageListByCategory";
+				getPackageService.request.categoryId = id;
+				getPackageService.send();
+			}
+  
+			private function getPackageResult(event:ResultEvent):void {
+				VBox(categoryTabNavi.getChildAt(categoryTabIdx)).removeAllChildren();
+			  	VBox(categoryTabNavi.getChildAt(categoryTabIdx)).addChild(searchBox);
+				searchBox.visible = true;
+				
+				for(var i:int=0; i<event.result.Package.length(); i++){
+					var se:secrchStructure = new secrchStructure();
+					se.packageId = event.result.Package[i].packageId;
+					se.version = event.result.Package[i].version;
+					se.status = event.result.Package[i].status;
+					se.latestDeployedYn = event.result.Package[i].latestDeployedYn;
+					se.categoryId = event.result.Package[i].categoryId;
+					se.categoryName = event.result.Package[i].categoryName;
+					se.packageName = event.result.Package[i].name;
+					se.creater = event.result.Package[i].creator;
+					se.createrName = event.result.Package[i].creatorName;
+					se.createdTime = event.result.Package[i].createdTime;
+					se.modifier = event.result.Package[i].modifier;
+					se.modifierName = event.result.Package[i].modifierName;
+					se.modifiedTime = event.result.Package[i].modifiedTime;
+					se.description = event.result.Package[i].description;
+					se.addEventListener(CustormEvent.REFRESH, packageRefresh)
+					
+					if(event.result.Package[i].status == "DEPLOYED"){
+						se.undeployImageSize = 0;
+						se.deployImageSize = 15;
+						se.titleColor = 0xff6600;
+					}else{
+						se.undeployImageSize = 15;
+						se.deployImageSize = 0;
+						se.titleColor = 0x999999;						
+					}
+					VBox(categoryTabNavi.getChildAt(categoryTabIdx)).addChild(se);					
+				}
+			}
+			
+			private function packageRefresh(event:CustormEvent):void{
+				getPackage(VBox(categoryTabNavi.getChildAt(categoryTabIdx)).id);
+			}
+			
+			private function creatCategoryPopCall():void{
+				/* var pop:CreateCategoryPop = CreateCategoryPop(PopUpManager.createPopUp(this, CreateCategoryPop, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.rootCategoryId.text = rootCategoryId.text;
+				PopUpManager.centerPopUp(pop); */
+			}
+			
+			private function creatPackagePopCall():void{
+				var pop:CreatePackagePop = CreatePackagePop(PopUpManager.createPopUp(this, CreatePackagePop, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				//Alert.show(currCategoryId + ":"+currCategoryName);
+				pop.categoryId.text = currCategoryId;
+				pop.x = 120;
+				pop.y = 20;
+			}
+			private function changeCategory():void {
+				if(categoryTabNavi.selectedIndex == lastTabIndex){
+					var pop:CreateCategoryPop = CreateCategoryPop(PopUpManager.createPopUp(this, CreateCategoryPop, true));
+					pop.showCloseButton = true;
+					pop.owner = this;
+					pop.rootCategoryId.text = rootCategoryId.text;
+					pop.x = 120;
+					pop.y = 20;
+				}else{
+					categoryTabIdx = categoryTabNavi.selectedIndex; 
+					VBox(categoryTabNavi.getChildAt(categoryTabIdx)).removeAllChildren();
+					// 캔버스 안에 패키지 박스 삽입하기 - start
+					getPackage(VBox(categoryTabNavi.getChildAt(categoryTabIdx)).id);
+					currCategoryId = String(VBox(categoryTabNavi.getChildAt(categoryTabIdx)).id);
+					currCategoryName = String(VBox(categoryTabNavi.getChildAt(categoryTabIdx)).label);
+					// 캔버스 안에 패키지 박스 삽입하기 - end
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="getRootCategoryService"  resultFormat="e4x" useProxy="false" result="getRootCategoryResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="getCategoryService" resultFormat="e4x" useProxy="false" result="getCategoryTabResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="getPackageService"  resultFormat="e4x" useProxy="false" result="getPackageResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<pageCount>0</pageCount>
+			<recordCount>0</recordCount>
+			<!-- listType = 0 : 전체 보기, 1: 배치된 것만 보기, 2 : 최신 버전만 보기 -->
+			<listType>0</listType>
+			<!--<categoryId>{companyGrid.selectedItem.id}</categoryId>
+			<packageName>{packageName.text}</packageName>-->
+		</mx:request>
+	</mx:HTTPService>
+	<mx:TextInput id="rootCategoryId" text="{xmlResultRoot.Category.id}" width="0%" visible="false"/>
+	<mx:HBox x="0" y="0" width="100%" height="20" verticalAlign="bottom" horizontalGap="0" id="tabButtonBox">
+	</mx:HBox>
+	<mx:TabNavigator x="0" y="20" id="categoryTabNavi" width="100%" height="100%" change="changeCategory()" 
+		styleName="categoryTabs" tabStyleName="categorymyTabs" selectedTabTextStyleName="categorymySelectedTabs" tabHeight="0">
+    </mx:TabNavigator>
+	<mx:HBox id="searchBox" visible="false" width="100%" height="23" horizontalCenter="0" horizontalGap="2" paddingLeft="0" horizontalAlign="left" verticalAlign="middle" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:HBox width="50%" height="23" horizontalAlign="left" verticalAlign="middle" horizontalGap="0" paddingLeft="0">
+			<mx:ComboBox height="20" width="100"></mx:ComboBox>
+		</mx:HBox>
+		<mx:HBox width="50%" height="23" horizontalAlign="right" verticalAlign="middle" horizontalGap="3" paddingRight="0">
+			<mx:TextInput id="parTitle" width="140" height="20"/>
+			<mx:Button label="검색" styleName="normalLabel" width="47" height="20"/>
+			<mx:Button label="패키지만들기" styleName="normalLabel" width="80" height="20" click="creatPackagePopCall()" paddingLeft="4" paddingRight="5" textAlign="center"/>
+		</mx:HBox>
+	</mx:HBox>	
+</mx:Canvas>
+
+

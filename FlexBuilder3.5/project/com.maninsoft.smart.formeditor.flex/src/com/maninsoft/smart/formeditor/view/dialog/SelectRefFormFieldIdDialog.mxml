@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractSimpleDialog xmlns="com.maninsoft.smart.common.dialog.*" xmlns:mx="http://www.adobe.com/2006/mxml"	height="100%" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormFormatInfo;
+			import mx.resources.ResourceManager;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.util.FormEditorService;
+			import mx.controls.Button;
+			import mx.collections.ArrayCollection;
+
+			import flash.display.DisplayObject;
+			import flash.events.Event;
+			import flash.events.FocusEvent;
+
+			import mx.controls.Tree;
+			import mx.core.Application;
+			import mx.core.Container;
+			import mx.core.UIComponent;
+			import mx.events.ListEvent;
+			import mx.events.TreeEvent;
+			import mx.managers.PopUpManager;
+
+			//----------------------------------------------------------------------
+			// Class Variables
+			//----------------------------------------------------------------------
+			
+			private static var _dialog: SelectRefFormFieldIdDialog;
+
+			//----------------------------------------------------------------------
+			// Variables
+			//----------------------------------------------------------------------
+
+			[Bindable]
+			private var _formFields: ArrayCollection = new ArrayCollection();
+
+			private var _acceptFunc: Function;
+			private var _formEntity:FormEntity;
+			private var _current: String;
+			private var _emptyField: Boolean;
+			private var _idField: Boolean;
+
+			//----------------------------------------------------------------------
+			// Class methods
+			//----------------------------------------------------------------------
+
+			public static function execute(formEntity: FormEntity, current:Object, acceptFunc: Function, position:Point=null, width:Number=0, height:Number=0, emptyField:Boolean=true, idField:Boolean=false): void {
+				if (!formEntity)
+					return;
+				_dialog = PopUpManager.createPopUp(Application.application as DisplayObject, SelectRefFormFieldIdDialog, false) as SelectRefFormFieldIdDialog;
+
+				_dialog._acceptFunc = acceptFunc;
+				_dialog._formEntity = formEntity;
+				_dialog._current = current as String;
+				_dialog._emptyField = emptyField;
+				_dialog._idField = idField;
+				_dialog.getFields();
+	
+				if(position){
+					_dialog.x = position.x;
+					_dialog.y = position.y;
+				}else{
+					PopUpManager.centerPopUp(_dialog);	
+				}
+	
+				if(width) _dialog.width = width;
+				if(height) _dialog.height = height;
+				_dialog.formFieldDG.setFocus();
+
+				_dialog.addEventListener(FocusEvent.MOUSE_FOCUS_CHANGE, _dialog.dialogFocusChange);
+	
+			}
+
+			//----------------------------------------------------------------------
+			// Internal methods
+			//----------------------------------------------------------------------
+			private function closeDialog(accept: Boolean = true): void {
+				if (accept && (_acceptFunc != null) && formFieldDG.selectedItem)
+					_acceptFunc(formFieldDG.selectedItem);
+		
+				PopUpManager.removePopUp(this);
+			}
+
+			//----------------------------------------------------------------------
+			// Event handlers
+			//----------------------------------------------------------------------
+
+			private function dialogFocusChange(event: FocusEvent): void {
+				if(	(event.relatedObject == _dialog) ||
+					((event.relatedObject is UIComponent) && (UIComponent(event.relatedObject).parentDocument == _dialog)) ||
+					(_dialog.formFieldDG && _dialog.formFieldDG.contains(event.relatedObject))){
+						return;
+				}
+		
+				closeDialog(false);
+			}
+
+			//------------------------
+			// Dialog
+			//------------------------
+
+			private function dlg_keyDown(event: KeyboardEvent): void {
+				if (event.keyCode == Keyboard.ESCAPE){
+					closeDialog(false);
+				}
+			}	
+
+			//------------------------
+			// organizationTree
+			//------------------------
+
+			private function formFieldDG_itemClick(event:ListEvent): void{
+				closeDialog(true);
+			}
+			
+			private function getFields():void{
+				FormEditorService.getFieldsByFormId(_formEntity.format.refFormId, getFieldsCallback);
+			}
+			private function getFieldsCallback(fields:ArrayCollection):void {
+				if(fields && fields.length>0){
+					_formFields = fields;
+					if(_idField){
+						var idField:FormEntity = new FormEntity(FormEntity(fields[0]).root, "id");
+						idField.name = ResourceManager.getInstance().getString("FormEditorETC", "idBracketText");
+						idField.format = new FormFormatInfo();
+						_formFields.addItem(idField);
+					}
+				}else{
+					_formFields = new ArrayCollection();
+				}
+				if(_emptyField){
+					var emptyField:Object = new Object();
+					emptyField["id"] = FormEntity.EMPTY_FORM_FIELDID;
+					emptyField["name"] = FormEntity.EMPTY_FORM_FIELDNAME;
+					emptyField["label"] = FormEntity.EMPTY_FORM_FIELDNAME;
+					_formFields.addItemAt(emptyField, 0);
+				}
+				if(_current && _formFields){
+					for each(var field:Object in _formFields){
+						if(field.id == _current){
+							formFieldDG.selectedItem = field;
+							break;
+						}
+					}
+				}
+//				formFieldDG.height = _formFields.length*formFieldDG.rowHeight;
+			}
+		]]>
+	</mx:Script>
+    <mx:DataGrid id="formFieldDG" styleName="selectFormFieldDG" dataProvider="{_formFields}" width="100%" showHeaders="false" 
+       	itemClick="formFieldDG_itemClick(event)" verticalScrollPolicy="auto" horizontalScrollPolicy="off" rowHeight="22">
+	       	<mx:columns>
+	           	<mx:DataGridColumn>
+       				<mx:itemRenderer>
+               			<mx:Component>
+               				<mx:HBox styleName="selectDialogDGItemBox" horizontalScrollPolicy="off">
+                   				<mx:Button styleName="selectDialogDGItemButton" y="0" width="18" height="18" icon="{data.icon}"/>
+                   				<mx:Label styleName="selectDialogDGItemLabel" text="{data.name}"/> 
+               				</mx:HBox>
+               			</mx:Component>
+           			</mx:itemRenderer>		                	
+	            </mx:DataGridColumn>
+	        <mx:DataGridColumn dataField="id" headerText="id" width="0" visible="false"/>
+	    </mx:columns>
+	</mx:DataGrid>
+</AbstractSimpleDialog>

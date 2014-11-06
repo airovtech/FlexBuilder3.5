@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LinkButton textAlign="center" mouseDown="doDrag(event)" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.IFlexDisplayObject;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			
+			private var _formatType:String;
+			public function get formatType():String {
+				return this._formatType;
+			}
+			public function set formatType(formatType:String):void {
+				this._formatType = formatType;
+			}
+			
+			private var dragImage:IFlexDisplayObject;
+		    private function doDrag(event:MouseEvent):void{
+		        var ds:DragSource = new DragSource();
+		        
+		        // 오브젝트에 데이터를 추가합니다.
+		        ds.addData(this, "form");
+		        
+		        if (dragImage == null) {
+		        	var icon:Object = this.getStyle("icon");
+					var bgColor:Object = this.getStyle("backgroundColor");
+		        	
+		        	var dragButton:FormatButton = new FormatButton();
+		        	dragButton.width = this.width;
+		        	dragButton.height = this.height;
+					if (icon != null)
+						dragButton.setStyle("icon", icon);
+					if (bgColor != null)
+						dragButton.setStyle("backgroundColor", bgColor);
+		        	dragImage = dragButton;
+		        }
+		        
+		        DragManager.doDrag(this, ds, event, dragImage);
+			}
+		]]>
+	</mx:Script>
+</mx:LinkButton>

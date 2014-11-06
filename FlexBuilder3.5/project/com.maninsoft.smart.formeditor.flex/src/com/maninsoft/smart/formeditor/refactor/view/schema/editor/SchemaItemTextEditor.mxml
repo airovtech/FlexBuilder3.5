@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="{init()}" verticalScrollPolicy="off" horizontalScrollPolicy="off" xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			private function init():void{
+				schemaItemName.setFocus();
+			}
+		]]>
+	</mx:Script>
+	<controls:KoreanTextInput id="schemaItemName" text="{data.name}"/>
+</mx:Box>

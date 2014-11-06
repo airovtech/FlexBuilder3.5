@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ChartInfo xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="crComplete()" chartType="COLUMN_CHART"
+	horizontalAlign="center" verticalAlign="middle" backgroundColor="#C8EAFA" xmlns="mxmlComponet.home.chartInfo.info.*" xmlns:axis="mxmlComponet.home.chartInfo.axis.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mxmlComponet.home.chartInfo.model.ChartInfoModel;
+			
+			private function crComplete():void{
+				try{
+					valueInfo.columnId = chartInfoModel.valueInfoId;
+					valueInfo.columnName = chartInfoModel.valueInfoName;
+					remark.columnId = chartInfoModel.remarkId;
+					remark.columnName = chartInfoModel.reamrkName;
+					grouping.columnId = chartInfoModel.groupingId;
+					grouping.columnName = chartInfoModel.groupingName;
+				}catch(e:Error){}
+			}
+			
+			override public function infoChange():void{
+				crComplete();
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="95%" height="95%" verticalGap="2" verticalAlign="middle">
+		<mx:VBox width="100%" height="95%" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10">
+			<mx:HBox width="100%" height="95%" horizontalGap="2" horizontalAlign="center" verticalAlign="middle">
+				<mx:VBox width="10%" height="100%" horizontalAlign="center" verticalAlign="middle" id="YBox">
+					<mx:Box height="30%" verticalAlign="bottom">
+						<mx:Label text="값" styleName="normalLabel"/>
+					</mx:Box>
+					<axis:CustormTextInput id="valueInfo" width="20" height="50%" angle="270" widthAndHeightChange="true" rotateble="true" 
+						custormItemChange="valueInfoChange(event)"/>
+					<mx:Button width="22" height="22" styleName="propBtnQuickMenu" useHandCursor="true"  toolTip="Value필터" click="openValueFilter(event)"/>
+				</mx:VBox>					
+				
+				<mx:VBox width="80%" height="100%" horizontalAlign="center" verticalAlign="middle">
+			        <mx:Image  id="chartImg" source="@Embed('images/chart/columnChart.PNG')" width="100%" height="100%"/>
+		        </mx:VBox>			
+				
+				<mx:VBox width="10%" height="100%" horizontalAlign="center" verticalAlign="middle" id="RemarkBox">
+					<mx:Box height="30%" verticalAlign="bottom">
+						<mx:Label text="범례" styleName="normalLabel"/>
+					</mx:Box>
+					<axis:CustormTextInput id="remark" width="23" height="50%" angle="270" widthAndHeightChange="true" rotateble="true"
+						custormItemChange="remarkChange(event)"/>
+				</mx:VBox>
+			</mx:HBox>	
+			<mx:HBox width="100%" height="5%" horizontalAlign="center" verticalAlign="middle" id="XBox">
+				<mx:Box width="30%" horizontalAlign="right">
+					<mx:Label text="분류" styleName="normalLabel"/>
+				</mx:Box>
+				<axis:CustormTextInput id="grouping" width="50%" height="20" rotateble="false" widthAndHeightChange="false"
+					custormItemChange="groupingChange(event)"/>
+				<mx:Button  width="22" height="22" styleName="propBtnQuickMenu" useHandCursor="true"  toolTip="Grouping필터" click="openGroupingFilter(event)"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:VBox>
+</ChartInfo>

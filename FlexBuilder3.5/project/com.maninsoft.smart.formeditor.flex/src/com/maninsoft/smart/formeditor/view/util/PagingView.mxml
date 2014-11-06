@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox
+	width="100%" verticalAlign="middle" 
+	xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			import mx.controls.Button;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.formeditor.util.FormEditorEvent;
+			import mx.controls.LinkButton;
+			
+			public var pageGroupSize:int = 10;
+			private var prevPageGroupNo:int = 0;
+			private var nextPageGroupNo:int = 0;
+			public var pageSize:int = 10;
+			public var pageNo:int = 0;
+			public var totalSize:int = 0;
+			[Bindable]
+			private var padding:Number = 2;
+			
+			public function refresh():void {
+				pagingScope.removeAllChildren();
+				
+				var pageNumber:int = pageNo + 1;
+				var startPage:int = 1;
+				var endPage:int = 1;
+				var lastPage:int = 1;
+				if (pageNumber > pageGroupSize) {
+					startPage = pageNumber / pageGroupSize;
+					startPage = startPage * pageGroupSize + 1;
+					
+					prevPageGroupNo = startPage - 2;
+					prevPageGroupButton.enabled = true;
+					prevPageGroupButton.alpha = 1;
+				} else {
+					prevPageGroupButton.enabled = false;
+					prevPageGroupButton.alpha = 0.3;
+				}
+				if (totalSize > pageSize) {
+					lastPage = totalSize / pageSize;
+					if (totalSize % pageSize > 0)
+						lastPage++;
+					endPage = startPage + pageGroupSize - 1;
+					if (endPage > lastPage) {
+						endPage = lastPage;
+						nextPageGroupButton.enabled = false;
+						nextPageGroupButton.alpha = 0.3;
+					} else if (endPage < lastPage) {
+						nextPageGroupNo = endPage;
+						nextPageGroupButton.enabled = true;
+						nextPageGroupButton.alpha = 1;
+					}
+				}
+				
+				endPage++;
+				for (var i:int=startPage; i<endPage; i++) {
+					var pageButton:LinkButton = new LinkButton();
+					pageButton.label = String(i);
+					pageButton.setStyle("paddingLeft", padding);
+					pageButton.setStyle("paddingRight", padding);
+					if (i == pageNumber) {
+						pageButton.setStyle("fontWeight", "bold");
+					} else {
+						pageButton.setStyle("fontWeight", "normal");
+						pageButton.addEventListener(MouseEvent.CLICK, selectPage);
+					}
+					pagingScope.addChild(pageButton);
+				}
+			}
+			
+			private function selectPage(event:MouseEvent):void {
+				var pageButton:Button = Button(event.target);
+				dispatchSelectPageEvent(SmartUtil.toNumber(pageButton.label) - 1);
+			}
+			private function selectPrevPageGroup():void {
+				dispatchSelectPageEvent(prevPageGroupNo);
+			}
+			private function selectNextPageGroup():void {
+				dispatchSelectPageEvent(nextPageGroupNo);
+			}
+			private function dispatchSelectPageEvent(pageNo:int):void {
+				var feEvent:FormEditorEvent = new FormEditorEvent(FormEditorEvent.SELECTPAGE);
+				feEvent.pageNo = pageNo;
+				dispatchEvent(feEvent);
+			}
+		]]>
+	</mx:Script>
+	<mx:Box width="50%"/>
+	<mx:LinkButton id="prevPageGroupButton" icon="{FormEditorAssets.prevPageGroupIcon}" click="selectPrevPageGroup()" enabled="false" alpha="0.3" paddingLeft="{padding}" paddingRight="{padding}"/>
+	<mx:HBox id="pagingScope" horizontalGap="2"/>
+	<mx:LinkButton id="nextPageGroupButton" icon="{FormEditorAssets.nextPageGroupIcon}" click="selectNextPageGroup()" enabled="false" alpha="0.3" paddingLeft="{padding}" paddingRight="{padding}"/>
+	<mx:Box width="50%"/>
+</mx:HBox>

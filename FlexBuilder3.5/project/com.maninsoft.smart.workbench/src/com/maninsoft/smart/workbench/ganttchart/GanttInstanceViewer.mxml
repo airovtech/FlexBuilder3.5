@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:smart="com.maninsoft.smart.ganttchart.editor.*" backgroundColor="#ffffff">
+	<mx:Script source="GanttInstanceViewer_mxml.as"/>
+	<mx:XML id="testGanttXPDLSource">
+		<xpdl:Package Id="pkg_b4da5ac88bb7442e8d3a784832841aee" Name="개발계획" xmlns:xpdl="http://www.wfmc.org/2004/XPDL2.0alpha">
+  			<xpdl:PackageHeader>
+    			<xpdl:XPDLVersion>2.0</xpdl:XPDLVersion>
+    			<xpdl:Vendor>ManInSoft</xpdl:Vendor>
+    			<xpdl:Created>Wed Jun 23 20:25:20 KST 2010</xpdl:Created>
+    			<xpdl:Description>null</xpdl:Description>
+  			</xpdl:PackageHeader>
+  			<xpdl:RedefinableHeader>
+    			<xpdl:Author>ysjung@maninsoft.co.kr</xpdl:Author>
+    			<xpdl:Version>1</xpdl:Version>
+    			<xpdl:Codepage>UTF-8</xpdl:Codepage>
+    			<xpdl:Countrykey>KR</xpdl:Countrykey>
+  			</xpdl:RedefinableHeader>
+  			<xpdl:Script Type="null" Version="null" Grammar="null"/>
+  			<xpdl:Pools>
+    			<xpdl:Pool ChartBaseDate="2010-07-01 00:00:00" ChartStartDate="2010-07-01 00:00:00" Orientation="HORIZONTAL" Process="null" BoundaryVisible="false" Id="0" Name="간트차트">
+      				<xpdl:Lanes>
+        				<xpdl:Lane Id="0" Name="주관부서" ParentLane="0">
+          				<xpdl:NodeGraphicsInfos>
+            				<xpdl:NodeGraphicsInfo Page="0" Height="1024" Width="1024" BorderColor="0" FillColor="16777215" HeadColor="13421772"/>
+          				</xpdl:NodeGraphicsInfos>
+        				</xpdl:Lane>
+      				</xpdl:Lanes>
+      				<xpdl:NodeGraphicsInfos>
+        				<xpdl:NodeGraphicsInfo Width="0" Height="0" BorderColor="0" FillColor="0" TextColor="0" Shadow="false" Gradient="false">
+          					<xpdl:Coordinates XCoordinate="0" YCoordinate="0"/>
+        				</xpdl:NodeGraphicsInfo>
+      				</xpdl:NodeGraphicsInfos>
+    			</xpdl:Pool>
+  			</xpdl:Pools>
+  			<xpdl:WorkflowProcesses>
+    			<xpdl:WorkflowProcess Id="prc_0255696a21474d738bc83ee82b570be5" Name="개발계획" ParentId="null" AccessLevel="null" Status="null">
+      				<xpdl:ProcessHeader DurationUnit="null">
+        				<xpdl:Created>null</xpdl:Created>
+        				<xpdl:Description/>
+      				</xpdl:ProcessHeader>
+      				<xpdl:RedefinableHeader>
+        				<xpdl:Author>null</xpdl:Author>
+        				<xpdl:Version>null</xpdl:Version>
+        				<xpdl:Codepage>null</xpdl:Codepage>
+        				<xpdl:Countrykey>null</xpdl:Countrykey>
+      				</xpdl:RedefinableHeader>
+      				<xpdl:Activities>
+        				<xpdl:Activity StartActivity="false" PerformerName="" Status="READY" Id="1" Name="분석 설계">
+          					<xpdl:Implementation>
+            					<xpdl:Task>
+              						<xpdl:TaskApplication Id="WorkListManager" Name="SYSTEMFORM" FormName="기본 업무화면" Version="0" UserTaskType="normal" MeanTime="null" ApprovalLine="null" ApprovalLineName="null" PlanFrom="2010-07-03 18:28:04" PlanTo="2010-07-06 21:24:46" ExecutionFrom="2010-07-03 18:00:00" ExecutionTo="2010-07-06 21:00:00"/>
+            					</xpdl:Task>
+          					</xpdl:Implementation>
+          					<xpdl:Performers/>
+          					<xpdl:DataFields/>
+          					<xpdl:Assignments/>
+          					<xpdl:NodeGraphicsInfos>
+            					<xpdl:NodeGraphicsInfo Width="268" Height="14" BorderColor="4428977" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="0">
+              						<xpdl:Coordinates XCoordinate="238.57184523809522" YCoordinate="41.5"/>
+            					</xpdl:NodeGraphicsInfo>
+          					</xpdl:NodeGraphicsInfos>
+        				</xpdl:Activity>
+        				<xpdl:Activity StartActivity="false" PerformerName="" Status="PROCESSING" Id="2" Name="개발">
+          					<xpdl:Implementation>
+            					<xpdl:Task>
+              						<xpdl:TaskApplication Id="WorkListManager" Name="SYSTEMFORM" FormName="기본 업무화면" Version="0" UserTaskType="normal" MeanTime="null" ApprovalLine="null" ApprovalLineName="null" PlanFrom="2010-07-01 21:46:14" PlanTo="2010-07-04 09:41:17" ExecutionFrom="2010-07-02 21:00:00" ExecutionTo="2010-07-05 09:00:00"/>
+            					</xpdl:Task>
+          					</xpdl:Implementation>
+          					<xpdl:Performers/>
+          					<xpdl:DataFields/>
+          					<xpdl:Assignments/>
+          					<xpdl:NodeGraphicsInfos>
+            					<xpdl:NodeGraphicsInfo Width="215" Height="14" BorderColor="4428977" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="0">
+              						<xpdl:Coordinates XCoordinate="78.14074404761905" YCoordinate="66.5"/>
+            					</xpdl:NodeGraphicsInfo>
+          					</xpdl:NodeGraphicsInfos>
+        				</xpdl:Activity>
+        				<xpdl:Activity StartActivity="false" PerformerName="" Status="DELAYED" Id="21" Name="테스트">
+          					<xpdl:Implementation>
+            						<xpdl:Task>
+              						<xpdl:TaskApplication Id="WorkListManager" Name="SYSTEMFORM" FormName="기본 업무화면" Version="0" UserTaskType="normal" MeanTime="null" ApprovalLine="EMPTYAPPROVAL" ApprovalLineName="없음" PlanFrom="2010-07-04 09:41:17" PlanTo="2010-07-06 04:18:54" ExecutionFrom="null" ExecutionTo="null"/>
+            					</xpdl:Task>
+          					</xpdl:Implementation>
+          					<xpdl:Performers/>
+          					<xpdl:DataFields/>
+          					<xpdl:Assignments/>
+          					<xpdl:NodeGraphicsInfos>
+            					<xpdl:NodeGraphicsInfo Width="153" Height="14" BorderColor="4428977" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="0">
+              						<xpdl:Coordinates XCoordinate="293.20177083333334" YCoordinate="91.5"/>
+            					</xpdl:NodeGraphicsInfo>
+          					</xpdl:NodeGraphicsInfos>
+        				</xpdl:Activity>
+        				<xpdl:Activity StartActivity="false" PerformerName="" Status="READY" Id="22" Name="안정화 및 교육">
+          					<xpdl:Implementation>
+            					<xpdl:Task>
+              						<xpdl:TaskApplication Id="WorkListManager" Name="SYSTEMFORM" FormName="기본 업무화면" Version="0" UserTaskType="normal" MeanTime="null" ApprovalLine="EMPTYAPPROVAL" ApprovalLineName="없음" PlanFrom="2010-07-05 16:00:37" PlanTo="2010-07-07 22:20:19" ExecutionFrom="2010-06-27 23:00:00" ExecutionTo="null"/>
+            					</xpdl:Task>
+          					</xpdl:Implementation>
+          					<xpdl:Performers/>
+          					<xpdl:DataFields/>
+          					<xpdl:Assignments/>
+          					<xpdl:NodeGraphicsInfos>
+            					<xpdl:NodeGraphicsInfo Width="194" Height="14" BorderColor="4428977" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="0">
+              						<xpdl:Coordinates XCoordinate="402.0368898809523" YCoordinate="116.5"/>
+            					</xpdl:NodeGraphicsInfo>
+          					</xpdl:NodeGraphicsInfos>
+        				</xpdl:Activity>
+      				</xpdl:Activities>
+      				<xpdl:Transitions>
+        				<xpdl:Transition Id="44" Name="" From="2" To="21">
+          					<xpdl:Description/>
+          					<xpdl:Condition Type="CONDITION">
+            					<xpdl:Expression ScriptGrammar="javascript"/>
+          					</xpdl:Condition>
+          					<xpdl:ConnectorGraphicsInfos>
+            					<xpdl:ConnectorGraphicsInfo Path="90,270" TextPos="0,0"/>
+          					</xpdl:ConnectorGraphicsInfos>
+        				</xpdl:Transition>
+      				</xpdl:Transitions>
+    			</xpdl:WorkflowProcess>
+  			</xpdl:WorkflowProcesses>
+  			<xpdl:Artifacts/>
+		</xpdl:Package>
+	</mx:XML>
+	<mx:VBox width="100%" height="100%" verticalGap="3" horizontalAlign="center" backgroundColor="#FFFFFF" verticalAlign="middle" paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="1"
+			borderStyle="none" borderThickness="1" horizontalScrollPolicy="off" verticalScrollPolicy="off">	
+		<mx:Canvas id="editorHeaderToolBar" visible="true" width="100%" height="27" backgroundColor="#e9eeee" borderStyle="none" borderThickness="0">
+			<mx:HBox top="4" left="10" horizontalGap="8" verticalAlign="middle">
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusNoneIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('GanttChartETC', 'statusNoneText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusProcessingIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusProcessingText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusDoneIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusDoneText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusStoppedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusStoppedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusReturnedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusReturnedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusDelayedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusDelayedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusSelectedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusSelectedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+			</mx:HBox>
+		</mx:Canvas>
+		<mx:HBox width="100%" height="100%" borderStyle="none" borderThickness="0">
+			<smart:GanttChartMonitor id="xpdlViewer" width="100%" height="100%" backgroundColor="#ffffff" resize="xpdlViewer_resize(event);" selectionChanged="xpdlViewer_selectionChanged(event);" />						
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

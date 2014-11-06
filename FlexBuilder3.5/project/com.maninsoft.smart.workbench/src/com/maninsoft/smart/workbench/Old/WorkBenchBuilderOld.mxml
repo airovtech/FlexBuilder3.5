@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:common="com.maninsoft.smart.common.*" 
+	xmlns:xpdl="com.maninsoft.smart.modeler.xpdl.*" xmlns:view="com.maninsoft.smart.formeditor.refactor.simple.view.*" xmlns:custormObj="smartWork.custormObj.*" 
+	xmlns:view1="com.maninsoft.smart.formeditor.refactor.view.*" creationComplete="init();"  xmlns:simple="com.maninsoft.smart.formeditor.refactor.simple.*" 
+	xmlns:pack="com.maninsoft.smart.workbench.pack.*" xmlns:mxml="com.maninsoft.smart.modeler.xpdl.mxml.*" xmlns:toolTipMenu="com.maninsoft.smart.modeler.toolTipMenu.*">
+	<mx:states>
+		<mx:State name="Form">
+			<mx:RemoveChild target="{formEditor}"/>
+			<mx:AddChild relativeTo="{mainStage}" position="lastChild" target="{formEditor}"/>
+			<mx:RemoveChild target="{diagramEditor}"/>
+			<mx:AddChild relativeTo="{diagramHiddenStage}" position="lastChild" target="{diagramEditor}"/>
+			<mx:SetProperty target="{grdProblem}" name="height" value="0"/>
+			<mx:SetProperty target="{toolViewStack}" name="selectedIndex" value="2"/>
+			<mx:SetProperty target="{treeAccordion}" name="selectedIndex" value="1"/>
+		</mx:State>
+		
+		<mx:State name="Diagram">
+			<mx:RemoveChild target="{diagramEditor}"/>
+			<mx:AddChild relativeTo="{mainStage}" position="lastChild" target="{diagramEditor}"/>
+			<mx:RemoveChild target="{formEditor}"/>
+			<mx:AddChild relativeTo="{formHiddenStage}" position="lastChild" target="{formEditor}"/>
+			<mx:SetProperty target="{toolViewStack}" name="selectedIndex" value="1"/>
+			<mx:SetProperty target="{treeAccordion}" name="selectedIndex" value="0"/>	
+		</mx:State>
+		
+		<mx:State name="info">
+			<!--
+			<mx:RemoveChild target="{infoPackage}"/>
+			<mx:AddChild relativeTo="{mainStage}" position="lastChild" target="{infoPackage}"/>
+			<mx:RemoveChild target="{formEditor}"/>
+			<mx:AddChild relativeTo="{formHiddenStage}" position="lastChild" target="{formEditor}"/>
+			<mx:RemoveChild target="{diagramEditor}"/>
+			<mx:AddChild relativeTo="{diagramHiddenStage}" position="lastChild" target="{diagramEditor}"/>
+			-->
+			<mx:SetProperty target="{toolViewStack}" name="selectedIndex" value="1"/>
+		</mx:State>
+	</mx:states>
+	<mx:Script source="Workbench_pde.as"/>
+	<mx:Script source="Workbench_fe.as"/>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.event.FormEditorEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.workbench.command.FormTypeChangeCommand;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormDocumentCommandUtil;
+			import mx.core.UIComponent;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.CloseEvent;
+			import mx.containers.TitleWindow;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.workbench.common.meta.IPackageMetaModel;
+			import mx.core.Application;
+			import com.maninsoft.smart.workbench.command.RemoveFormCommand;
+			import com.maninsoft.smart.workbench.command.AddFormCommand;
+			import com.maninsoft.smart.workbench.command.RemoveProcessCommand;
+			import com.maninsoft.smart.workbench.command.AddProcessCommand;
+			import mx.containers.Form;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.workbench.common.editor.EditDomain;
+			import mx.collections.XMLListCollection;
+			import mx.events.MenuEvent;
+			import com.maninsoft.smart.workbench.util.NameGenerator;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWPackage;
+			import com.maninsoft.smart.workbench.event.MISPackageEvent;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import mx.automation.codec.ArrayPropertyCodec;
+			import com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWProcess;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.workbench.event.MISFormEvent;
+			import com.maninsoft.smart.workbench.event.MISProcessEvent;
+			import mx.core.Container;
+			
+			[Bindable]
+			private var packId:String;
+			[Bindable]
+			private var packVer:int;
+			
+			[Bindable]
+			public var categoryName:String;
+			
+			[Bindable]
+			private var swForm:SWForm;
+			
+			[Bindable]
+			private var swProcess:SWProcess;
+			
+			[Bindable]
+			private var swPackage:SWPackage;
+			
+			[Bindable]
+			private var editDomain:EditDomain;
+			
+			[Bindable]
+			private var diagramEditorPropertyStatus:Boolean = false; //다이어그램 속성창 상태.
+			
+			[Bindable]
+			private var formEditorPropertyStatus:Boolean = false; //폼 속성창 상태.
+			
+			[Bindable]
+			private var miniDiagramStatus:Boolean = false; //다이어그램 미니창상태.
+			
+			[Bindable]
+			private var miniFormStatus:Boolean = false; //폼 미니창 상태.
+		
+			private var diagramEditorPropertyStatus2:Boolean = true; 
+			private var formEditorPropertyStatus2:Boolean = true; 
+			private var miniDiagramStatus2:Boolean = true; 
+			private var miniFormStatus2:Boolean = true; 
+
+			private function init():void{
+				registerEvent();
+				/*
+				var workHeight:int = this.height - topArea.height - workbenchToolBar.height - grdProblem.height;
+				diagramEditorPropertyStage.width = mainStage.width*0.2; 
+				formEditorPropertyStage.width = mainStage.width*0.2; 
+				miniForm.width = mainStage.width*0.2;
+				miniDiagram.width = mainStage.width*0.2;
+				
+				diagramEditorPropertyStage.height = workHeight*0.5-40; 
+				formEditorPropertyStage.height = workHeight*0.5-40; 
+				miniForm.height = workHeight*0.5-40;
+				miniDiagram.height = workHeight*0.5-40;
+				
+				var startY:int = topArea.height + workbenchToolBar.height;
+				var startX:int = mainStage.x + mainStage.width - miniDiagram.width;
+				
+				miniForm.x = startX - 20;
+				miniForm.y = startY + 50;
+				miniDiagram.x = startX - 20;
+				miniDiagram.y = this.height - miniDiagram.height - formEditorPropertyStage.height;
+				
+				diagramEditorPropertyStage.x = startX - 20;
+				diagramEditorPropertyStage.y = startY + diagramEditorPropertyStage.height + 50;
+				formEditorPropertyStage.x = startX - 20;
+				formEditorPropertyStage.y = this.height - formEditorPropertyStage.height;
+				*/
+			}
+			
+			private function registerEvent():void{
+				registerFormEvent();			
+				formEditor.addEventListener(FormEditorEvent.FORM_RENAME, formRename, true);	
+				formEditor.addEventListener(FormEditorEvent.FORM_FIELD_RENAME, formFieldRename, true);
+			}
+			
+			/***********************데이터 처리****************************/			
+			// 패키지를 로드 
+			public function load(packId:String, packVer:int):void{
+				this.packId = packId;
+				this.packVer = packVer;
+				this.editDomain = new EditDomain();
+				loadPackage();
+				
+			}
+			
+			private function loadPackage():void{
+				WorkbenchConfig.repoService.retrievePackage(this.packId, this.packVer, loadHandler, serviceFault);
+			}
+			
+			public function loadHandler(event:MISPackageEvent):void{
+				this.packId = packId;
+				this.swPackage = event.packMetaModel;
+				openPackage(packId, packVer.toString());
+			}
+			
+			public function serviceFault(event:MISPackageEvent):void{
+			}
+
+			private function openPackage(packId: String, packVer: String):void{
+				openPackageTree(packId, packVer, swPackage.name, true);
+//				this.currentState = "info";
+//				if(swPackage.getProcessResource()!=null){
+//					this.currentState = "Diagram";
+//				}else{
+//					this.currentState = "Form";
+//				}
+				this.currentState = "Diagram";
+				resetExtents();
+			}
+			
+			// 폼 오픈 
+			public function openForm(formId:String):void{
+				var arr:ArrayCollection = this.swPackage.getFormResources();
+				for(var i:int; i<arr.length; i++){
+					this.swForm = SWForm(arr.getItemAt(i));
+					if(formId == swForm.id){
+						break;
+					} 
+				}
+				formEditor.openForm(this.swForm);
+				this.currentState = "Form";
+				if(formEditorPropertyStatus2){
+					formEditorPropertyStatus = true;
+				}
+				if(miniDiagramStatus2){
+					miniDiagramStatus = true;
+				}
+				diagramEditorPropertyStatus = false;
+				miniFormStatus = false;
+				processLabel.text = " 업무화면";
+				PopUpManager.removePopUp(pop);
+				popMode = true;
+			}
+			
+			//프로세스 오픈
+			public function openProcess():void{
+				this.currentState = "Diagram";
+				if(diagramEditorPropertyStatus2){
+					diagramEditorPropertyStatus = true;
+				}
+				if(miniFormStatus2){
+					miniFormStatus = true;
+				}
+				formEditorPropertyStatus = false;
+				miniDiagramStatus = false;
+				processLabel.text = " 업무프로세스";
+				PopUpManager.removePopUp(pop);
+				popMode = true;
+			}
+			
+			//패키지정보 오픈
+			public function openInfo():void{
+				this.currentState = "info";
+				
+				diagramEditorPropertyStatus = false;
+				miniFormStatus = false;
+				formEditorPropertyStatus = false;
+				miniDiagramStatus = false;
+				processLabel.text = "";
+			}
+
+			// 폼 정보 업데이트 
+			private function updateForm(swForm:SWForm):void{
+				// TODO 폼정보 업데이트 처리
+			}
+			// 프로세스 정보 업데이트 
+			private function updateProcess(swProcess:SWProcess):void{
+				// TODO 프로세스 정보 업데이트 처리
+			}
+			
+			/**************************리소스 창 제어***********************************/
+			[Bindable]
+			public var isClosed:Boolean = false;
+			
+			public function discloseView():void {
+				if (isClosed == false) {
+					resTreeShrink.end();
+					resTreeShrink.play();
+					isClosed = true;
+					resourceArea.setStyle("horizontalAlign", "left");
+				} else {
+					resTreeGrow.end();
+					resTreeGrow.play();
+					isClosed = false;
+					resourceArea.setStyle("horizontalAlign", "right");
+				}
+			}			
+			
+			private function getScale(parent:DisplayObject, child:DisplayObject):Number{
+				var scale:Number = 1;
+				if(parent != null && child != null){
+					if(scale > parent.width/(child.width + 100)){
+						scale = parent.width/(child.width + 100);
+					}
+					
+					if(scale > parent.height/(child.height + 100)){
+						scale = parent.height/(child.height + 100);
+					}
+				}
+				
+				return scale;
+			}
+			
+			private function goTestForm():void{
+				var swForm:SWForm;
+				swForm = SWForm(this.swPackage.getFormResources().getItemAt(0));
+				openForm(swForm.id);
+			}
+			
+			/*********프로세스***********/
+			private function addProcess():void{  //추가
+            	if(this.swPackage.getProcessResource() == null){
+            		editDomain.getCommandStack().execute(new AddProcessCommand(this.swPackage, NameGenerator.generateProcessName(this.swPackage), 
+            												addProcessHandler, faultHandler, removeProcessHandler));	
+            	}else{
+            		MsgUtil.showError("패키지에는 하나의 프로세스만 존재할 수 있습니다.");
+            	}
+            }
+            
+            private function addProcessHandler(event:MISPackageEvent):void{
+				this.swPackage.setProcessResource(event.swProcess);
+
+				// 트리를 갱신한다.
+				refreshPackageTree();
+            }
+            
+            private function removeProcess():void{ //삭제
+            	var swPrc:SWProcess = SWProcess(this.swPackage.getProcessResource());
+                editDomain.getCommandStack().execute(new RemoveProcessCommand(this.swPackage, swPrc, removeProcessHandler, faultHandler, addProcessHandler));
+            }
+            
+            private function removeProcessHandler(event:MISPackageEvent):void{
+            	if(this.swPackage.children.length == 1){
+            		//packResourceTree.expandItem(this.swPackage, false); //Tree에 반영(?)
+            	}
+				this.swPackage.setProcessResource(null);
+
+				// 트리를 갱신한다.
+				refreshPackageTree();
+            }
+            
+            /*********폼***********/
+            private function addForm():void{  // 추가
+				editDomain.getCommandStack().execute(new AddFormCommand(this.swPackage, NameGenerator.generateFormName(this.swPackage), 
+														addFormHandler, faultHandler, removeFormHandler));
+            }
+            
+            private function addFormHandler(event:MISPackageEvent):void{
+				this.swPackage.addFormResource(event.swForm);
+														
+				// 폼트리 영역을 갱신한다.
+				refreshFormTree();
+            }     
+                         
+            private function removeForm(formId:String):void{  // 삭제      
+            	var arr:ArrayCollection = this.swPackage.getFormResources();
+            	var swForm:SWForm;
+				for(var i:int; i<arr.length; i++){
+					swForm = SWForm(arr.getItemAt(i));
+					if(formId == swForm.id){
+						break;
+					}
+				}
+            	editDomain.getCommandStack().execute(new RemoveFormCommand(this.swPackage, swForm, removeFormHandler, faultHandler, addFormHandler));
+            }
+            
+            private function removeFormHandler(event:MISPackageEvent):void{
+  				if(this.swPackage.children.length == 1){
+            		//packResourceTree.expandItem(this.packModel, false); //Tree에 반영(?)
+      			}
+				this.swPackage.removeFormResource(event.swForm);
+														
+				// 폼트리 영역을 갱신한다.
+				refreshFormTree();
+            }
+            
+            private function faultHandler(event:MISPackageEvent):void{
+				//TODO 에러처리
+				MsgUtil.showError(event.msg);
+            }
+            
+            // 배치
+            private function deployPackage():void
+            {
+            	WorkbenchConfig.repoService.deploy(this.swPackage, deployResultHandler, faultHandler); 
+            }
+            
+            private function deployResultHandler(e:MISPackageEvent):void{
+            	MsgUtil.showMsg(e.msg);
+            }
+            
+            private function diagramProPanel(status:Boolean):void{
+            	diagramEditorPropertyStatus = status;
+            	diagramEditorPropertyStatus2 = status;
+            }
+            
+            private function formEditorProPanel(status:Boolean):void{
+            	formEditorPropertyStatus = status;
+            	formEditorPropertyStatus2 = status;
+            }
+            
+            private function miniDiagramPanel(status:Boolean):void{
+            	miniDiagramStatus = status;
+            	miniDiagramStatus2 = status;
+            }
+            
+            private function miniFormPanel(status:Boolean):void{
+            	miniFormStatus = status;
+            	miniFormStatus2 = status;
+            }
+            
+            private function miniFormLoad(formId:String):void{
+            	var form:SWForm;
+            	var arr:ArrayCollection = this.swPackage.getFormResources();
+				for(var i:int; i<arr.length; i++){
+					form = SWForm(arr.getItemAt(i));
+					if(formId == form.id){
+						break;
+					} 
+				}
+            	//miniFormEditor.load(form);
+            }
+            
+//            [Embed(source="/assets/fe/tool/save.png")]
+//            private var FE_TOOL_SAVE:Class;
+
+			private var pop:TitleWindow;
+			private var popMode:Boolean = true;
+			private function propertyPop(property:UIComponent):void{
+				if(popMode){
+					popMode = false;
+					property.visible = true;
+					pop = TitleWindow(PopUpManager.createPopUp(this, TitleWindow, false));
+					pop.title = "속성편집";
+					pop.setStyle("fontSize", 12);
+					pop.setStyle("titleStyleName", "normalLabel");
+					pop.setStyle("borderStyle", "solid");
+					pop.setStyle("borderThickness", 2);
+					pop.setStyle("borderColor", "#666666");
+   					pop.setStyle("backgroundColor", "#f3e5d4");
+					
+					pop.alpha = 3;
+					pop.showCloseButton = true;
+					pop.owner = this;
+					pop.addChild(property);
+					pop.width=350;
+					pop.height = 450;
+					pop.addEventListener(CloseEvent.CLOSE, popCloseHandler);
+					PopUpManager.centerPopUp(pop);
+					if(property.id =="diagramEditorPropertyStage"){
+						treeAccordion.selectedIndex = 0;
+					}else{
+						treeAccordion.selectedIndex = 1;
+					}
+				}
+			}
+			
+			private function popCloseHandler(event:CloseEvent):void{
+				var target:TitleWindow = TitleWindow(event.target);
+				target.getChildAt(0).visible = false;
+				PopUpManager.removePopUp(target);
+				popMode = true;
+			}
+			
+			private function accordionChange():void{
+				if(treeAccordion.selectedIndex==0){
+					this.currentState = "Diagram";
+				}else{
+					this.currentState = "Form";
+				}
+				PopUpManager.removePopUp(pop);
+				popMode = true;
+			}
+			
+			public function changeFormTypeService(formId:String, version:String):void{
+				//서버에서 XPDL을 검사해서  Process달린 Form이면 Type:PROCESS로 변경하고 아닌것은 Type:SINGLE로 변경한다.
+				//이것은 다이어그램을 저장하는 순간 일어난다.
+				//editDomain.getCommandStack().execute(new FormTypeChangeCommand(formId, version+"", "SINGLE", typeChangeHandler, faultHandler));
+			}
+			
+			private function typeChangeHandler(event:MISPackageEvent):void{						
+				//refreshFormTree();
+            } 
+            
+            private function pacageNameClick(event:MouseEvent):void{						
+				packageToolTipMenu.x = Application.application.mouseX;
+				packageToolTipMenu.y = Application.application.mouseY;
+				packageToolTipMenu.open();
+				allToolTipMenuDisable(packageToolTipMenu);
+            }   
+		]]>
+	</mx:Script>
+	<mx:Style source="/assets/css/builder.css"/>
+	<mx:Resize id="resTreeShrink" widthTo="{20}" target="{resourceArea}" duration="0"/>
+	<mx:Resize id="resTreeGrow" widthTo="{stageBox.width * 0.15}" target="{resourceArea}" duration="0"/>
+	
+	<mx:VBox width="100%" height="100%" horizontalGap="0" verticalGap="0" paddingBottom="3" horizontalAlign="center">
+		<mx:VBox width="100%" height="130" verticalGap="0" paddingLeft="0" paddingBottom="0" paddingRight="0" paddingTop="0">
+			<mx:HBox width="100%" height="50" horizontalAlign="left" borderStyle="none" horizontalGap="4" 
+				paddingLeft="20" paddingTop="10" id="topArea" verticalAlign="top">
+				<mx:VBox width="50%" height="100%" verticalAlign="top" horizontalAlign="left">
+					<mx:Image source="@Embed('/assets/pde/images/icon/logo_left.PNG')" />
+				</mx:VBox>
+				<mx:VBox width="338" height="100%" verticalAlign="bottom" horizontalAlign="right">
+					<mx:Image source="@Embed('/assets/pde/images/icon/logo_right.PNG')" />
+				</mx:VBox>
+				<mx:Canvas width="312"/>
+			</mx:HBox>
+			<mx:VBox paddingLeft="10" width="1000" height="80" verticalGap="0" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<mx:HBox width="985" height="40" horizontalAlign="center" verticalAlign="middle" backgroundColor="#F9F6F6" 
+					borderColor="#999999" borderStyle="solid" horizontalGap="4" cornerRadius="10" paddingLeft="5" paddingRight="5" id="workbenchToolBar">
+					<common:GradientBox width="403" height="30" cornerRadius="5" verticalAlign="middle" 
+						gradientTo="#666666" gradientFrom="#999999" horizontalScrollPolicy="off">
+						<mx:HBox width="418" height="100%" verticalAlign="middle" horizontalAlign="center" horizontalGap="2">
+					        <mx:Label height="22" width="98%" styleName="normalLabel" 
+					        	text="   {WorkbenchConfig.userName}님 안녕하세요!  |  {WorkbenchConfig.toDay.substring(0, 4)}년 {WorkbenchConfig.toDay.substring(4, 6)}월 {WorkbenchConfig.toDay.substring(6, 8)}일 에 입장하셨습니다." 
+					        	textAlign="center" color="#FFFFFF">
+					        </mx:Label>
+					        <mx:Spacer width="80"/>
+						</mx:HBox>						
+					</common:GradientBox>
+					<common:GradientBox width="193" height="30" cornerRadius="5" verticalAlign="middle" 
+						gradientTo="#B3B3B3" gradientFrom="#CBCBCB">
+						<mx:HBox width="193" height="100%" verticalAlign="middle" horizontalAlign="center" horizontalGap="2">
+							<mx:Label text="현재작업공간  :" color="#3399cc"/>
+							<mx:Label text=" 업무프로세스" color="#000000" id="processLabel" visible="true" width="70"/>
+						</mx:HBox>						
+					</common:GradientBox>
+					<common:GradientBox width="370" height="30" cornerRadius="5" verticalAlign="middle" horizontalAlign="center" 
+						gradientTo="#666666" gradientFrom="#999999" horizontalScrollPolicy="off">
+						<mx:HBox width="374" height="100%" verticalAlign="middle" horizontalAlign="right" horizontalGap="2" horizontalScrollPolicy="off">
+							<mx:Label height="22" width="145" styleName="normalLabel" text="최근작업 업무패키지" textAlign="center" color="#FFFFFF"></mx:Label>
+							<mx:ComboBox id="latestWorkCombo" height="22" width="219" styleName="normalLabel" labelField="formName" right="3"></mx:ComboBox>
+							<mx:Spacer width="5"/>
+						</mx:HBox>						
+					</common:GradientBox>
+				</mx:HBox>
+				<mx:Canvas width="100%" height="35">
+					
+					<mx:ViewStack  x="70" y="0" width="200" height="30" backgroundColor="#FFFFFF" cornerRadius="10" borderStyle="solid">
+						<mx:Canvas width="100%" height="100%">
+							<mx:HBox width="100%" height="30" horizontalAlign="center" verticalAlign="middle" backgroundColor="#cccccc" 
+								borderColor="#999999" borderStyle="solid" horizontalGap="2" cornerRadius="5" paddingLeft="5" paddingRight="5">
+								<mx:Label text=" 패키지 " color="#000000"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:Label text=" 편집 " color="#000000"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:Label text=" 검증 " color="#000000"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:Label text=" 도움말 " color="#000000"/>
+							</mx:HBox>
+						</mx:Canvas>
+					</mx:ViewStack>
+					<mx:ViewStack id="toolViewStack" x="289" y="0" width="641" height="30" backgroundColor="#FFFFFF" cornerRadius="10" borderStyle="solid">
+						<mx:Canvas width="100%" height="100%">
+						</mx:Canvas>
+						<mx:Canvas width="100%" height="100%">
+							<mx:HBox width="100%" height="30" horizontalAlign="left" verticalAlign="middle" backgroundColor="#cccccc" 
+								borderColor="#999999" borderStyle="solid" horizontalGap="2" cornerRadius="5" paddingLeft="5" paddingRight="5" 
+								id="diagramToolBar">
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/save.png')" click="{tbarDiagram_BtnClick('SAVE')}" toolTip="저장하기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/select.png')" click="{tbarPDEPalette_btnClick('select')}" toolTip="선택"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/sequence.png')" click="{tbarPDEPalette_btnClick('sequence')}" toolTip="연결하기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/annotation.png')" click="{tbarPDEPalette_btnClick('annotation')}" toolTip="주석달기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/undo.png')" click="{tbarPDEEdit_BtnClick('UNDO')}" toolTip="실행취소"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/redo.png')" click="{tbarPDEEdit_BtnClick('REDO')}" toolTip="다시실행"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/orientation.png')" click="{tbarPDEEdit_BtnClick('ORIENTATION')}" toolTip="회전하기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/zoomIn.png')" click="{tbarPDEEdit_BtnClick('ZOOMIN')}" toolTip="확대보기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/zoomOut.png')" click="{tbarPDEEdit_BtnClick('ZOOMOUT')}" toolTip="축소보기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_left.png')" click="{tbarPDEAlign_BtnClick('ALIGN_LEFT')}" toolTip="좌측정렬"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_hcenter.png')" click="{tbarPDEAlign_BtnClick('ALIGN_VCENTER')}" toolTip="가로중앙정렬"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_right.png')" click="{tbarPDEAlign_BtnClick('ALIGN_RIGHT')}" toolTip="우측정렬"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_top.png')" click="{tbarPDEAlign_BtnClick('ALIGN_TOP')}" toolTip="상단정렬"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_vcenter.png')" click="{tbarPDEAlign_BtnClick('ALIGN_HCENTER')}" toolTip="세로중앙정렬"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_bottom.png')" click="{tbarPDEAlign_BtnClick('ALIGN_BOTTOM')}" toolTip="하단정렬"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/pde/images/icon/align_lanecenter.png')" click="{tbarPDEAlign_BtnClick('ALIGN_LANECENTER')}" toolTip="레인중앙정렬"/>					
+							</mx:HBox>
+						</mx:Canvas>
+						<mx:Canvas width="100%" height="100%">
+							<mx:Image source="@Embed(source='assets/fe/indicate.png')" left="100" y="-5"/>
+							<mx:HBox id="formToolBar" width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" 
+								backgroundColor="#cccccc" borderColor="#999999" borderStyle="solid" cornerRadius="5" 
+								paddingLeft="5" paddingRight="5" horizontalGap="4" >
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/1save.png')" click="{formEditor.formEditor.saveForm()}" toolTip="저장하기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/3refresh.PNG')" click="{formEditor.formEditor.loadForm()}" toolTip="새로고침"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/4undo.png')" click="{formEditor.formEditor.editDomain.getCommandStack().undo()}" toolTip="실행취소"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/5redo.png')" click="{formEditor.formEditor.editDomain.getCommandStack().redo()}" toolTip="다시실행"/>
+								<!--
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/6field_type change.PNG')" click="{this.formSchemaArea.treeNav.changeNextType()}" 
+									enabled="{this.formSchemaArea.treeNav.schemaTree.selectedItem != null}" 
+									useHandCursor="{this.formSchemaArea.treeNav.schemaTree.selectedItem != null}" toolTip="표시방법변경"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/7add_field.PNG')" click="{this.formSchemaArea.treeNav.insertNext()}" toolTip="항목추가"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/8zoomIn.png')" click="{formEditor.formEditor.plusScale()}" toolTip="확대보기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/9zoomOut.png')" click="{formEditor.formEditor.minusScale()}" toolTip="축소보기"/>
+								-->
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/15layout_1.PNG')" 
+									click="{FormDocumentCommandUtil.executeUpdateFormDocumentProperty(formEditor.formEditor.editDomain, 
+									formEditor.formEditor.formModel, 1, FormDocument.PROP_CELL_SIZE)}" toolTip="레이아웃1"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/15_1layout_2.PNG')" 
+									click="{FormDocumentCommandUtil.executeUpdateFormDocumentProperty(formEditor.formEditor.editDomain, 
+									formEditor.formEditor.formModel, 2, FormDocument.PROP_CELL_SIZE)}" toolTip="레이아웃2"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/16style.PNG')" toolTip="스타일입히기"/>
+								<mx:Label text="|" color="#ffffff" width="6" toolTip=""/>
+								<mx:LinkButton icon="@Embed(source='assets/fe/tool/17style_save.PNG')" toolTip="스타일저장하기"/>				
+							</mx:HBox>
+						</mx:Canvas>
+					</mx:ViewStack>
+				</mx:Canvas>
+			</mx:VBox>			
+		</mx:VBox>
+
+		<!-- 화면 사이즈 조절 버튼 (추후 구현 예정)<mx:Button label="+" click="sizeChange()" horizontalCenter="0" width="18" height="18" paddingBottom="0" paddingLeft="0"	paddingRight="0" paddingTop="0" id="sizeChangeBtn"/>-->
+		<mx:HBox id="stageBox" width="100%" height="100%" verticalGap="0" horizontalGap="5" paddingTop="0" paddingBottom="0" paddingLeft="25" paddingRight="5">
+			<!--<mx:Canvas width="170" height="100%" id="resourceArea" cornerRadius="10" backgroundColor="#FFFFFF" borderStyle="solid"
+				>-->
+			<mx:Panel width="178" height="100%" id="resourceArea" cornerRadius="10" backgroundColor="#FFFFFF" borderStyle="solid"
+				title="업무패키지 작업 공간" styleName="leftCustomPanel" titleStyleName="leftCustomPanelTitle" verticalGap="0">
+				<!-- horizontalAlign="right" verticalGap="8" -->
+				<!--<mx:Image source="{isClosed == false?(IconLibrary.closeNav):IconLibrary.openNav}" useHandCursor="true" buttonMode="true" 
+					mouseChildren="false" click="discloseView()" id="closeSchemaBtnRight" right="5" top="5" />-->
+				<!--<mx:Text id="resourceAreaTitle" text="업무패키지 작업 공간" styleName="leftCustomPanelTitle" top="{(50 - resourceAreaTitle.height) / 2}"
+					left="{(resourceArea.width - resourceAreaTitle.width)/2}"/>-->
+				<common:GradientBox width="100%" height="30" gradientTo="#B3B3B3" gradientFrom="#CBCBCB" horizontalAlign="left" verticalAlign="middle">
+					<mx:HBox width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="5" horizontalGap="1">
+						<mx:Image source="@Embed(source='/assets/pde/images/icon/packageinfo.png')" />
+						<mx:Label text="{this.swPackage.name}" color="#000000" fontSize="12" click="pacageNameClick(event)"/>
+					</mx:HBox>
+				</common:GradientBox>
+				<mx:Accordion width="100%" height="100%" left="0" top="50" headerStyleName="treeAccHeader" id="treeAccordion" change="accordionChange()">
+					<mx:Box label="             업무편집" width="100%" height="100%">
+						<xpdl:PackageNavigator id="dnavMain" width="100%" height="100%"
+							menuItemSelect="dnavMain_menuItemSelect(event);" disclosureOpenIcon="{null}" disclosureClosedIcon="{null}"
+							showRoot="{false}"
+							doubleClickEnabled="true" 
+							click="dnavMain_doubleClick(event);"
+							dragEnabled="true" dropEnabled="true" 
+							dragEnter="dnavMain_dragEnter(event);" 
+							dragOver="dnavMain_dragOver(event);" 
+							callBack="{packageInfoRename}"
+							dragDrop="dnavMain_dragDrop(event);"
+							fontSize="11"/><!-- left="0" top="20" bottom="20" visible="{!isClosed}"  doubleClick="dnavMain_doubleClick(event);"제거-->
+					</mx:Box>
+					<mx:Box label="             화면편집" width="100%" height="100%">
+						<!--view:SimpleSchemaEditor id="formSchemaArea" width="100%" height="100%"
+							editDomain="{this.formEditor.formEditor.editDomain}" formDocument="{this.formEditor.formEditor.formModel}" swForm="{this.formEditor.swForm}"
+							/-->
+					</mx:Box>
+				</mx:Accordion>
+
+			</mx:Panel>	
+			<!--</mx:Canvas>-->
+			
+			<!--PackageInfo, Diagram Editor, Form Editor 공동으로 쓰는 영역-->
+			<mx:VBox width="762" height="100%" id="mainStage" backgroundColor="#F9F6F6" cornerRadius="5"
+				borderStyle="solid" borderColor="#999999" horizontalAlign="center" verticalAlign="middle">
+			</mx:VBox>	
+			
+			<!--PackageInfo, Diagram Editor, Form Editor 숨어있는  영역-->
+			<mx:VBox width="0" height="0" verticalGap="0">
+				<!--Form Editor-->
+				<mx:Canvas id="formHiddenStage">
+						<simple:SimpleFormEditor  width="100%" height="100%" id="formEditor"/>
+				</mx:Canvas>
+				
+				<mx:Canvas id="diagramHiddenStage">
+					<mx:VDividedBox id="diagramEditor" width="100%" height="100%" verticalGap="4" horizontalAlign="center" verticalAlign="middle"  
+						cornerRadius="10" paddingLeft="10" paddingRight="10">
+						<mx:HBox id="processBox" x="0" y="0" width="100%" height="30" backgroundColor="#E9975A" horizontalAlign="left" verticalAlign="top">
+							<mx:HBox width="100%" backgroundColor="#FFFFFF" height="27" cornerRadius="10">
+								<mx:HBox y="0" width="50%" height="25" horizontalAlign="left" verticalAlign="middle" horizontalGap="2">
+									<mx:Image source="@Embed('assets/pde/images/icon/process.png')" width="20" height="20"/>
+									<mx:Label text="{this.swPackage.getProcessResource().name}" fontSize="13" styleName="normalLabel"/>
+								</mx:HBox>
+								<mx:HBox y="0" width="50%" height="25" horizontalAlign="right" verticalAlign="middle" horizontalGap="2">				
+								</mx:HBox>
+							</mx:HBox>
+						</mx:HBox>		
+						<mx:HBox width="100%" height="100%" id="XPDLEditorHBox">
+							<mx:Canvas width="100%" height="100%" borderColor="#999999" borderStyle="solid">						
+								<xpdl:XPDLEditor id="deMain" width="100%" height="100%" 
+											creationComplete="deMain_creationComplete(event);"
+											createNodeRequest="deMain_createNodeRequest(event);" 
+											selectionChanged="deMain_selectionChanged(event);"
+											laneSelectionChanged="deMain_laneSelectionChanged(event);"
+											toolInitialized="deMain_toolInitialized(event);"
+											diagramNodeAdded="deMain_diagramChanged(event);"
+											diagramNodeRemoved="deMain_diagramChanged(event);"
+											diagramNodeReplaced="deMain_diagramChanged(event);"
+											diagramLinkAdded="deMain_diagramChanged(event);"
+											diagramLinkRemoved="deMain_diagramChanged(event);"
+											diagramPropChanged="deMain_diagramChanged(event);"
+											resize="deMain_resize(event);" horizontalScrollPolicy="auto" verticalScrollPolicy="auto"
+										/>
+							</mx:Canvas>
+							
+							<mx:VBox right="4" top="0" horizontalAlign="center" backgroundColor="#cccccc">
+								<mx:Button width="39" height="19" id="fulllBtn" scaleX="0.8" styleName="processFitMap" click="fitMap()"/>
+								<mx:Button y="2" x="3" id="cmZoomIn" toolTip="10% 늘이기" width="30" height="14"  click="cmZoomIn_click(event);" styleName="processPlus"/>
+								<mx:VSlider id="diagramScale" y="16" x="1" allowTrackClick="true" styleName="PSlider" width="30" height="100" 
+									        change="sliderChange()"/>
+								<mx:Button id="cmZoomOut" toolTip="10% 줄이기" y="76" x="3" width="30" height="14"  click="cmZoomOut_click(event);" styleName="processMinus"/>
+							</mx:VBox>
+							
+						</mx:HBox>
+						<!--Problem 안보이게 막음-->
+						<mx:DataGrid id="grdProblem" width="0" height="0" 
+							creationComplete="grdProblem_creationComplete(event);" click="grdProblem_click(event);"
+							doubleClickEnabled="true"  doubleClick="grdProblem_doubleClick(event);">
+							<mx:columns>
+								<mx:DataGridColumn dataField="level" headerText="Level" width="50"/>
+								<mx:DataGridColumn dataField="label" headerText="이름" width="150"/>
+								<mx:DataGridColumn id="colHint" dataField="hasHint" headerText="힌트" width="45"/>
+								<mx:DataGridColumn id="colFixUp" dataField="canFixUp" headerText="처리" width="45"/>
+								<mx:DataGridColumn dataField="message" headerText="요약" width="500"/>
+							</mx:columns>
+						</mx:DataGrid>
+					</mx:VDividedBox>
+				</mx:Canvas>
+				
+				<mx:Canvas id="infoHiddenStage">
+					<!--
+					<pack:PackageInfo id="infoPackage" packageId="{this.packId}" packageVersion="{this.packVer}" categoryName="{this.categoryName}"/>
+					-->
+				</mx:Canvas>
+			</mx:VBox>
+		</mx:HBox> 
+	</mx:VBox>
+	
+	<!--diagram Editor MINI-->
+	<!--
+	<custormObj:MovePanel id="miniDiagram" width="0" height="0" showControls="true" enableResize="true" visible="{miniDiagramStatus}" 
+		panelClose="{miniDiagramPanel(false)}" pTitleBarHeight="3">
+		<xpdl:XPDLEditor id="miniXPDLEditor" width="100%" height="100%" borderStyle="solid" borderColor="#000000"/>
+	</custormObj:MovePanel>
+	-->
+	
+	<!--Form Editor MINI-->
+	<!--
+	<custormObj:MovePanel id="miniForm" width="0" height="0" showControls="true" enableResize="true" visible="{miniFormStatus}" 
+		panelClose="{miniFormPanel(false)}" pTitleBarHeight="3">
+		<view:FormDocumentViewer id="miniFormEditor" width="100%" height="100%"  miniMode="true"/>
+	</custormObj:MovePanel>
+	-->
+				
+	<!--Diagram Editor Property Editor-->
+	<mx:Canvas id="diagramEditorPropertyStage" width="100%" height="100%" visible="false">
+		<mxml:PDEPropertyPageMxml id="diagramPropertyPage" width="100%" height="100%" fontSize="10" 
+			verticalScrollPolicy="auto" horizontalScrollPolicy="off"
+			sourceChanged="diagramPropertyPage_sourceChanged(event);"
+			selectionChanged="diagramPropertyPage_selectionChanged(event);"
+		    />
+	</mx:Canvas>
+	<!--Form Editor Property Editor-->
+	<mx:Canvas id="formEditorPropertyStage" width="100%" height="100%" visible="false">
+		<!--view1:FormPropertyEditor id="formPropertyEditor" x="0" y="0" width="100%" height="100%" 
+			editDomain="{this.formEditor.formEditor.editDomain}" verticalScrollPolicy="auto">							
+		</view1:FormPropertyEditor-->
+	</mx:Canvas>
+	
+	<toolTipMenu:ActivityToolTipMenu id="activityToolTipMenu" visible="false" creationComplete="{registerTooltipActivityMenu()}"/>
+	<toolTipMenu:LaneToolTipMenu id="laneToolTipMenu" visible="false" creationComplete="{registerTooltipLaneMenu()}"/>
+	<toolTipMenu:ProcessToolTipMenu id="processToolTipMenu" visible="false" creationComplete="{registerTooltipProcessMenu()}"/>
+	<toolTipMenu:SingleWorkToolTipMenu id="singleWorkToolTipMenu" visible="false" creationComplete="{registerTooltipSingleMenu()}"/>
+	<toolTipMenu:PackageFormToolTipMenu id="packageFormToolTipMenu" visible="false" creationComplete="{registerTooltipPackageFormMenu()}"/>
+	<toolTipMenu:DiagramFormToolTipMenu id="diagramFormToolTipMenu" visible="false" creationComplete="{registerTooltipDiagramFormMenu()}"/>
+	<toolTipMenu:PackageToolTipMenu id="packageToolTipMenu" visible="false" creationComplete="{registerTooltipPackageMenu()}"/>
+	<toolTipMenu:LinkToolTipMenu id="linkToolTipMenu" visible="false" creationComplete="{registerTooltipLinkMenu()}"/>
+</mx:Canvas>

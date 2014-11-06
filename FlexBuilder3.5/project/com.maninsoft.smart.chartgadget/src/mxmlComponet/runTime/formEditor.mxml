@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:view="com.maninsoft.smart.formeditor.refactor.view.*" creationComplete="init()" xmlns:runTime="mxmlComponet.runTime.*" xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.containers.Form;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import portalAs.Properties;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import com.maninsoft.smart.common.org.PopDeptSelect;
+			
+			[Bindable]
+			private var _workId:String; //workId
+			[Bindable]
+			public var showBtn:Boolean = true; //버튼바 대한 보여줄지 상태
+			[Bindable]
+			public var tagVisible:Boolean = false;  //tag바를 보여주냐 안보주냐 상태
+			[Bindable]
+			public var _workStatus:String; //업무상태  'ing':처리함 업무   'ed':완료한 업무
+			 
+			private function init():void{
+				activateMode();
+				if(runtimeForm.type == RuntimeForm.TYPE_INITIATE){
+					hb2.removeChild(btn1);
+					hb1.removeChild(btn3);
+					hb2.removeChild(btn4);
+					hb2.removeChild(btn5);
+				}
+				//metaInfo.searchMetaInfo(_workId, workStatus);
+			}
+			
+			public function activateMode():void{
+				if(_workId == null || _workId == "" || _workId=="null" || workStatus=="ed" || workStatus=="noti"){
+					buttonDisble(false);
+				}else{
+					buttonDisble(true);
+				}
+			}
+			
+			public function set workId(workId:String):void{
+				this._workId = workId;
+				if(workId!=null && workId!="" && workId!="null"){
+					runtimeForm.loadWorkItem(workId);
+				}
+				metaInfo.searchMetaInfo(_workId, workStatus);
+			}
+			
+			public function get workId():String{
+				return this._workId;
+			}
+			
+			public function set workStatus(workStatus:String):void{
+				this._workStatus = workStatus;
+				if(workStatus!=null && workStatus!="" && workStatus!="null" && metaInfo!=null){
+					metaInfo.searchMetaInfo(_workId, _workStatus);
+				}
+			}
+			
+			public function get workStatus():String{
+				return this._workStatus;
+			}
+			
+			private function workExe(mode:String):void{
+				if(mode == "save"){
+					runtimeForm.saveForm();
+				}else if(mode == "execute"){
+					runtimeForm.executeForm();
+					buttonDisble(false);
+				}else if(mode == "return"){
+					runtimeForm.returnForm();
+					buttonDisble(false);
+				}else if(mode == "terminate"){
+					runtimeForm.terminateForm();
+					buttonDisble(false);
+				}else if(mode == "entrust"){
+					if(entruster.text!="" && entruster.text!="null"){
+						runtimeForm.entrustForm(entruster.text);
+						buttonDisble(false);
+					}else{
+						Alert.show("위임자를 먼저 선택하세요.");
+					}
+				}
+			}
+			
+			private var assignPopupWin:AssignFormSelWin;
+			
+			private function assignPopup():void{
+				assignPopupWin = AssignFormSelWin(PopUpManager.createPopUp(this, AssignFormSelWin));
+				PopUpManager.centerPopUp(assignPopupWin);
+				assignPopupWin.x = 120;
+				assignPopupWin.y = 20;
+				assignPopupWin.addEventListener(Event.COMPLETE, assignPopupResult);
+			}
+			
+			private var assignFormEditor:AssignFormWin;
+			
+			private function assignPopupResult(e:Event):void{
+				assignFormEditor = AssignFormWin(PopUpManager.createPopUp(this, AssignFormWin));
+				assignFormEditor.width = 800;
+				assignFormEditor.height = 600;
+				assignFormEditor.loadAssignForm(assignPopupWin.formId, assignPopupWin.version, this.workId);
+				PopUpManager.centerPopUp(assignFormEditor);
+				assignFormEditor.x = 120;
+				assignFormEditor.y = 20;
+			}
+			
+			private function buttonDisble(btnMode:Boolean):void{
+				btn1.enabled = btnMode;
+				btn2.enabled = btnMode;
+				btn3.enabled = btnMode;
+				//btn4.enabled = btnMode;
+				//btn5.enabled = btnMode;
+				//btn6.enabled = btnMode;
+				btn4.enabled = false;
+				btn5.enabled = false;
+				btn6.enabled = false;
+				tagBtn.enabled = btnMode;
+				userBtn.enabled = btnMode;
+				gisiBtn.enabled = btnMode;
+			}
+			
+			private function sucess():void{
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent("sucessWorkitemExecute");
+				dispatchEvent(eventObj);
+			}
+			
+			private function sucessSave():void{
+			}
+			
+			private function fail():void{
+				buttonDisble(true);	
+			}
+			
+			private function cancel():void{	
+				sucess();
+			}
+			
+			private function orgPop():void{
+				var pop:PopDeptSelect = PopDeptSelect(PopUpManager.createPopUp(this, PopDeptSelect, true));
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.orgServiceUrl = Properties.basePath + "smartserver/services/common/organizationService.jsp";
+				pop.connUserId = Properties.basePath;
+				pop.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, 
+					function(e:CustormEvent):void{						
+						userSelect(e);						
+					}
+				);
+				PopUpManager.centerPopUp(pop);
+			}
+			
+			private function userSelect(event:CustormEvent):void{
+				entruster.text = event.userId;
+				entrusterName.text = event.userPosition + " " + event.userName;
+			}
+			
+			private function tagView(bo:Boolean):void{
+				tagVisible = bo;
+				if(bo){
+					tagBox.height = 24;
+				}else{
+					tagBox.height = 0;
+				}
+				tagText.text = "";
+				if(bo){
+					getTag.url = Properties.basePath + "smartserver/services/portal/tagService.jsp?method=getTagNameByWorkItemId";
+					getTag.send();
+				}
+			}
+			
+			private function tagSaveExe():void{
+				saveTag.url = Properties.basePath + "smartserver/services/portal/tagService.jsp?method=createWorkItemTagPost";
+				saveTag.send();
+				tagView(false);
+				tagBox.height = 0;
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="sucessWorkitemExecute", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+    </mx:Metadata>
+    
+    <mx:HTTPService id="getTag"  resultFormat="e4x" useProxy="false" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<workItemId>{_workId}</workItemId>
+		</mx:request>
+	</mx:HTTPService>
+	
+	<mx:HTTPService id="saveTag"  resultFormat="e4x" useProxy="false" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<tagName>{tagText.text}</tagName>
+			<workItemId>{_workId}</workItemId>
+		</mx:request>
+	</mx:HTTPService>
+	
+    <mx:VBox width="100%" height="100%" verticalGap="0">
+    	<runTime:metaInfo id="metaInfo" width="100%" height="60"/>
+		<view:RuntimeForm id="runtimeForm" width="100%" height="100%" basePath="{Properties.basePath}" userId="{Properties.userId}" 
+			sucessWorkitemExecute="sucess()" failWorkitemExecute="fail()" sucessWorkitemSave="sucessSave()" horizontalScrollPolicy="off" verticalScrollPolicy="auto">		
+		</view:RuntimeForm>
+		<mx:HBox horizontalAlign="center" verticalAlign="middle" width="100%" height="0" backgroundColor="#8CF7DD" id="tagBox" visible="{tagVisible}">
+			<mx:Label text="태그달기" width="60" styleName="nomalLabel" fontSize="11" height="20"/>
+			<mx:TextInput id="tagText" width="100%" text="{getTag.lastResult}" height="20"/>
+			<mx:Button id="tagSave" label="저장" toolTip="tag Save" width="50" fontSize="11" styleName="normalLabel" click="tagSaveExe()" height="20"/>
+			<mx:Button id="tagClose" label="닫기" toolTip="tag view Close" width="50" fontSize="11" styleName="normalLabel" click="{tagView(false)}" height="20"/>
+		</mx:HBox>
+		<mx:Canvas width="100%" height="{showBtn ? 24 : 0}" backgroundColor="#FFFFFF" visible="{showBtn}">
+			<controls:GradientBox width="100%" height="24" cornerRadius="0" verticalAlign="middle" gradientFrom="#CCCCCC" gradientTo="#999999">
+				<mx:HBox width="100%" height="20" horizontalGap="0" verticalAlign="middle">
+					<mx:HBox width="50%"  horizontalAlign="left" verticalAlign="middle" horizontalGap="1" id="hb1" paddingLeft="3">
+						<mx:Button id="tagBtn" label="태그" height="20" fontSize="11" styleName="normalLabel" click="{tagView(true)}"/>
+						<mx:Spacer width="30"/>
+						<mx:Label text="위임자"  fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:TextInput width="80" id="entrusterName" styleName="normalLabel" height="20"/>
+						<mx:Button id="userBtn" label="사용자선택" fontSize="11" styleName="normalLabel" click="orgPop()" height="20"/>
+						<mx:Button id="btn3" label="위임"  click="workExe('entrust')" fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:Spacer width="10"/>
+						<mx:Button id="gisiBtn" label="지시"  click="{assignPopup()}" fontSize="11" styleName="normalLabel" height="20"/>
+					</mx:HBox>
+					<mx:HBox width="50%" horizontalAlign="right"  verticalAlign="middle" horizontalGap="3" id="hb2" paddingRight="3">
+						<mx:Button id="btn1" label="저장"  click="workExe('save')" fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:Button id="btn2" label="완료"  click="workExe('execute')" fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:Button id="btn4" label="반려"  click="workExe('return')" fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:Button id="btn5" label="중단"  click="workExe('terminate')" fontSize="11" styleName="normalLabel" height="20"/>
+						<mx:Button id="btn6" label="취소"  click="cancel()" fontSize="11" styleName="normalLabel" height="20"/>
+					</mx:HBox>
+				</mx:HBox>
+			</controls:GradientBox>
+		</mx:Canvas>
+	</mx:VBox>	
+	<mx:TextInput width="0" height="0" id="entruster" visible="false"/>
+</mx:Canvas>

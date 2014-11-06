@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<view:AbstractFormatView 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:view="com.maninsoft.smart.formeditor.view.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import mx.controls.NumericStepper;
+			
+			private var numericStepper:NumericStepper;
+			override public function refreshVisual():void{
+				if(this.numericStepper == null){
+					this.numericStepper = new NumericStepper();
+					this.numericStepper.percentWidth = 100;
+					this.numericStepper.percentHeight = 100;
+					
+					this.addChild(this.numericStepper);
+				}
+				
+				if(this.fieldModel.format.minNumUse)
+					this.numericStepper.minimum = this.fieldModel.format.minNum;
+				if(this.fieldModel.format.maxNumUse)
+					this.numericStepper.maximum = this.fieldModel.format.maxNum; 
+					
+				this.numericStepper.stepSize = this.fieldModel.format.stepSize;	
+				this.numericStepper.enabled = !(this.fieldModel.readOnly);
+			}
+		
+			override public function get formatType():FormatType {
+				return FormatTypes.numericStepper;
+			}
+		]]>
+	</mx:Script>
+</view:AbstractFormatView>

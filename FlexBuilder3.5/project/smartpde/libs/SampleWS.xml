@@ -1,0 +1,172 @@
+<xpdl:Package Id="pkg_36a36c2d87eb41259d298914f13187db" Name="test process" xmlns:xpdl="http://www.wfmc.org/2004/XPDL2.0alpha">
+  <xpdl:PackageHeader>
+    <xpdl:XPDLVersion>2.0</xpdl:XPDLVersion>
+    <xpdl:Vendor>ManInSoft</xpdl:Vendor>
+    <xpdl:Created>Mon Aug 09 15:46:00 KST 2010</xpdl:Created>
+    <xpdl:Description>null</xpdl:Description>
+  </xpdl:PackageHeader>
+  <xpdl:RedefinableHeader>
+    <xpdl:Author>kmyu@maninsoft.co.kr</xpdl:Author>
+    <xpdl:Version>1</xpdl:Version>
+    <xpdl:Codepage>UTF-8</xpdl:Codepage>
+    <xpdl:Countrykey>KR</xpdl:Countrykey>
+  </xpdl:RedefinableHeader>
+  <xpdl:Script Type="null" Version="null" Grammar="null"/>
+  <xpdl:Pools>
+    <xpdl:Pool Orientation="HORIZONTAL" Process="null" BoundaryVisible="false" Id="0" Name="프로세스">
+      <xpdl:Lanes>
+        <xpdl:Lane Id="0" Name="주관부서" ParentLane="0">
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Page="0" Height="363" Width="21" BorderColor="0" FillColor="16777215" HeadColor="13421772"/>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Lane>
+      </xpdl:Lanes>
+      <xpdl:NodeGraphicsInfos>
+        <xpdl:NodeGraphicsInfo Width="862" Height="363" BorderColor="0" FillColor="10066329" TextColor="0" Shadow="false" Gradient="false">
+          <xpdl:Coordinates XCoordinate="4" YCoordinate="0"/>
+        </xpdl:NodeGraphicsInfo>
+      </xpdl:NodeGraphicsInfos>
+    </xpdl:Pool>
+  </xpdl:Pools>
+  <xpdl:WorkflowProcesses>
+    <xpdl:WorkflowProcess Id="prc_fff1a4e0fbe544c5a54fd23b71425e56" Name="test process" ParentId="" AccessLevel="null" Status="null">
+      <xpdl:ProcessHeader DurationUnit="null">
+        <xpdl:Created>null</xpdl:Created>
+        <xpdl:Description/>
+      </xpdl:ProcessHeader>
+      <xpdl:RedefinableHeader>
+        <xpdl:Author>null</xpdl:Author>
+        <xpdl:Version>null</xpdl:Version>
+        <xpdl:Codepage>null</xpdl:Codepage>
+        <xpdl:Countrykey>null</xpdl:Countrykey>
+      </xpdl:RedefinableHeader>
+      <xpdl:FormalParameters>
+        <xpdl:FormalParameter Id="test1" name="" InitialValue="null" Required="false" Mode="IN">
+          <xpdl:DataType>
+            <xpdl:BasicType Type="textInput"/>
+          </xpdl:DataType>
+        </xpdl:FormalParameter>
+        <xpdl:FormalParameter Id="test2" name="" InitialValue="null" Required="false" Mode="IN">
+          <xpdl:DataType>
+            <xpdl:BasicType Type="textInput"/>
+          </xpdl:DataType>
+        </xpdl:FormalParameter>
+        <xpdl:FormalParameter Id="test3" name="" InitialValue="null" Required="false" Mode="IN">
+          <xpdl:DataType>
+            <xpdl:BasicType Type="textInput"/>
+          </xpdl:DataType>
+        </xpdl:FormalParameter>
+      </xpdl:FormalParameters>
+      <xpdl:Activities>
+        <xpdl:Activity StartActivity="false" PerformerName="" Id="1" Name="시작">
+          <xpdl:Event>
+            <xpdl:StartEvent Trigger="None"/>
+          </xpdl:Event>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="30" Height="30" BorderColor="0" FillColor="10860750" TextColor="0" Shadow="true" Gradient="true" LaneId="0">
+              <xpdl:Coordinates XCoordinate="25" YCoordinate="44"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+        <xpdl:Activity StartActivity="true" PerformerName="선임 연구원 유광민" Id="2" Name="업무">
+          <xpdl:Implementation>
+            <xpdl:Task>
+              <xpdl:TaskApplication IsCustomForm="false" Id="WorkListManager" Name="SYSTEMFORM" FormName="기본업무화면" Version="1" UserTaskType="" MeanTime="30" ApprovalLine="" ApprovalLineName=""/>
+            </xpdl:Task>
+          </xpdl:Implementation>
+          <xpdl:Performers>
+            <xpdl:Performer>kmyu@maninsoft.co.kr</xpdl:Performer>
+          </xpdl:Performers>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="80" Height="40" BorderColor="0" FillColor="10860750" TextColor="4342852" Shadow="true" Gradient="true" LaneId="0">
+              <xpdl:Coordinates XCoordinate="155" YCoordinate="39"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+        <xpdl:Activity StartActivity="false" PerformerName="" Id="12" Name="종료">
+          <xpdl:Event>
+            <xpdl:EndEvent Result="null"/>
+          </xpdl:Event>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="30" Height="30" BorderColor="10536142" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="0">
+              <xpdl:Coordinates XCoordinate="461" YCoordinate="180"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+
+
+        <xpdl:Activity StartActivity="false" PerformerName="" Id="18" Name="시스템 업무">
+          <xpdl:Implementation>
+              <xpdl:Task>               
+			<xpdl:TaskService Implementation="Unspecified">                 
+				<xpdl:MessageIn Id="uniqId">  
+					<xpdl:ActualParameters Execution="before">
+					  <xpdl:ActualParameter Id="id" Name="id" DataType="string" TargetType="processForm" FieldId="$ActivityData.2.0.제목" 
+						   FieldName="{사용자업무화면.제목}" ValueType="value"></xpdl:ActualParameter>
+					  <xpdl:ActualParameter Id="getTestVoReturn" Name="getTestVoReturn" DataType="string" Mode="IN"></xpdl:ActualParameter>  
+					<xpdl:ActualParameters>
+				</xpdl:MessageIn>
+				<xpdl:MessageOut Id="uniqId"/> 
+					<xpdl:ActualParameters Execution="before">
+					  <xpdl:ActualParameter Id="id" Name="id" DataType="string" TargetType="processForm" FieldId="$ActivityData.2.0.제목" 
+						   FieldName="{사용자업무화면.제목}" ValueType="value"></xpdl:ActualParameter>
+					  <xpdl:ActualParameter Id="getTestVoReturn" Name="getTestVoReturn" DataType="string" Mode="OUT"></xpdl:ActualParameter>  
+					<xpdl:ActualParameters>
+				</xpdl:MessageOut>              
+			</xpdl:TaskService>             
+		</xpdl:Task> 
+          </xpdl:Implementation>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="77" Height="33" BorderColor="10536142" FillColor="15726847" TextColor="6710886" Shadow="false" Gradient="false" LaneId="0">
+              <xpdl:Coordinates XCoordinate="253" YCoordinate="179"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+
+
+
+      </xpdl:Activities>
+      <xpdl:Transitions>
+        <xpdl:Transition Id="4" Name="" From="1" To="2">
+          <xpdl:Description/>
+          <xpdl:Condition Type="CONDITION">
+            <xpdl:Expression ScriptGrammar="javascript"/>
+          </xpdl:Condition>
+          <xpdl:ConnectorGraphicsInfos>
+            <xpdl:ConnectorGraphicsInfo Path="90,270" TextPos="0,0"/>
+          </xpdl:ConnectorGraphicsInfos>
+        </xpdl:Transition>
+        <xpdl:Transition Id="19" Name="" From="2" To="18">
+          <xpdl:Description/>
+          <xpdl:Condition Type="CONDITION">
+            <xpdl:Expression ScriptGrammar="javascript"/>
+          </xpdl:Condition>
+          <xpdl:ConnectorGraphicsInfos>
+            <xpdl:ConnectorGraphicsInfo Path="180,270" TextPos="0,0"/>
+          </xpdl:ConnectorGraphicsInfos>
+        </xpdl:Transition>
+        <xpdl:Transition Id="20" Name="" From="18" To="12">
+          <xpdl:Description/>
+          <xpdl:Condition Type="CONDITION">
+            <xpdl:Expression ScriptGrammar="javascript"/>
+          </xpdl:Condition>
+          <xpdl:ConnectorGraphicsInfos>
+            <xpdl:ConnectorGraphicsInfo Path="90,270" TextPos="0,0"/>
+          </xpdl:ConnectorGraphicsInfos>
+        </xpdl:Transition>
+      </xpdl:Transitions>
+    </xpdl:WorkflowProcess>
+  </xpdl:WorkflowProcesses>
+  <xpdl:Artifacts/>
+</xpdl:Package>

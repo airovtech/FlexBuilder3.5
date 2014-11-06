@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="450" height="450" close="PopUpManager.removePopUp(this)" 
+	 xmlns:ns1="mxmlComponet.common.*" xmlns:ns2="portalAs.gridComponent.*" horizontalScrollPolicy="off" verticalScrollPolicy="off" 
+	 initialize="init()" creationComplete="crComplete()" title="Gadget선택-업무선택" titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	 borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3" xmlns:page="com.maninsoft.smart.common.page.*">
+	<mx:Script>
+		<![CDATA[
+			import mxmlComponet.gadget.model.GadgetColumn;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import mxmlComponet.gadget.column.SupperGadgetColumns;
+			import mxmlComponet.gadget.declaration.GadgetDeclaration;
+			import portalAs.gridComponent.FindSelectItem;
+			import mxmlComponet.gadget.model.GadgetContent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.managers.PopUpManager;
+			import portalAs.Properties;
+			
+			private var gadgetDeclaration:GadgetDeclaration = new GadgetDeclaration();
+			
+			[Bindable]
+			public var gadgetContents:ArrayCollection = gadgetDeclaration.getGadgetContentArray();
+			[Bindable]
+			public var gadgetFormContents:ArrayCollection = new ArrayCollection();
+			
+			[Bindable]
+			public var gadgetColumns:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var gadgetContent:GadgetContent;
+			public var gadgetContentId:String;
+			
+			[Bindable]
+			public var formId:String;
+			
+			private function init():void{
+				this.width = this.owner.width/2;
+				this.height = this.owner.height/1.5;
+			}
+			
+			private function crComplete():void{
+				var arr1:Array = gadgetGrid1.columns;
+				DataGridColumn(arr1[1]).width = gadgetGrid1.width*0.1;
+				DataGridColumn(arr1[2]).width = gadgetGrid1.width*0.45;
+				DataGridColumn(arr1[3]).width = gadgetGrid1.width*0.45;
+				var arr2:Array = gadgetGrid2.columns;
+				DataGridColumn(arr2[1]).width = gadgetGrid2.width*0.1;
+				DataGridColumn(arr2[2]).width = gadgetGrid2.width*0.45;
+				DataGridColumn(arr2[3]).width = gadgetGrid2.width*0.45;
+				var arr3:Array = columnGrid.columns;
+				DataGridColumn(arr3[1]).width = columnGrid.width*0.1;
+				DataGridColumn(arr3[2]).width = columnGrid.width*0.45;
+				DataGridColumn(arr3[3]).width = columnGrid.width*0.45;
+				seachFormService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=searchSingleFormList";
+				seachFormService.send();
+			}
+			
+			private function getGadgetContentList():void{
+			}
+			
+			private function getColumnList():void{
+				
+			}
+			
+			private function nextStep():void{
+				gadgetContentId = FindSelectItem.getSelectItemId(gadgetGrid2);
+				if(gadgetContentId!=null){
+					gadgetContent = gadgetDeclaration.getGadgetContent(gadgetContentId);
+					var clazz:Class = Class(getDefinitionByName(gadgetContent.columnName));
+					gadgetColumns = SupperGadgetColumns(new clazz()).getColumnArray();
+				}else{
+					gadgetContent = GadgetContent(FindSelectItem.getSelectItemObject(gadgetGrid1));
+					formId = gadgetContent.formId;
+					seachFormFieldService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=getSingleFormFieldList";
+					seachFormFieldService.send();
+				}
+				step1.visible = false;
+				step2.visible = true;
+			}
+			private function nextStep2():void{
+				var arr:Array = FindSelectItem.getArraySelectItemObject(columnGrid);
+				if(this.owner is PrivateHome){
+					PrivateHome(this.owner).newAddGadget(gadgetContent.className, gadgetContent.name, 250, arr, gadgetContent.formId);
+				}else if(this.owner is IndepPrivateHome){
+					IndepPrivateHome(this.owner).newAddGadget(gadgetContent.className, gadgetContent.name, 250, arr, gadgetContent.formId);
+				}
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function seachFormResult(event:ResultEvent):void {
+				gadgetGrid1.rowHeight = 22;
+				var searchCount:int;
+				var xmlResult:XML = XML(event.result);    
+				var idList:XMLListCollection = new XMLListCollection(xmlResult.Form.id);
+				var nameList:XMLListCollection = new XMLListCollection(xmlResult.Form.name);
+				var descriptionList:XMLListCollection = new XMLListCollection(xmlResult.Form.description);
+				var formIdList:XMLListCollection = new XMLListCollection(xmlResult.Form.formId);
+				searchCount = idList.length;
+				//naviPg.totalCount = Number(String(xmlResult.@totalCount));
+				//gadgetGrid1.height = Number(gadgetGrid1.headerHeight) + Number(gadgetGrid1.rowHeight)*searchCount;
+				for(var i:int=0; i<idList.length; i++){
+					var gadgetContent:GadgetContent = new GadgetContent(idList[i], nameList[i], descriptionList[i], 
+																		"mxmlComponet.gadget.FormWorkGadget", "", false, formIdList[i]);
+					gadgetFormContents.addItem(gadgetContent);
+				}
+			}
+			
+			private function seachFormFieldResult(event:ResultEvent):void {
+				var xmlResult:XML = XML(event.result);    
+				var idList:XMLListCollection = new XMLListCollection(xmlResult.FormField.id);
+				var nameList:XMLListCollection = new XMLListCollection(xmlResult.FormField.name);
+				for(var i:int=0; i<idList.length; i++){
+					var gcm:GadgetColumn = new GadgetColumn("A"+idList[i]+"Header", nameList[i], "", false);
+					gadgetColumns.addItem(gcm);
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="seachFormService"  resultFormat="e4x" useProxy="false" result="seachFormResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<!--<pageCount>{naviPg.pageCount}</pageCount>
+			<recordCount>{naviPg.pageSize}</recordCount>-->
+			<name>{formName.text}</name>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="seachFormFieldService"  resultFormat="e4x" useProxy="false" result="seachFormFieldResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<formId>{formId}</formId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:Canvas width="100%" height="100%" id="step1" visible="true">
+		<mx:VBox width="95%" height="110%" verticalGap="0">
+			<mx:HBox width="100%" height="26" backgroundColor="#BCBABA" horizontalGap="3" paddingLeft="3" horizontalAlign="center" verticalAlign="middle" paddingRight="3">
+				<mx:Label text="업무명" verticalCenter="0" horizontalCenter="0" height="20"/>
+				<mx:TextInput width="100%" verticalCenter="0" horizontalCenter="0" id="formName" height="20"/>
+				<mx:Button label="검색" verticalCenter="0" horizontalCenter="0" styleName="normalLabel" height="20"/>
+			</mx:HBox>
+			<mx:VBox width="100%" height="242" borderThickness="0" borderStyle="none" backgroundColor="#BCBABA">
+				<mx:DataGrid width="100%" height="100%" id="gadgetGrid1" dataProvider="{gadgetFormContents}">
+					<mx:columns>
+						<mx:DataGridColumn headerText="id" dataField="id" width="0" visible="false"/>
+						<mx:DataGridColumn headerText="선택"  textAlign="center">
+							<mx:itemRenderer>
+			                    <mx:Component>
+									<ns2:EmbedGridRadioButton embedId="{data.id}" embedIsChecked="{data.isChecked}"/>
+								</mx:Component>
+			                </mx:itemRenderer>
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="업무명" dataField="name" textAlign="center"/>
+						<mx:DataGridColumn headerText="설명" dataField="description" textAlign="center"/>
+						<mx:DataGridColumn headerText="formId" dataField="formId" width="0" visible="false"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+			<mx:Spacer height="10"/>
+			<mx:VBox width="100%" height="92" verticalGap="0">
+				<mx:DataGrid width="100%" height="100%" verticalCenter="0" id="gadgetGrid2" dataProvider="{gadgetContents}" rowHeight="22">
+					<mx:columns>
+						<mx:DataGridColumn headerText="id" dataField="id" width="0" visible="false"/>
+						<mx:DataGridColumn headerText="선택" dataField="isChecked" textAlign="center">
+							<mx:itemRenderer>
+								<mx:Component>
+									<ns2:EmbedGridRadioButton embedId="{data.id}" embedIsChecked="{data.isChecked}"/>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+						<mx:DataGridColumn headerText="업무명" dataField="name" textAlign="center"/>
+						<mx:DataGridColumn headerText="설명" dataField="description" textAlign="center"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+			<mx:HBox width="100%" height="30" verticalGap="3" horizontalAlign="center" verticalAlign="middle">
+				<mx:Button label="취소" height="20" right="2" styleName="normalLabel"/>
+				<mx:Button label="다음" height="20" left="2" click="nextStep()" styleName="normalLabel"/>
+			</mx:HBox>
+		</mx:VBox>	
+	</mx:Canvas>
+	<mx:Canvas width="100%" height="100%" id="step2" visible="false">
+		<mx:VBox width="100%" height="100%" verticalGap="0">
+			<mx:Canvas width="100%" height="5%">	
+			</mx:Canvas>
+			<mx:DataGrid width="100%" height="80%" verticalCenter="0" id="columnGrid" dataProvider="{gadgetColumns}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="id" dataField="id" width="0" visible="false"/>
+					<mx:DataGridColumn headerText="선택" dataField="isChecked" textAlign="center">
+						<mx:itemRenderer>
+							<mx:Component>
+								<ns2:EmbedGridChecBox embedId="{data.id}" embedIsChecked="{data.isChecked}"/>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="컬럼명" dataField="name" textAlign="center"/>
+					<mx:DataGridColumn headerText="비고" dataField="description" textAlign="center"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<page:PageNavigate   width="100%" height="10%" clickPageItem="getColumnList()" id="columnGridNav" pageSize="10"/>
+			<mx:HBox width="100%" height="26" verticalGap="0" verticalAlign="middle" horizontalAlign="center" horizontalGap="3">
+				<mx:Button label="이전" height="20" right="2" styleName="normalLabel"/>
+				<mx:Button label="완료" height="20" left="2" click="nextStep2()" styleName="normalLabel"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:Canvas>
+</mx:TitleWindow>

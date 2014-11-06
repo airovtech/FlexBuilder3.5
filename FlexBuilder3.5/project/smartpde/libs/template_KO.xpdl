@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xpdl:Package Id="null" Name="null" xmlns:xpdl="http://www.wfmc.org/2004/XPDL2.0alpha">
+  <xpdl:PackageHeader>
+    <xpdl:XPDLVersion>2.0</xpdl:XPDLVersion>
+    <xpdl:Vendor>ManInSoft</xpdl:Vendor>
+    <xpdl:Created>null</xpdl:Created>
+    <xpdl:Description>null</xpdl:Description>
+  </xpdl:PackageHeader>
+  <xpdl:RedefinableHeader>
+    <xpdl:Author>null</xpdl:Author>
+    <xpdl:Version>1</xpdl:Version>
+    <xpdl:Codepage>UTF-8</xpdl:Codepage>
+    <xpdl:Countrykey>KR</xpdl:Countrykey>
+  </xpdl:RedefinableHeader>
+  <xpdl:Script Type="null" Version="null" Grammar="null"/>
+  <xpdl:Pools>
+    <xpdl:Pool Orientation="HORIZONTAL" Process="null" BoundaryVisible="false" Id="0" Name="프로세스">
+      <xpdl:Lanes>
+        <xpdl:Lane Id="0" Name="주관부서" ParentLane="0">
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Page="0" Height="117" Width="21"/>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Lane>
+      </xpdl:Lanes>
+      <xpdl:NodeGraphicsInfos>
+        <xpdl:NodeGraphicsInfo Width="575" Height="117">
+          <xpdl:Coordinates XCoordinate="10" YCoordinate="10"/>
+        </xpdl:NodeGraphicsInfo>
+      </xpdl:NodeGraphicsInfos>
+    </xpdl:Pool>
+  </xpdl:Pools>
+  <xpdl:WorkflowProcesses>
+    <xpdl:WorkflowProcess Id="null" Name="null" AccessLevel="null" Status="null">
+      <xpdl:ProcessHeader DurationUnit="null">
+        <xpdl:Created>null</xpdl:Created>
+        <xpdl:Description>null</xpdl:Description>
+      </xpdl:ProcessHeader>
+      <xpdl:RedefinableHeader>
+        <xpdl:Author>null</xpdl:Author>
+        <xpdl:Version>null</xpdl:Version>
+        <xpdl:Codepage>null</xpdl:Codepage>
+        <xpdl:Countrykey>null</xpdl:Countrykey>
+      </xpdl:RedefinableHeader>
+      <xpdl:Activities>
+        <xpdl:Activity StartActivity="false" Id="1" Name="시작">
+          <xpdl:Event>
+            <xpdl:StartEvent Trigger="None"/>
+          </xpdl:Event>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="35" Height="35" LaneId="0">
+              <xpdl:Coordinates XCoordinate="25" YCoordinate="43"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+        <xpdl:Activity StartActivity="false" Id="2" Name="업무화면 업무">
+          <xpdl:Implementation>
+            <xpdl:Task>
+              <xpdl:TaskApplication Id="WorkListManager" Name="SYSTEMFORM" FormName="기본업무화면" Version="1"/>
+            </xpdl:Task>
+          </xpdl:Implementation>
+          <xpdl:Performers/>
+          <xpdl:DataFields/>
+          <xpdl:Assignments/>
+          <xpdl:NodeGraphicsInfos>
+            <xpdl:NodeGraphicsInfo Width="100" Height="40" LaneId="0">
+              <xpdl:Coordinates XCoordinate="155" YCoordinate="39"/>
+            </xpdl:NodeGraphicsInfo>
+          </xpdl:NodeGraphicsInfos>
+        </xpdl:Activity>
+      </xpdl:Activities>
+      <xpdl:Transitions>
+        <xpdl:Transition Id="4" Name="" From="1" To="2">
+          <xpdl:Description/>
+          <xpdl:Condition Type="CONDITION">
+            <xpdl:Expression ScriptGrammar="javascript"/>
+          </xpdl:Condition>
+          <xpdl:ConnectorGraphicsInfos>
+            <xpdl:ConnectorGraphicsInfo Path="90,270" TextPos="0,0"/>
+          </xpdl:ConnectorGraphicsInfos>
+        </xpdl:Transition>
+      </xpdl:Transitions>
+    </xpdl:WorkflowProcess>
+  </xpdl:WorkflowProcesses>
+  <xpdl:Artifacts/>
+</xpdl:Package>

@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractSimpleDialog xmlns="com.maninsoft.smart.common.dialog.*" xmlns:mx="http://www.adobe.com/2006/mxml"	height="100%" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.modeler.xpdl.server.ApplicationService;
+			import com.maninsoft.smart.formeditor.model.SystemServiceParameter;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskService;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import com.maninsoft.smart.modeler.xpdl.model.process.FormalParameter;
+			import com.maninsoft.smart.modeler.xpdl.model.SubFlow;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskForm;
+			import com.maninsoft.smart.modeler.xpdl.model.base.Activity;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.modeler.xpdl.model.XPDLDiagram;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskFormField;
+			import com.maninsoft.smart.workbench.common.assets.TreeAssets;
+			import com.maninsoft.smart.workbench.common.assets.PropertyIconLibrary;
+			import mx.controls.Button;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.modeler.assets.DialogAssets;
+			import com.maninsoft.smart.modeler.xpdl.dialogs.SelectUserDialog;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskApplication;
+			import com.maninsoft.smart.modeler.xpdl.server.Department;
+			import com.maninsoft.smart.modeler.xpdl.server.Server;
+			import com.maninsoft.smart.modeler.xpdl.server.User;
+
+			import flash.display.DisplayObject;
+			import flash.events.Event;
+			import flash.events.FocusEvent;
+
+			import mx.collections.ArrayCollection;
+			import mx.controls.Tree;
+			import mx.core.Application;
+			import mx.core.Container;
+			import mx.core.UIComponent;
+			import mx.events.ListEvent;
+			import mx.events.TreeEvent;
+			import mx.managers.PopUpManager;
+
+			//----------------------------------------------------------------------
+			// Class Variables
+			//----------------------------------------------------------------------
+
+			private static var _dialog: SelectActivityFieldDialog;
+
+			//----------------------------------------------------------------------
+			// Variables
+			//----------------------------------------------------------------------
+
+			private var _server: Server;
+
+			[Bindable]
+			private var _activityFields: Object;
+
+			private var _acceptFunc: Function;
+			private var _openingItem: Department;
+
+			private var _diagram:XPDLDiagram;
+			public function get diagram():XPDLDiagram {
+				return _diagram;
+			}
+
+			public function set diagram(value:XPDLDiagram):void {
+				_diagram = value;
+				
+				_activityFields = new ArrayCollection();
+				
+				if (value == null || value.xpdlPackage == null || value.xpdlPackage.process == null || 
+					SmartUtil.isEmpty(value.xpdlPackage.process.activities))
+					return;
+
+				var acts:Array = value.activities;
+				var paramForm:TaskForm = new TaskForm();
+				var inParams: Array = [];
+				paramForm.id = value.xpdlPackage.process.id.toString();
+				paramForm.name = "(" + resourceManager.getString("ProcessEditorETC", "processParameterText") + ")";
+				paramForm.packageId = value.xpdlPackage.id;
+				if(value.xpdlPackage.process.formalParameters){
+					for each(var inParam: FormalParameter in value.xpdlPackage.process.formalParameters){
+						if(inParam.mode == FormalParameter.MODE_IN || inParam.mode == FormalParameter.MODE_INOUT){
+							inParams.push(inParam);
+						}						
+					}
+				}
+				paramForm.addItems(inParams);
+				_activityFields.addItem(paramForm);						
+				for each (var act:Activity in acts) {
+					if (act is TaskApplication && TaskApplication(act).formId != "SYSTEMFORM"){
+						for(var i:int=0; i<diagram.server.taskForms.length; i++){
+							if(diagram.server.taskForms[i].formId == TaskApplication(act).formId){
+								break;
+							}
+						}
+						if(i==diagram.server.taskForms.length && TaskApplication(act).isCustomForm && TaskApplication(act).applicationService){
+							var taskApplication: TaskApplication = act as TaskApplication;
+							var appService: ApplicationService = taskApplication.applicationService as ApplicationService;
+							var returnParams: Array = [];
+							paramForm = new TaskForm();
+							paramForm.id = appService.id;
+							paramForm.name = taskApplication.name + " (" + resourceManager.getString("ProcessEditorETC", "returnText") + ")";
+							if(appService.returnParams){
+								for each(var returnParam: FormalParameter in appService.returnParams){
+									returnParam.parentId = taskApplication.id.toString();
+									returnParams.push(returnParam);
+								}
+							}
+							paramForm.addItems(returnParams);
+							_activityFields.addItem(paramForm);						
+							
+						}else if(i<diagram.server.taskForms.length){						
+							var taskForm:TaskForm = TaskForm(diagram.server.taskForms[i]).clone();
+							var formFields:Array = diagram.server.getTaskFormFields(taskForm.formId);
+							if (SmartUtil.isEmpty(formFields))
+								break;
+							
+							taskForm.addItems(formFields);
+							_activityFields.addItem(taskForm);
+						}						
+					}else if(act is SubFlow && SubFlow(act).subProcess){
+						var formalParameters: Array = SubFlow(act).subProcess.formalParameters;
+						var subFlow: SubFlow = act as SubFlow;
+						paramForm = new TaskForm();
+						var outParams: Array = [];
+						paramForm.id = subFlow.subProcessId;
+						paramForm.name = subFlow.name + " (" + resourceManager.getString("ProcessEditorETC", "parameterText") + ")";
+						paramForm.packageId = subFlow.subProcessInfo.packageId;
+						paramForm.creator = subFlow.subProcessInfo.creator;
+						if(formalParameters){
+							for each(var param: FormalParameter in formalParameters){
+								if(param.mode == FormalParameter.MODE_OUT || param.mode == FormalParameter.MODE_INOUT){
+									outParams.push(param);
+								}
+							}
+						}
+						paramForm.addItems(outParams);
+						_activityFields.addItem(paramForm);						
+					}else if(act is TaskService && TaskService(act).systemService){
+						var taskService: TaskService = act as TaskService;
+						var systemServiceParameters: Array = taskService.systemService.messageOut;
+						paramForm = new TaskForm();
+						outParams = [];
+						paramForm.id = taskService.serviceId;
+						paramForm.name = taskService.name + " (" + resourceManager.getString("ProcessEditorETC", "parameterText") + ")";
+						if(systemServiceParameters){
+							for each(var serviceParam:SystemServiceParameter in systemServiceParameters){
+								serviceParam.parentId = taskService.id.toString();
+								outParams.push(serviceParam);
+							}
+						}
+						paramForm.addItems(outParams);
+						_activityFields.addItem(paramForm);						
+					}
+				}
+			}
+			//----------------------------------------------------------------------
+			// Class methods
+			//----------------------------------------------------------------------
+
+			public static function execute(current:Object, diagram:XPDLDiagram, acceptFunc: Function, position:Point=null, width:Number=0, height:Number=0): void {
+
+				_dialog = PopUpManager.createPopUp(Application.application as DisplayObject, SelectActivityFieldDialog, false) as SelectActivityFieldDialog;
+
+				_dialog._acceptFunc = acceptFunc;
+				if(position){
+					_dialog.x = position.x;
+					_dialog.y = position.y;
+				}else{
+					PopUpManager.centerPopUp(_dialog);	
+				}
+	
+				if(width) _dialog.width = width;
+				if(height) _dialog.height = height;
+	
+				_dialog.diagram = diagram;
+//				_dialog.load(current);
+					
+				_dialog.activityFieldTree.setFocus();
+				_dialog.addEventListener(FocusEvent.MOUSE_FOCUS_CHANGE, _dialog.dialogFocusChange);
+	
+			}
+
+			//----------------------------------------------------------------------
+			// Internal methods
+			//----------------------------------------------------------------------
+/*
+			private function load(current: Object): void {
+				if (current) {
+					if(String(current).indexOf("@")>=0){
+						var selectedItem:User = findInDepartment(_dialog._organization as Department, String(current));
+						var selectedObject:DisplayObject = _dialog.organizationTree.getChildByName(selectedItem.name);
+						var selectedIndex:int = 1;
+						_dialog.organizationTree.selectedIndex = selectedIndex;
+						function findInDepartment(children:Department, id:String):User{
+							var item:Object;
+							if(children.children.length>0){
+								for each(item in children.children){
+									if(item is User && User(item).id == id){
+										return item as User;
+									}else if(item is Department){
+										var foundItem:User = findInDepartment(item as Department, id);
+										if(foundItem){
+											return foundItem;
+										}
+									}
+								}
+							}
+							return null;
+						}
+						_dialog.organizationTree.expandItem(_dialog.organizationTree.selectedItem, true);
+						_dialog.organizationTree.setFocus();
+					}else{
+						_dialog.tn.selectedIndex=1;
+						for each(var formField:TaskFormField in _dialog._formFields){
+							if(formField.id == current){
+								_dialog.formFieldDG.selectedItem=formField;								
+							}
+						}
+						_dialog.formFieldDG.setFocus();
+					}
+				}else{
+					organizationTree.setFocus();
+					organizationTree.expandChildrenOf(organizationTree.dataProvider[0], true);
+				}
+			}
+*/
+			private function closeDialog(accept: Boolean = true): void {
+				if (accept && (_acceptFunc != null) && activityFieldTree.selectedItem){
+					_acceptFunc(activityFieldTree.selectedItem);
+				}
+				PopUpManager.removePopUp(this);
+			}
+
+			//----------------------------------------------------------------------
+			// Event handlers
+			//----------------------------------------------------------------------
+
+			private function activityFieldIcon(item:Object): Class{
+				if(item is TaskForm){
+					return PropertyIconLibrary.formAssignedIcon;			
+				}else if(item is TaskFormField){
+					return TaskFormField(item).icon;		
+				}else if(item is FormalParameter){
+					return FormalParameter(item).formatType.icon;
+				}else if(item is SystemServiceParameter){
+					return SystemServiceParameter(item).icon;
+				}
+				return null;
+			}
+
+			private function dialogFocusChange(event: FocusEvent): void {
+				if(	(event.relatedObject == _dialog) ||
+					((event.relatedObject is UIComponent) && (UIComponent(event.relatedObject).parentDocument == _dialog)) ||
+					(_dialog.activityFieldTree && _dialog.activityFieldTree.contains(event.relatedObject))){
+						return;
+				}		
+				closeDialog(false);
+			}
+
+			//------------------------
+			// Dialog
+			//------------------------
+
+			private function dlg_keyDown(event: KeyboardEvent): void {
+				if (event.keyCode == Keyboard.ESCAPE){
+					closeDialog(false);
+				}
+			}	
+
+			//------------------------
+			// activityFieldTree
+			//------------------------
+
+			private function activityFieldTree_itemClick(event:ListEvent): void {
+				if(Tree(event.target).selectedItem is TaskFormField || Tree(event.target).selectedItem is FormalParameter || Tree(event.target).selectedItem is SystemServiceParameter){
+					closeDialog(true);	
+				}
+				return;
+			}
+		]]>
+	</mx:Script>
+    <mx:Tree id="activityFieldTree" styleName="selectActivityFieldTree" showRoot="false" width="100%" wordWrap="false" showDataTips="true"
+		disclosureClosedIcon="{TreeAssets.plusIcon}" disclosureOpenIcon="{TreeAssets.minusIcon}"
+       	iconFunction="activityFieldIcon" labelField="label" verticalScrollPolicy="auto" horizontalScrollPolicy="off" 
+		itemClick="activityFieldTree_itemClick(event)" dataProvider="{_activityFields}">
+	</mx:Tree>
+</AbstractSimpleDialog>

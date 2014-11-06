@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="treeDataInit()">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.VScrollBar;
+			import mx.rpc.http.mxml.HTTPService;
+			import portalAs.Properties;
+			import portalAs.FindApplication;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			public var dataRequest:HTTPService;
+			
+			[Bindable] 
+			public var processIdVer:String;
+			[Bindable] 
+			public var formIdProcessIdVer:String;
+			[Bindable]
+			public var formIdVer:String;
+			[Bindable]
+			public var clickedLabel:String; 
+			
+            [Embed("images/portal_main/taskTree/tasktree_1.png")]
+            private var Icon1_:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_1_1.png")]
+            private var Icon1_1:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_1_2.png")]
+            private var Icon1_2:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_1_3.png")]
+            private var Icon1_3:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_1_4.png")]
+            private var Icon1_4:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_2.png")]
+            private var Icon2_:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_2_1.png")]
+            private var Icon2_1:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_2_1_1.png")]
+            private var Icon2_1_1:Class;
+
+            [Embed("images/portal_main/taskTree/tasktree_2_1_2.png")]
+            private var Icon2_1_2:Class;
+
+			 
+			private function treeDataInit():void {
+				treeInit(taskTree, Properties.basePath 
+				+ "smartserver/services/runtime/searchingService.jsp?method=getWorkBoxList&userId=" + Properties.userId);
+			}
+			public function treeDataRefresh():void {
+				tree_status = "init";
+				treeDataInit();
+			}	    					
+		]]>
+	</mx:Script>
+	<mx:Script source="../../portalAs/TaskTreeUtil.as"/>
+	<mx:Panel x="0" y="0" width="100%" height="100%" layout="absolute" title="업무공간" 
+		styleName="leftCustomPanel" titleStyleName="leftCustomPanelTitle"> 	
+		<mx:Tree id="taskTree" x="10" y="0" width="100%" height="97%" labelField="@label" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+			showRoot="false" borderStyle="none" styleName="taskTree" itemClick="this.treeSelect()"/>	
+		<!--<mx:HBox x="0" y="0" width="100%" height="24" horizontalAlign="right" 
+			paddingRight="4" paddingLeft="4" paddingTop="4" paddingBottom="4">
+			<mx:Button label="Button" width="16" height="16" click="treeDataRefresh()"/>
+		</mx:HBox>-->
+	</mx:Panel>
+</mx:Canvas>

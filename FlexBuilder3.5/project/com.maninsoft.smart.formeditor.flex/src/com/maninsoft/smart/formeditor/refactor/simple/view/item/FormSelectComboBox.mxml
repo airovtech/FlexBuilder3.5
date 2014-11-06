@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" change="{changFormField()}">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			
+			private var _formDocument:FormDocument;
+			
+			public function set formDocument(formDocument:FormDocument):void{
+				this._formDocument = formDocument;
+				
+				labelField = "name";
+				
+				dataProvider = formDocument.children;
+			}
+			
+			public function get formDocument():FormDocument{
+				return this._formDocument;
+			}
+			
+			public var selectFormField:FormEntity;
+			
+			private function changFormField():void{
+				selectFormField = FormEntity(this.selectedItem);
+			}
+		]]>
+	</mx:Script>
+</mx:ComboBox>

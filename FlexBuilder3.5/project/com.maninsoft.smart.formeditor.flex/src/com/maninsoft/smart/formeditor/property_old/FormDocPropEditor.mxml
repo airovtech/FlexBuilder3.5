@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TabNavigator implements="com.maninsoft.smart.formeditor.property.IFormPropertyEditor" 
+	label="{resourceManager.getString('FormEditorETC', 'formDocPropertiesText')}" 
+	width="100%" height="100%" styleName="formDocPropEditor" 
+	paddingTop="2" paddingBottom="2" tabStyleName="propTitle" 
+	creationComplete="{refreshVisual()}" 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:component="com.maninsoft.smart.formeditor.refactor.component.*" 
+	xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.util.FormEditorAssets;
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import com.maninsoft.smart.formeditor.layout.model.FormLayout;
+			import com.maninsoft.smart.formeditor.property.part.FormDocPropController;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.simple.util.FormDocumentCommandUtil;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormModelCommand;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			private var _editDomain:FormEditDomain;
+
+			public function set editDomain(editDomain:FormEditDomain):void{
+			    this._editDomain = editDomain;
+			}
+			public function get editDomain():FormEditDomain{
+			    return this._editDomain;
+			}
+			
+			private var _selectModel:ISelectableModel;
+
+			public function set selectModel(selectModel:ISelectableModel):void{
+			    this._selectModel = selectModel;
+			    
+			    this.formDocument = this._selectModel as FormDocument;
+			}
+			public function get selectModel():ISelectableModel{
+			    return this._selectModel;
+			}
+			
+			private var _formDocPropController:FormDocPropController;
+
+			public function set formDocPropController(formDocPropController:FormDocPropController):void{
+			    this._formDocPropController = formDocPropController;
+			}
+			public function get formDocPropController():FormDocPropController{
+			    return this._formDocPropController;
+			}
+			
+			public function registerViewer():void{
+				if(formDocPropController == null){
+					this.formDocPropController = new FormDocPropController();
+					this.formDocPropController.editDomain = this.editDomain;
+				}
+				this.formDocPropController.formDocumentView = this;
+				this.formDocPropController.formModel = this.formDocument;
+				
+			}
+			
+			private var formDocument:FormDocument;
+			
+			public function refreshVisual():void{
+				if(this.formDocument != null && this.initialized){
+					this.registerViewer();
+					
+					this.nameEdit.text = this.formDocument.name;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox icon="{FormEditorAssets.propertyIcon}" label="{resourceManager.getString('FormEditorETC', 'formDocPropertiesText')}" 
+		paddingLeft="5" paddingTop="5"  width="100%">
+		<mx:Grid  styleName="propForm" width="50%" horizontalGap="1" verticalGap="1" >
+			<mx:GridRow width="100%" >
+				<mx:GridItem styleName="propLabelCon" width="80" >
+					<mx:Label text="{resourceManager.getString('WorkbenchETC', 'nameText')}"/>
+				</mx:GridItem>
+				<mx:GridItem styleName="propFormItem" width="100%">
+					<mx:Label id="nameEdit" width="100%"/>
+				</mx:GridItem>
+			</mx:GridRow>
+		</mx:Grid>
+	</mx:HBox>
+</mx:TabNavigator>

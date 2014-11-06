@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GadgetPanel xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns2="com.maninsoft.smart.*">
+	<mx:Script>
+		<![CDATA[
+			import portalAs.Properties;
+			
+			[Bindable]
+			private var prcInstId:String;
+			
+			public function monitorDiagramCreate(prcInstId:String): void {
+				if(prcInstId!=null){
+					this.prcInstId = prcInstId;
+					viewMain.serviceUrl = Properties.basePath + "smartserver/services/runtime/searchingService.jsp";
+					viewMain.userId = Properties.userId;
+					viewMain.prcInstId = prcInstId 
+					viewMain.load();
+				}
+			}
+		]]>
+	</mx:Script>
+	<ns2:InstanceViewer id="viewMain" width="100%" height="100%"/>
+</GadgetPanel>

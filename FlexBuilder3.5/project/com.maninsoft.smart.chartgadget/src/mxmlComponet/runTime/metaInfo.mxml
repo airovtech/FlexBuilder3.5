@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="60" backgroundColor="#ECE9D8">
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.ResultEvent;
+			import portalAs.Properties;
+			
+			[Bindable]
+			private var workId:String;
+			[Bindable]
+			private var xmlResult:XML
+			
+			public function searchMetaInfo(parWorkId:String, parStatus:String):void{
+				workId = parWorkId;
+				if(parStatus=="ed"){
+					searchWorkService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=searchMyDoneWorkList";
+				}else{
+					searchWorkService.url = Properties.basePath + "smartserver/services/runtime/searchingService.jsp?method=searchMyTodoWorkList";
+				}
+				if(workId!=null && workId!="" && workId!="null"){
+					searchWorkService.send();
+				}
+			}	
+			
+			private function searchWorkResult(event:ResultEvent):void {
+				xmlResult = XML(event.result);   
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="searchWorkService"  resultFormat="e4x" useProxy="false" result="searchWorkResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<pageCount>1</pageCount>
+			<recordCount>1</recordCount>
+			<id>{workId}</id>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:VBox width="100%" height="100%" verticalAlign="middle" horizontalAlign="center" verticalGap="0" paddingBottom="0" paddingLeft="5" paddingRight="5" paddingTop="0">
+		<mx:VBox height="60" width="100%" verticalGap="0">
+			<mx:HBox width="100%" height="20">
+				<mx:Label height="20" width="100%" text="제목: {xmlResult.WorkItemInfo.title}" fontSize="11" styleName="normalLabel"/> 
+				<mx:Label height="20" width="100%" text="이전업무수행자: {xmlResult.WorkItemInfo.assignerName}" fontSize="11" styleName="normalLabel"/>
+			</mx:HBox>
+			<mx:HBox width="100%" height="20">
+				<mx:Label height="20" width="100%" text="상태: {xmlResult.WorkItemInfo.statusName}" fontSize="11" styleName="normalLabel"/>
+				<mx:Label height="20" width="100%" text="타입: {xmlResult.WorkItemInfo.workTypeName}" fontSize="11" styleName="normalLabel"/>
+			</mx:HBox>
+			<mx:HBox width="100%" height="20">
+				<mx:Label height="20" width="100%" text="생성일: {xmlResult.WorkItemInfo.createdTime}" fontSize="11" styleName="normalLabel"/>								
+				<mx:Label height="20" width="100%" text="완료일: {xmlResult.WorkItemInfo.completedTime}" fontSize="11" styleName="normalLabel"/>
+			</mx:HBox>
+		</mx:VBox>	
+	</mx:VBox>
+</mx:Canvas>

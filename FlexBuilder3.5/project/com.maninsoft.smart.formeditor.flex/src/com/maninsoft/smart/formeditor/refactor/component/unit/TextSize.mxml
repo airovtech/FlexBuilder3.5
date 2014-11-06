@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml">	
+	<mx:Metadata>
+        [Event("dataChange")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			public static const DEFAULT_SIZE:String = "11";
+			
+			[Bindable] public var fontSizes:Array = [ 
+								{label:"8"}, 
+								{label:"9"}, 
+								{label:"10"}, 
+								{label:DEFAULT_SIZE}, 
+								{label:"12"},
+								{label:"14"},
+								{label:"16"},
+								{label:"18"},
+								{label:"20"},
+								{label:"22"},
+								{label:"24"},
+								{label:"28"},
+								{label:"32"},
+								{label:"48"},
+								{label:"72"}
+								];
+						
+			
+			private function dispatchDataChangeEvent():void {
+                this.dispatchEvent( new Event("dataChange") );
+            }
+           
+			public function restoreDefault():void {
+				fontSizeCombo.selectedIndex = 3;
+			}           
+			
+			public function set size(size:String):void {
+				var index:int = -1;
+				
+				for(var i:int = 0 ; i < fontSizes.length ; i++){
+					if(fontSizes[i]["label"] == size){
+						index = i;
+						break;
+					} 					
+				}
+				
+				if(index != -1)
+					this.fontSizeCombo.selectedIndex = index;
+			}
+			
+			public function get size():String{
+				return this.fontSizeCombo.selectedItem["label"];
+			}      
+           
+		]]>
+	</mx:Script>
+	<mx:ComboBox dataProvider="{fontSizes}" id="fontSizeCombo" selectedIndex="3" editable="true"
+			change="{dispatchDataChangeEvent();}" rowCount="10"/>
+</mx:Canvas>

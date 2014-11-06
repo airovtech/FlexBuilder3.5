@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:smart="com.maninsoft.smart.modeler.xpdl.*" backgroundColor="#ffffff">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.assets.WorkbenchAssets;
+		]]>
+	</mx:Script>
+	<mx:Script source="InstanceViewer_mxml.as"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0" horizontalAlign="center" backgroundColor="#FFFFFF" verticalAlign="middle" paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="1"
+			borderStyle="none" borderThickness="1" horizontalScrollPolicy="off" verticalScrollPolicy="off">	
+		<mx:Canvas id="diagramViewerHeaderToolBar" visible="true" width="100%" height="27" backgroundColor="#e9eeee" borderStyle="none" borderThickness="0">
+			<mx:HBox top="4" left="10" horizontalGap="8" verticalAlign="middle">
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusNoneIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusNoneText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusProcessingIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusProcessingText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusDoneIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusDoneText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusStoppedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusStoppedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusReturnedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusReturnedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusDelayedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusDelayedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+				<mx:Canvas>
+					<mx:Image source="{WorkbenchAssets.daigramStatusSelectedIcon}" />
+					<mx:Text height="12" left="20" top="2" text="{resourceManager.getString('WorkbenchETC', 'statusSelectedText')}" fontFamily="윤고딕340" fontSize="10"/>				
+				</mx:Canvas>
+			</mx:HBox>
+			<mx:LinkButton  id="fullBtn" styleName="overview" click="fitMap()" right="{diagramScale.width+3+2}" top="10" visible="true" toolTip="{resourceManager.getString('WorkbenchETC', 'fitToScreenTTip')}"/>
+			<mx:HSlider id="diagramScale" styleName="PSlider" minimum="20" maximum="100" showDataTip="false" liveDragging="true" width="60" right="3" top="0" value="100" change="sliderChange()" visible="true"/>
+		</mx:Canvas>
+		<mx:HBox width="100%" height="100%" borderStyle="none" borderThickness="0">
+			<smart:XPDLMonitor id="xpdlViewer" width="100%" height="100%" backgroundColor="#ffffff" resize="xpdlViewer_resize(event);" selectionChanged="xpdlViewer_selectionChanged(event);"/>						
+		</mx:HBox>
+	</mx:VBox>
+</mx:Canvas>

@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="260" height="534" creationComplete="init()">
+	<mx:Metadata>
+		[Event(name="openForm", type="com.maninsoft.smart.workbench.event.MISFormEvent")]
+		[Event(name="openProcess", type="com.maninsoft.smart.workbench.event.MISProcessEvent")]
+		[Event(name="updateForm", type="com.maninsoft.smart.workbench.event.MISFormEvent")]
+		[Event(name="updateProcess", type="com.maninsoft.smart.workbench.event.MISProcessEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.workbench.common.editor.EditDomain;
+			import com.maninsoft.smart.workbench.command.RenameFormCommand;
+			import com.maninsoft.smart.workbench.common.meta.AbstractResourceMetaModel;
+			import mx.core.Application;
+			import mx.controls.TextInput;
+			import com.maninsoft.smart.workbench.command.UpdateProcessCommand;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.workbench.common.meta.AbstractPackageChildResourceMeta;
+			import com.maninsoft.smart.workbench.command.UpdateFormCommand;
+			import com.maninsoft.smart.workbench.command.RemoveProcessCommand;
+			import com.maninsoft.smart.workbench.command.RemoveFormCommand;
+			import com.maninsoft.smart.workbench.command.AddProcessCommand;
+			import com.maninsoft.smart.workbench.util.NameGenerator;
+			import com.maninsoft.smart.workbench.command.AddFormCommand;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.workbench.event.MISProcessEvent;
+			import com.maninsoft.smart.workbench.common.util.MsgUtil;
+			import com.maninsoft.smart.formeditor.refactor.event.service.ServiceEvent;
+			import com.maninsoft.smart.workbench.event.service.RepositoryServiceEvent;
+			import com.maninsoft.smart.workbench.util.WorkbenchConfig;
+			import com.maninsoft.smart.workbench.event.MISPackageEvent;
+			import mx.events.ListEvent;
+			import com.maninsoft.smart.workbench.event.MISFormEvent;
+			import com.maninsoft.smart.workbench.common.meta.SmartModelConstant;
+			import mx.events.ItemClickEvent;
+			import com.maninsoft.smart.workbench.common.meta.IResourceMetaModel;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import com.maninsoft.smart.workbench.common.meta.IFormMetaModel;
+			import com.maninsoft.smart.workbench.common.meta.IProcessMetaModel;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWPackage;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWProcess;
+			import com.maninsoft.smart.workbench.common.meta.IPackageMetaModel;
+			
+			[Bindable]
+			public var packModel:SWPackage;
+			
+			[Bindable]
+			public var editDomain:EditDomain;
+			
+			private function init():void{
+				test();
+				registerTreeConextMenu();
+			}
+			
+			private function test():void{
+				packModel = new SWPackage();
+				packModel.id = "package1";
+				packModel.name = "패키지1";
+				
+				var prcResource:IProcessMetaModel = new SWProcess();
+				prcResource.id = "process1";
+				prcResource.name = "프로세스1";
+				packModel.setProcessResource(prcResource);
+				
+				var formResource:IFormMetaModel = new SWForm();
+				formResource.id = "form1";
+				formResource.name = "폼1";
+				packModel.addFormResource(formResource);
+
+//				XML = 
+//				<swPackage id="package1" packageId="package1" version="1" createdTime="2008-02-28" deployedTime="" deployYN="N">
+//					<name></name>
+//					<creater/>
+//					<deployer/>
+//					<desc/>
+//					<resources>
+//						<resource type="process">
+//							<name>프로세스</name>
+//							<swProcess id="process1">
+//								<name>프로세스1</name>
+//							</swProcess>
+//						</resource>
+//						<resource type="form">
+//							<name>폼</name>
+//							<swForm id="form1">
+//								<name></name>
+//							</swForm>
+//						</resource>
+//					</resources>
+//				</swPackage>				
+			}
+			
+			private function getIcon(item:Object):Class{
+				return IResourceMetaModel(item).icon;
+			}	
+			
+			private function itemDoubleClick(event:ListEvent):void{
+				var itemResource:IResourceMetaModel = IResourceMetaModel(this.packResourceTree.selectedItem);
+				
+				switch(itemResource.type){
+					case SmartModelConstant.FORM_TYPE:
+						openForm();
+						break;
+					case SmartModelConstant.PROCESS_TYPE:
+						openProcess();
+						break;
+					default:						
+				}
+				
+			}
+
+            /*********프로세스***********/
+            //추가
+			private function addProcess():void
+            {
+            	if(this.packModel.getProcessResource() == null){
+            		editDomain.getCommandStack().execute(new AddProcessCommand(this.packModel, NameGenerator.generateProcessName(this.packModel), addProcessHandler, faultHandler, removeProcessHandler));	
+            	}else{
+            		MsgUtil.showMsg(this, "패키지에는 하나의 프로세스만 존재할 수 있습니다.", "프로세스 생성 결과");
+            	}
+                
+            }
+            private function addProcessHandler(event:MISPackageEvent):void
+            {
+				this.packModel.setProcessResource(event.swProcess);
+//				packResourceTree.dataProvider = this.packModel;
+            }
+            //삭제
+            private function removeProcess(swPrc:SWProcess):void
+            {
+                editDomain.getCommandStack().execute(new RemoveProcessCommand(this.packModel, swPrc, removeProcessHandler, faultHandler, addProcessHandler));
+            }
+            private function removeProcessHandler(event:MISPackageEvent):void
+            {
+            	if(this.packModel.children.length == 1)
+            		packResourceTree.expandItem(this.packModel, false)
+            		
+				this.packModel.setProcessResource(null);
+            }
+            /*********폼***********/
+            // 추가
+            private function addForm():void
+            {
+				editDomain.getCommandStack().execute(new AddFormCommand(this.packModel, NameGenerator.generateFormName(this.packModel), addFormHandler, faultHandler, removeFormHandler));
+            }
+            private function addFormHandler(event:MISPackageEvent):void
+            {
+				this.packModel.addFormResource(event.swForm);
+            }     
+            // 삭제                   
+            private function removeForm(swForm:SWForm):void
+            {
+            	editDomain.getCommandStack().execute(new RemoveFormCommand(this.packModel, swForm, removeFormHandler, faultHandler, addFormHandler));
+            }
+            private function removeFormHandler(event:MISPackageEvent):void
+            {
+            	if(this.packModel.children.length == 1)
+            		packResourceTree.expandItem(this.packModel, false)
+            		
+				this.packModel.removeFormResource(event.swForm);
+            }
+            
+            private function faultHandler(event:MISPackageEvent):void
+            {
+				//TODO 에러처리
+				MsgUtil.showMsg(this, event.msg);
+            }
+            
+            private function openForm():void
+            {
+                dispatchEvent(new MISFormEvent(MISFormEvent.OPEN, SWForm(this.packResourceTree.selectedItem)));
+            }
+            
+            private function openProcess():void
+            {
+                dispatchEvent(new MISProcessEvent(MISProcessEvent.OPEN, SWProcess(this.packResourceTree.selectedItem)));
+            }
+            /*************************************************************/
+            // 배치
+            private function deployPackage():void
+            {
+            	WorkbenchConfig.repoService.deploy(this.packModel,
+            		 deployResultHandler,
+            		 faultHandler); 
+            }
+            
+            private function deployResultHandler(e:MISPackageEvent):void
+            {
+            	MsgUtil.showMsg(Application.application.document, e.msg, "배치결과");
+            }
+            /**********************컨텍스트 메뉴******************************/
+            [Bindable]
+            private var treeMenu:ContextMenu = new ContextMenu();
+            
+            private function registerTreeConextMenu():void
+            {
+                treeMenu.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenuTriggered);
+                treeMenu.hideBuiltInItems();
+                buildMenuItem();
+            }
+
+			private var packageContextMenu:Array;
+			private var processContextMenu:Array;
+			private var formContextMenu:Array;
+			// 컨텍스트 메뉴 생성
+			private function buildMenuItem():void
+            {
+                buildPackageMenuItem();
+                buildProcessMenuItem();
+                buildFormMenuItem();
+            }
+            // 패키지 컨텍스트 메뉴
+            private function buildPackageMenuItem():void
+            {
+            	packageContextMenu = new Array();
+            	
+                var renameMenu:ContextMenuItem = new ContextMenuItem('이름 바꾸기');
+				packageContextMenu.push(renameMenu);
+				
+				var addProcessMenu:ContextMenuItem = new ContextMenuItem('프로세스 추가', true);
+				addProcessMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){addProcess()});
+				packageContextMenu.push(addProcessMenu);
+				
+				var addFormMenu:ContextMenuItem = new ContextMenuItem('화면 추가');
+				addFormMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent) { addForm() });
+				packageContextMenu.push(addFormMenu);
+				
+				var deployMenu:ContextMenuItem = new ContextMenuItem('배치', true);
+				deployMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent) { deployPackage() });
+				packageContextMenu.push(deployMenu);
+				
+//				var checkInMenu:ContextMenuItem = new ContextMenuItem('편집 완료');
+//				packageContextMenu.push(checkOutMenu);
+            }
+            // 폼 컨텍스트 메뉴
+            private function buildFormMenuItem():void
+            {
+            	formContextMenu = new Array();
+            	
+            	var openMenu:ContextMenuItem = new ContextMenuItem('열기');
+            	openMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){openForm()});
+				formContextMenu.push(openMenu);
+
+				var deleteMenu:ContextMenuItem = new ContextMenuItem('삭제');
+				deleteMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){removeForm(SWForm(packResourceTree.selectedItem)) });
+				formContextMenu.push(deleteMenu);
+				
+                var renameMenu:ContextMenuItem = new ContextMenuItem('이름 바꾸기');
+                renameMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){renameEditor()});
+				formContextMenu.push(renameMenu);
+				
+				var setExecuteFormMenu:ContextMenuItem = new ContextMenuItem('폼 종류 변경(프로세스 <-> 단위업무)', true);
+				setExecuteFormMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){changeType()});
+				formContextMenu.push(setExecuteFormMenu);
+            }
+            // 프로세스 컨텍스트 메뉴
+            private function buildProcessMenuItem():void
+            {
+            	processContextMenu = new Array();
+            	
+            	var openMenu:ContextMenuItem = new ContextMenuItem('열기');
+            	openMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){openProcess()});
+				processContextMenu.push(openMenu);
+
+				var deleteMenu:ContextMenuItem = new ContextMenuItem('삭제');
+				deleteMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){removeProcess(SWProcess(packResourceTree.selectedItem))});
+				processContextMenu.push(deleteMenu);
+				
+                var renameMenu:ContextMenuItem = new ContextMenuItem('이름 바꾸기');
+         		renameMenu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent){renameEditor()});
+				processContextMenu.push(renameMenu);
+				
+				var addFormMenu:ContextMenuItem = new ContextMenuItem('화면 추가', true);
+				processContextMenu.push(addFormMenu);
+            }
+            			
+            public function contextMenuTriggered(event:ContextMenuEvent):void
+            {
+                if( this.packResourceTree.selectedItem != null )
+                {
+                    if( IResourceMetaModel(this.packResourceTree.selectedItem).type == SmartModelConstant.PACKAGE_TYPE ){
+                        treeMenu.customItems = packageContextMenu;
+                    } else if( IResourceMetaModel(this.packResourceTree.selectedItem).type == SmartModelConstant.PROCESS_TYPE ){
+                        treeMenu.customItems = processContextMenu;
+                    } else {
+                    	treeMenu.customItems = formContextMenu;
+                    }
+                }
+            }
+			/******************** 서버 통신 **************************/
+            // 패키지 저장
+			private function savePackage():void{
+				WorkbenchConfig.repoService.savePackage(this.packModel, savePackageResult, serviceFault);
+			}
+			// 폼 로드
+			private function loadPackage(packId:String, packVer:int):void{
+				WorkbenchConfig.repoService.retrievePackage(packId, packVer, loadPackageResult, serviceFault);			
+			}
+			// 폼 저장결과
+			private function savePackageResult(event:RepositoryServiceEvent):void{
+				MsgUtil.showMsg(this, event.msg);			
+			}
+			// 폼 로드 결과
+			private function loadPackageResult(event:RepositoryServiceEvent):void{
+				this.packModel = event.swPack;		
+			}
+			// 폼  서비스 실
+			private function serviceFault(event:RepositoryServiceEvent):void{
+				MsgUtil.showMsg(this, event.msg);
+			}
+			
+            // 폼 에디터 작업중 트리 처리 막기
+            private function disableEditing(event:ListEvent):void {
+                if(event.rowIndex==0) {  
+                    event.preventDefault(); 
+                }
+            }                                         
+            
+            // 폼 에디터 작업완료시 중 트리 처리 막기
+            private function processData(event:ListEvent):void {       
+                    // Disable copying data back to the control.
+                    event.preventDefault();
+
+					if(packResourceTree.selectedItem is AbstractPackageChildResourceMeta){
+						renamePackageChild(TextInput(packResourceTree.itemEditorInstance).text, AbstractPackageChildResourceMeta(packResourceTree.selectedItem));	
+					}                    
+
+                    // Close the item editor.
+                    packResourceTree.destroyItemEditor();
+                    packResourceTree.editable = false;
+                    packResourceTree.setFocus();    
+            } 
+            
+            private function renamePackageChild(name:String, packageChild:AbstractPackageChildResourceMeta):void{
+				
+				if(packageChild != null){
+					var command:Command;
+					
+					if(packageChild.type == SmartModelConstant.FORM_TYPE){
+						command = new RenameFormCommand(this.packModel, SWForm(packageChild), name, saveServiceResult, saveServiceFault, saveServiceResult);	
+					}else if(packageChild.type == SmartModelConstant.PROCESS_TYPE){
+						command = new UpdateProcessCommand(this.packModel, SWProcess(packageChild), "name", name, saveServiceResult, saveServiceFault, saveServiceResult);
+					}else{
+						return;
+					}
+					this.editDomain.getCommandStack().execute(command);
+				}
+
+			}
+			
+			private function renameEditor():void{
+				packResourceTree.editable = true;
+				this.packResourceTree.editedItemPosition = {rowIndex: this.packResourceTree.selectedIndex, columnIndex: 0};
+			}
+			
+			private function changeType():void{
+				if(packResourceTree.selectedItem != null){
+					var command:Command;
+					
+					if(AbstractResourceMetaModel(packResourceTree.selectedItem).type == SmartModelConstant.FORM_TYPE){
+						command = new UpdateFormCommand(this.packModel, SWForm(packResourceTree.selectedItem), "formType", (SWForm(packResourceTree.selectedItem).formType == SWForm.FORMTYPE_PROCESS)?SWForm.FORMTYPE_SINGLE:SWForm.FORMTYPE_PROCESS, saveServiceResult, saveServiceFault, saveServiceResult);	
+					}else{
+						return;
+					}
+					this.editDomain.getCommandStack().execute(command);
+				}
+			}
+			
+			private function saveServiceResult(event:MISPackageEvent):void{
+				
+			}
+			
+			private function saveServiceFault(evnet:MISPackageEvent):void{
+				
+			}
+			
+			// 스키마 아이템 트리용 라벨 함수
+			private function packItemLabelFunc(item:Object):String{
+				if(item is SWForm){
+					if(SWForm(item).formType == SWForm.FORMTYPE_PROCESS)
+						return item["name"] + "(프로세스)";
+					else
+						return item["name"] + "(단위업무)";
+				}
+				return item["name"];
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Tree id="packResourceTree" x="0" y="0" width="100%" height="100%"
+		dataProvider="{this.packModel}" iconFunction="getIcon" selectedIndex="0" labelFunction="packItemLabelFunc" iconField="icon" 
+		showRoot="true" doubleClickEnabled="true" itemDoubleClick="{itemDoubleClick(event)}"
+		itemEditor="mx.controls.TextInput" contextMenu="{treeMenu}"  fontSize="11"
+		itemEditBeginning="{disableEditing(event)}"	itemEditEnd="{processData(event)}">
+	</mx:Tree>	
+</mx:Canvas>

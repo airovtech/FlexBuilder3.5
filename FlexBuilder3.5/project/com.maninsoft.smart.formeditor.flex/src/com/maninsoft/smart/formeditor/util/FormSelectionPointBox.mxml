@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="{SELECTION_POINT_SIZE * 3}" height="{SELECTION_POINT_SIZE * 3}" 
+	>
+	<mx:Script>
+		<![CDATA[
+			public static const SELECTION_POINT_SIZE:Number = 3;
+		]]>
+	</mx:Script>
+	<mx:Box x="{SELECTION_POINT_SIZE}" y="{SELECTION_POINT_SIZE}" width="{SELECTION_POINT_SIZE}" height="{SELECTION_POINT_SIZE}" 
+		borderStyle="none" backgroundColor="#000000" cornerRadius="0">
+		
+	</mx:Box>
+</mx:Canvas>

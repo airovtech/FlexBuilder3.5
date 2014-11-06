@@ -1,0 +1,87 @@
+/* CSS file */
+	.propertyPage{
+		selectedColor: #eeeeee;
+	}
+	
+	.propertyPageItemBox{
+	}
+	.buttonPropertyEditor{
+		horizontalGap: 3;
+	}
+	
+	.buttonValueLabel{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		color: #4c4c4c;
+		paddingTop: 2;
+		paddingLeft: 2;
+	}
+	
+	.buttonDialogButton{
+		focusThickness: 0;
+		leading: 0;
+	}
+	
+	.formEditButton{
+		icon: Embed(source="/assets/icon/property/btn_workedit.png");
+		focusThickness: 0;
+		leading: 0;
+		borderStyle: none;
+	}
+	
+	.conditionEditButton{
+		borderStyle: none;
+		focusThickness: 0;
+		fillAlphas: 0,0;
+		leading: 0;
+		icon: Embed(source="/assets/icon/property/btn_condition.gif");
+		paddingTop: 0;
+		paddingBottom: 0;
+		paddingLeft: 0;
+		paddingRight: 0;
+		cornerRadius: 0;
+	}
+	
+	.conditionEditButtonEmpty{
+		borderStyle: none;
+		focusThickness: 0;
+		fillAlphas: 0,0;
+		leading: 0;
+		icon: Embed(source="/assets/icon/property/btn_condition_empty.gif");
+		paddingTop: 0;
+		paddingBottom: 0;
+		paddingLeft: 0;
+		paddingRight: 0;
+		cornerRadius: 0;
+	}
+	
+	.meanTimePropertyEditor{
+		borderStyle: none;
+		horizontalGap: 1;
+		paddingTop: 1;
+		paddingLeft: 1;
+	}
+	
+	.meanTimePropertyEditorText{
+		textAlign: right;
+		focusThickness: 1;
+		fontName: "Tahoma";
+		fontSize: 11;
+	}
+	
+	.meanTimePropertyEditorLabel{
+		paddingTop: 2;
+		fontName: "Tahoma";
+		fontSize: 11;
+	}
+
+	.listDataListItemDG{
+		backgroundColor: #ffffff;
+		alternatingItemColors: #ffffff,#ffffff;
+		color: #000000;
+		borderStyle: solid;
+		verticalGridLines: false;
+		horizontalGridLines: false;
+		focusThickness: 0;
+	}
+

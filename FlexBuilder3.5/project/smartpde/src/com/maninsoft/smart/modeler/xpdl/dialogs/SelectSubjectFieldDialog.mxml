@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AbstractSimpleDialog xmlns="com.maninsoft.smart.common.dialog.*" xmlns:mx="http://www.adobe.com/2006/mxml"	height="100%" width="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.modeler.xpdl.server.ApplicationService;
+			import com.maninsoft.smart.formeditor.model.SystemServiceParameter;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskService;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import com.maninsoft.smart.modeler.xpdl.model.process.FormalParameter;
+			import com.maninsoft.smart.modeler.xpdl.model.SubFlow;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskForm;
+			import com.maninsoft.smart.modeler.xpdl.model.base.Activity;
+			import com.maninsoft.smart.common.util.SmartUtil;
+			import com.maninsoft.smart.modeler.xpdl.model.XPDLDiagram;
+			import com.maninsoft.smart.modeler.xpdl.server.TaskFormField;
+			import com.maninsoft.smart.workbench.common.assets.TreeAssets;
+			import com.maninsoft.smart.workbench.common.assets.PropertyIconLibrary;
+			import mx.controls.Button;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.modeler.assets.DialogAssets;
+			import com.maninsoft.smart.modeler.xpdl.dialogs.SelectUserDialog;
+			import com.maninsoft.smart.modeler.xpdl.model.TaskApplication;
+			import com.maninsoft.smart.modeler.xpdl.server.Department;
+			import com.maninsoft.smart.modeler.xpdl.server.Server;
+			import com.maninsoft.smart.modeler.xpdl.server.User;
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+
+			import flash.display.DisplayObject;
+			import flash.events.Event;
+			import flash.events.FocusEvent;
+
+			import mx.collections.ArrayCollection;
+			import mx.controls.Tree;
+			import mx.core.Application;
+			import mx.core.Container;
+			import mx.core.UIComponent;
+			import mx.events.ListEvent;
+			import mx.events.TreeEvent;
+			import mx.managers.PopUpManager;
+
+			//----------------------------------------------------------------------
+			// Class Variables
+			//----------------------------------------------------------------------
+
+			private static var _dialog: SelectSubjectFieldDialog;
+
+			//----------------------------------------------------------------------
+			// Variables
+			//----------------------------------------------------------------------
+
+			private var _server: Server;
+
+			[Bindable]
+			private var _subjectFields: Object;
+
+			private var _acceptFunc: Function;
+			private var _openingItem: Department;
+
+			private var _task:TaskApplication;
+			
+			private var _currentFieldId:String = null;
+			
+			public function get task():TaskApplication {
+				return _task;
+			}
+
+			public function set task(value:TaskApplication):void {
+				_task = value;
+				
+				_subjectFields = new ArrayCollection();
+				
+				if (value == null || _task.diagram == null || _task.formId == null)
+					return;
+				
+				_server = _task.xpdlDiagram.server;
+				var formFields:Array = _server.getTaskFormFields(_task.formId);
+				var currentItem:TaskFormField = null;
+				if(formFields){
+					for each(var taskFormField:TaskFormField in formFields){
+						if(	   taskFormField.type != FormatTypes.currencyInput.type
+							&& taskFormField.type != FormatTypes.dateChooser.type
+							&& taskFormField.type != FormatTypes.emailIDInput.type
+							&& taskFormField.type != FormatTypes.numberInput.type
+							&& taskFormField.type != FormatTypes.percentInput.type
+							&& taskFormField.type != FormatTypes.refFormField.type
+							&& taskFormField.type != FormatTypes.textInput.type
+							&& taskFormField.type != FormatTypes.timeField.type
+							&& taskFormField.type != FormatTypes.dateTimeChooser.type)
+							continue;
+						if(taskFormField.id == _currentFieldId)
+							 currentItem = taskFormField;
+						_subjectFields.addItem(taskFormField);
+					}
+				}
+				
+				if(_currentFieldId && currentItem) _dialog.subjectFieldDG.selectedItem = currentItem;
+				
+			}
+			//----------------------------------------------------------------------
+			// Class methods
+			//----------------------------------------------------------------------
+
+			public static function execute(current:Object, task:TaskApplication, acceptFunc: Function, position:Point=null, width:Number=0, height:Number=0): void {
+
+				_dialog = PopUpManager.createPopUp(Application.application as DisplayObject, SelectSubjectFieldDialog, false) as SelectSubjectFieldDialog;
+
+				_dialog._acceptFunc = acceptFunc;
+				if(position){
+					_dialog.x = position.x;
+					_dialog.y = position.y;
+				}else{
+					PopUpManager.centerPopUp(_dialog);	
+				}
+	
+				if(width) _dialog.width = width;
+				if(height) _dialog.height = height;
+	
+				_dialog._currentFieldId = current as String;
+				_dialog.task = task;
+
+				_dialog.subjectFieldDG.setFocus();
+				_dialog.addEventListener(FocusEvent.MOUSE_FOCUS_CHANGE, _dialog.dialogFocusChange);
+	
+			}
+
+			private function closeDialog(accept: Boolean = true): void {
+				if (accept && (_acceptFunc != null) && subjectFieldDG.selectedItem){
+					_acceptFunc(subjectFieldDG.selectedItem);
+				}
+				PopUpManager.removePopUp(this);
+			}
+
+			//----------------------------------------------------------------------
+			// Event handlers
+			//----------------------------------------------------------------------
+
+			private function subjectFieldIcon(item:Object): Class{
+				return TaskFormField(item).icon;		
+			}
+
+			private function dialogFocusChange(event: FocusEvent): void {
+				if(	(event.relatedObject == _dialog) ||
+					((event.relatedObject is UIComponent) && (UIComponent(event.relatedObject).parentDocument == _dialog)) ||
+					(_dialog.subjectFieldDG && _dialog.subjectFieldDG.contains(event.relatedObject))){
+						return;
+				}		
+				closeDialog(false);
+			}
+
+			//------------------------
+			// Dialog
+			//------------------------
+
+			private function dlg_keyDown(event: KeyboardEvent): void {
+				if (event.keyCode == Keyboard.ESCAPE){
+					closeDialog(false);
+				}
+			}	
+
+			//------------------------
+			// activityFieldTree
+			//------------------------
+
+			private function subjectFieldDG_itemClick(event:ListEvent): void {
+				if(DataGrid(event.target).selectedItem is TaskFormField){
+					closeDialog(true);	
+				}
+				return;
+			}
+		]]>
+	</mx:Script>
+ 	<mx:DataGrid id="subjectFieldDG" focusThickness="0" styleName="selectDialogDG" width="100%" doubleClickEnabled="false" dataProvider="{_subjectFields}" 
+ 		itemClick="subjectFieldDG_itemClick(event)" showHeaders="false" verticalScrollPolicy="auto" horizontalScrollPolicy="off" rowHeight="22" editable="false">
+			<mx:columns>
+				<mx:DataGridColumn width="18">
+           			<mx:itemRenderer>
+               			<mx:Component>
+               				<mx:Image styleName="selectDialogDGItemImage" y="0" width="18" height="16" source="{data.icon}"/>
+               			</mx:Component>
+           			</mx:itemRenderer>
+           		</mx:DataGridColumn>		                	
+				<mx:DataGridColumn id="formNameCol" dataField="name"/>
+			</mx:columns>
+	</mx:DataGrid>
+</AbstractSimpleDialog>

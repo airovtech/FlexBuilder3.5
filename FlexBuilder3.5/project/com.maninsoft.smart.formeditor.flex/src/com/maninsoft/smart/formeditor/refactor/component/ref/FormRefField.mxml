@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="138" height="34" >
+	<!-- creationComplete="{init()}" -->
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.Fault;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			import flash.events.*;
+			import flash.net.URLLoader;
+			import flash.net.URLRequest;
+			import flash.xml.*;
+			
+			import mx.controls.Tree;
+			import mx.events.TreeEvent;
+			
+			[Bindable]
+			public var formId:String;
+			[Bindable]
+			public var formVer:int = -1;
+			[Bindable]
+			public var formName:String;
+			[Bindable]
+			public var formFieldId:String;
+			[Bindable]
+			public var formFieldName:String;
+			
+			private var pop:RefTaskSelWin;
+			
+			private function refFormPop():void{
+				if(this.formId != null && this.formVer != -1 && this.formFieldId != null){
+					pop = RefTaskSelWin(PopUpManager.createPopUp(this, RefTaskSelWin, true));
+					pop.start(this.formId, String(this.formVer), this.formName, this.formFieldId, this.formFieldName);
+					
+					pop.addEventListener(Event.COMPLETE, 
+						function(e:Event):void{						
+							formSelect();						
+						}
+					);
+//					PopUpManager.centerPopUp(pop);
+				}				
+			}
+			
+			private function formSelect():void{
+				if(pop.fieldValue != null)
+					fieldContents.text = pop.fieldValue;
+			}
+//			
+//			private function userSelectFail(event:FaultEvent):void{
+//				userName.text = "???";
+//			}
+		]]>
+	</mx:Script>
+	<mx:TextInput id="fieldContents" x="0" y="0" fontSize="11" height="{this.height}" width="{this.width - refBtn.width - 5}" editable="true" enabled="true"
+		styleName="formRefForm"/>
+	<mx:Button id="refBtn" y="{(this.height - refBtn.height)/2}" icon="{FormEditorAssets.formIcon}" right="0" height="22" width="40"
+		click="{refFormPop()}"
+		styleName="formRefFormButton"/>	
+	<!--  -->
+</mx:Canvas>

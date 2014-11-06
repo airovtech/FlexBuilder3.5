@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" titleStyleName="normalLabel" 
+	fontSize="11" dropShadowEnabled="false" borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" 
+	borderThicknessTop="3" cornerRadius="5" alpha="3" width="400" height="300" title="패키지생성" 
+	close="PopUpManager.removePopUp(this)" xmlns:controls="com.maninsoft.smart.common.controls.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import portalAs.Properties;
+			private function createPackageExe():void {
+				reqCreatePackageService.url = Properties.basePath + "smartserver/services/builder/builderService.jsp?method=createPackage";
+				reqCreatePackageService.send();
+			}
+			
+			private function reqCreatePackageResult(event:ResultEvent):void {
+				if(this.owner is searchList){
+					searchList(this.owner).getPackage(categoryId.text);
+				}else if(this.owner is IndepSearchList){
+					IndepSearchList(this.owner).getPackage(categoryId.text);
+				}
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="reqCreatePackageService"  resultFormat="e4x" useProxy="false" result="reqCreatePackageResult(event)" method="post">
+		<mx:request>
+			<userId>{Properties.userId}</userId>
+			<categoryId>{categoryId.text}</categoryId>
+			<name>{packageName.text}</name>
+			<desc>{desc.text}</desc>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:TextInput id="categoryId" width="0%" visible="false"/>
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:Form width="100%" height="100%">
+			<mx:FormItem label="패키지이름" width="100%">
+				<mx:TextInput width="100%" id="packageName"/>
+			</mx:FormItem>
+			<mx:FormItem label="패키지설명" width="100%" height="90%">
+				<mx:TextArea width="100%" height="100%" id="desc"/>
+			</mx:FormItem>
+		</mx:Form>
+		<controls:GradientBox width="100%" height="24" cornerRadius="0" verticalAlign="middle" gradientFrom="#CCCCCC" gradientTo="#999999">
+			<mx:HBox width="100%" height="20" horizontalGap="0" verticalAlign="middle">
+				<mx:HBox width="50%"  horizontalAlign="left" verticalAlign="middle" horizontalGap="1" id="hb1" paddingLeft="3">
+					<mx:Button label="생성" fontSize="11" styleName="normalLabel" height="20" click="createPackageExe()" />
+				</mx:HBox>
+				<mx:HBox width="50%" horizontalAlign="right"  verticalAlign="middle" horizontalGap="3" id="hb2" paddingRight="3">
+					<mx:Button label="취소" fontSize="11" styleName="normalLabel" height="20" click="PopUpManager.removePopUp(this);" />
+				</mx:HBox>
+			</mx:HBox>
+		</controls:GradientBox>		
+	</mx:VBox>
+</mx:TitleWindow>

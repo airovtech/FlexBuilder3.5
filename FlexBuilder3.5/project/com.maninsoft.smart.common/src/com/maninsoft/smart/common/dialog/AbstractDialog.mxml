@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"	styleName="abstractDialog" creationComplete="init()">
+	<mx:Style source="/assets/css/smartCommon.css"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.VBox;
+			import com.maninsoft.smart.common.assets.DialogAssets;	
+			import flash.events.Event;
+			import flash.events.MouseEvent;
+			import mx.containers.Box;
+			import mx.containers.HBox;
+			import mx.containers.TitleWindow;
+			import mx.controls.Image;
+			import mx.core.ScrollPolicy;
+			import mx.events.ChildExistenceChangedEvent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+
+			private var _result:Boolean=false;
+			
+			public var _showOkButton:Boolean;
+			public var _showCancelButton:Boolean;
+			public var contentBox:VBox = new VBox();
+			public var buttonScope:HBox = new HBox();
+			public var okButton:Image = new Image();
+			public var cancelButton:Image = new Image();
+				
+			private function init():void{
+
+				if (titleIcon == null){
+					titleIcon = DialogAssets.titleImage;
+				}
+
+				horizontalScrollPolicy=ScrollPolicy.OFF;
+				verticalScrollPolicy=ScrollPolicy.OFF;
+				showCloseButton = true;
+				addEventListener(CloseEvent.CLOSE, close);
+
+				contentBox.styleName="dialogContentBox";
+				contentBox.percentHeight = 100;
+				contentBox.percentWidth = 100;
+				this.addChild(contentBox);
+				
+				buttonScope.styleName="dialogButtonScope";
+				buttonScope.percentWidth = 100;
+				this.addChild(buttonScope);
+			
+				okButton.source = DialogAssets.okButton;
+				okButton.addEventListener(MouseEvent.CLICK, ok);
+				okButton.buttonMode = true;
+			
+				cancelButton.source = DialogAssets.cancelButton;
+				cancelButton.addEventListener(MouseEvent.CLICK, cancel);
+				cancelButton.buttonMode = true;			
+			
+				this.addEventListener(ChildExistenceChangedEvent.CHILD_ADD, restructButtonScope);
+			}
+			
+			public function get result():Boolean{
+				return _result;
+			}
+			
+			public function set result(value:Boolean):void{
+				_result=value;
+			}
+		
+			public function get showOkButton():Boolean {
+				return _showOkButton;
+			}
+			public function set showOkButton(value:Boolean):void {
+				if(_showOkButton == value) return;
+				_showOkButton = value;
+				if (value && !buttonScope.contains(okButton)) {
+					buttonScope.addChild(okButton);
+				} else if (!value && buttonScope.contains(okButton)) {
+					buttonScope.removeChild(okButton);
+				}
+				if(showOkButton || showCancelButton)
+					buttonScope.height = 30;
+				else
+					buttonScope.height = 0;
+			}
+		
+			public function get showCancelButton():Boolean{
+				return _showCancelButton;
+			}
+		
+			public function set showCancelButton(value:Boolean):void {
+				if(_showCancelButton == value) return;
+				_showCancelButton = value;
+				if (value && !buttonScope.contains(cancelButton)) {
+					buttonScope.addChild(cancelButton);
+				} else if (!value && buttonScope.contains(cancelButton)) {
+					buttonScope.removeChild(cancelButton);
+				}
+				if(showOkButton || showCancelButton)
+					buttonScope.height = 30;
+				else
+					buttonScope.height = 0;
+			}
+		
+			protected function ok(event:Event = null):void {
+				result=true;
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function cancel(event:Event = null):void {
+				result=false;
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function close(event:Event = null):void {
+				result=false;
+				PopUpManager.removePopUp(this);
+			}
+		
+			private function restructButtonScope(event:ChildExistenceChangedEvent):void {
+				if (this.buttonScope != null && this.contains(buttonScope))
+					this.setChildIndex(buttonScope, this.getChildren().length - 1);
+			}
+		
+		]]>
+	</mx:Script>	
+</mx:TitleWindow>

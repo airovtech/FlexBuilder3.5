@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Filter xmlns="mxmlComponet.home.chartInfo.filter.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="350" height="170">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.DragManager;
+			import mx.core.IUIComponent;
+			import mx.events.DragEvent;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.managers.PopUpManager;
+			import mx.events.ItemClickEvent;
+			import mxmlComponet.home.chartInfo.model.ConditionModel;
+			
+			[Bindable]
+			public var conditionModel:ConditionModel;
+			private var saveMode:String;
+			public var conditionCount;
+			
+			override public function crComplete():void{
+				columnName.addEventListener(DragEvent.DRAG_DROP, doDragDrop);
+				columnName.addEventListener(DragEvent.DRAG_OVER, doDragOver);
+				columnName.addEventListener(DragEvent.DRAG_ENTER, doDragEnter);
+				if(conditionModel == null){
+					conditionModel = new ConditionModel();
+					saveMode = "new";
+					conditionModel.id = conditionCount;
+				}else{
+					saveMode = "modi";
+					comparisonType.selectedValue = conditionModel.comparison;
+				}
+			}
+			
+			private function conditionSave():void{
+				conditionModel.name = conditionName.text;
+				conditionModel.columnName = columnName.text;
+				conditionModel.columnId = columnId.text;
+				conditionModel.conditionValue = conditionValue.text;
+				conditionModel.comparison = comparisonType.selectedValue as String;
+				if(saveMode == "new"){
+					var eventObj:CustormEvent = new CustormEvent("custormItemAdd");
+					eventObj["conditionModel"] = conditionModel;
+					dispatchEvent(eventObj);
+				}else{
+					var eventObj:CustormEvent = new CustormEvent("custormItemModify");
+					dispatchEvent(eventObj);
+				}
+				radioInit();
+				close();
+			}
+			
+			public function radioInit():void{
+				radio1.selected = false;
+				radio2.selected = false;
+				radio3.selected = false;
+				radio4.selected = false;
+				radio5.selected = false;
+				radio6.selected = false;
+			}
+			
+			private function doDragEnter(event:DragEvent):void{
+				if(event.dragSource.hasFormat("columnInfo")){
+					DragManager.acceptDragDrop(IUIComponent(event.target));
+				}
+	        }
+		        
+	        private function doDragOver(event:DragEvent):void{
+	        }
+	        
+	        private function doDragDrop(event:DragEvent):void{
+				var dgRow:Object=new Object();
+	          	dgRow=event.dragSource.dataForFormat("columnInfo");
+	          	columnId.text = dgRow[0].id;
+	          	columnName.text = dgRow[0].name;
+	        }
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="custormItemAdd", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+    <mx:Metadata>
+        [Event(name="custormItemModify", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" backgroundColor="#EDF5B4">
+		<mx:HBox width="90%">
+			<mx:Label text="조건명" styleName="normalLabel"/>
+			<mx:TextInput width="280" text="{conditionModel.name}" id="conditionName"/>
+		</mx:HBox>
+		<mx:HBox width="90%">
+			<mx:Label text="컬럼   " styleName="normalLabel"/>
+			<mx:TextInput width="280" text="{conditionModel.columnName}" id="columnName"/>
+		</mx:HBox>
+		<mx:HBox width="90%">
+			<mx:Label text="조건값" styleName="normalLabel"/>
+			<mx:TextInput width="280" text="{conditionModel.conditionValue}" id="conditionValue"/>
+		</mx:HBox>
+		<mx:HBox width="90%">
+			<mx:Canvas>
+				<mx:Label text="비교연산자" styleName="normalLabel"/>
+			</mx:Canvas>
+			<mx:RadioButtonGroup id="comparisonType"/>
+			<mx:RadioButton groupName="comparisonType" label="&lt;" value="&lt;" id="radio1"/>
+			<mx:RadioButton groupName="comparisonType" label="&lt;=" value="&lt;=" id="radio2"/>
+			<mx:RadioButton groupName="comparisonType" label="&gt;" value="&gt;" id="radio3"/>
+			<mx:RadioButton groupName="comparisonType" label="&gt;=" value="&gt;=" id="radio4"/>
+			<mx:RadioButton groupName="comparisonType" label="=" value="=" id="radio5"/>
+			<mx:RadioButton groupName="comparisonType" label="like" value="like" id="radio6"/>	
+		</mx:HBox>
+		<mx:HBox width="90%">
+			<mx:Button label="확인" click="conditionSave()"/>
+			<mx:Button label="취소" click="close()"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:TextInput width="0" height="0" visible="false" text="{conditionModel.columnId}" id="columnId"/>
+</Filter>

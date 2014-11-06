@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flexLibProperties version="1">
+<includeClasses>
+<classEntry path="smartWork.util.StringTokenizer"/>
+<classEntry path="smartWork.util.IMap"/>
+<classEntry path="smartWork.util.HashMap"/>
+<classEntry path="smartWork.custormObj.MovePanel"/>
+<classEntry path="smartWork.custormObj.GadgetPanel"/>
+<classEntry path="smartWork.custormObj.CssLoader"/>
+</includeClasses>
+<includeResources/>
+<namespaceManifests/>
+</flexLibProperties>

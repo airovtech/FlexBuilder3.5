@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import mx.collections.ArrayCollection;
+			import mx.events.ItemClickEvent;
+			[Bindable]
+			public var nav:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var pageCount:int=1;
+			[Bindable]
+			public var _totalCount:int = 0;
+			public var pageSize:uint = 10;
+			public var navSize:uint = 10;
+			[Bindable]
+			public var navTogWidth:int = 0;
+			
+			public function initCreate():void{
+				createNavBar(Math.ceil(_totalCount/pageSize));
+			}
+			
+			public function set totalCount(value:Number):void {
+		        _totalCount = value;
+		        initCreate();
+		    }
+
+			public function createNavBar(pages:uint = 1,set:uint = 0):void{
+				navTogWidth = 0;
+				nav.removeAll();
+				var pg:uint;
+				if( pages > 1 ){
+					if( set != 0 ){
+						nav.addItem({label:"<<",data:0});
+						navTogWidth +=35;
+						if( (set - navSize ) >= 0 ){
+							nav.addItem({label:"<",data:set - navSize});
+						}
+						else{
+							nav.addItem({label:"<",data:0});
+							navTogWidth +=35;
+						}
+					}
+					if (pages < 10){
+						for( var x:uint = 0; x < pages; x++){
+							pg = x + set;
+							nav.addItem({label: pg + 1,data: pg});
+							navTogWidth +=35;
+						}
+					}else{
+						for( var _x:uint = 0; _x < navSize; _x++){
+							pg = _x + set;
+							nav.addItem({label: pg + 1,data: pg});
+							navTogWidth +=35;
+						}
+					}
+					
+					if( pg < pages - 1 ){
+						nav.addItem({label:">",data:pg + 1});
+						navTogWidth +=35;
+						nav.addItem({label:">>",data:pages - pageSize});
+						navTogWidth +=35;
+					} 
+				}
+			}
+			 
+			public function navigatePage(event:ItemClickEvent):void{
+				var lb:String = event.item.label.toString();
+				pageCount = Number(lb);
+				var eventObj:CustormEvent = new CustormEvent("clickPageItem");
+				dispatchEvent(eventObj);
+				if( lb.indexOf("<") > -1 || lb.indexOf(">") > -1 ){
+					createNavBar(Math.ceil(_totalCount/pageSize),event.item.data);
+					if( event.item.data == 0 ){
+						navTog.selectedIndex = 0;
+					}
+					else{
+						navTog.selectedIndex = 2;
+					}
+				} 
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="clickPageItem", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:ToggleButtonBar id="navTog" itemClick="navigatePage(event)" dataProvider="{nav}" maxWidth="{_totalCount}" 
+		horizontalCenter="0" verticalCenter="0" width="{navTogWidth}" buttonHeight="16" styleName="pageNavigaterStyle"/>
+</mx:Canvas>

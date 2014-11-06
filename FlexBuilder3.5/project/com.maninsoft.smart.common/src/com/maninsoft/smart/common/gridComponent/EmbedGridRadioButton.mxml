@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.model.GridDataProviderModel;
+			import mx.collections.ArrayCollection;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.controls.listClasses.ListBase;
+			import mx.controls.RadioButton;
+			import mx.core.UIComponent;
+			import mx.controls.DataGrid;
+			
+			[Bindable]
+			public var embedId:String;
+			[Bindable]
+			public var embedIsChecked:Boolean;
+			
+			private function selectRadio(evt:MouseEvent):void {
+				var dataGrid:DataGrid = DataGrid(UIComponent(UIComponent(UIComponent(evt.target).parent).parent).parent);
+				var arr:ArrayCollection = ArrayCollection(dataGrid.dataProvider);
+				var gp:GridDataProviderModel;
+				for(var i:int; i<arr.length; i++){
+					gp = GridDataProviderModel(arr.getItemAt(i));
+					if(radioId.text == gp.id){
+						gp.isChecked = true;
+					}else{
+						gp.isChecked = false;
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Text id="radioId" text="{embedId}" visible="false" width="0"/>
+	<mx:RadioButton label="" selected="{embedIsChecked}" click="selectRadio(event)" verticalCenter="0" horizontalCenter="0"/>
+</mx:Canvas>
+
+
+<!--
+<mx:Component>
+	<mx:Canvas width="100%" height="100%">
+		<mx:Script>
+			<![CDATA[
+				import mx.controls.dataGridClasses.DataGridColumn;
+				import mx.controls.listClasses.ListBase;
+				import mx.controls.RadioButton;
+				import mx.core.UIComponent;
+				import mx.controls.DataGrid;
+				private function selectRadio(evt:MouseEvent){
+					var dg:DataGrid = DataGrid(UIComponent(UIComponent(UIComponent(evt.target).parent).parent).parent);	
+					for(var i:int; i<dg.document.gadgetContents.length; i++){
+						if(radioId.text == dg.document.gadgetContents[i].id){
+							dg.document.gadgetContents[i].isChecked = true;
+						}else{
+							dg.document.gadgetContents[i].isChecked = false;
+						}
+					}
+					//RadioButton(evt.target).selected = false;
+				}
+			]]>
+		</mx:Script>
+		<mx:Text id="radioId" text="{data.id}" visible="false" width="0"/>
+		<mx:RadioButton label="" selected="{data.isChecked}" click="selectRadio(event)" verticalCenter="0" horizontalCenter="0"/>
+	</mx:Canvas>
+</mx:Component>
+-->

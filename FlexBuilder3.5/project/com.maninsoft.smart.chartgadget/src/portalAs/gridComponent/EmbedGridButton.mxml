@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import portalAs.commonModel.GridDataProviderModel;
+			import mx.collections.ArrayCollection;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.controls.listClasses.ListBase;
+			import mx.controls.RadioButton;
+			import mx.core.UIComponent;
+			import mx.controls.DataGrid;
+			
+			[Bindable]
+			public var embedId:String;
+			[Bindable]
+			public var buttonName:String;
+			
+			private function clickButton(evt:MouseEvent):void {
+				var dataGrid:DataGrid = DataGrid(UIComponent(UIComponent(UIComponent(evt.target).parent).parent).parent);
+				var eventObj:CustormEvent = new CustormEvent("custormItemClick");
+				eventObj["dataGrid"] = dataGrid;
+				dispatchEvent(eventObj);
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="custormItemClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:Text id="radioId" text="{embedId}" visible="false" width="0"/>
+	<mx:Button label="{buttonName}" click="clickButton(event)" verticalCenter="0" horizontalCenter="0"/>
+</mx:Canvas>

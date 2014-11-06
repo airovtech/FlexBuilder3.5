@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="450" height="300" layout="absolute" title="디버그" fontFamily="Arial" fontSize="12" 
+	showCloseButton="true" close="{close()}">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			public function append(debugStr:String):void{
+				debugText.text += debugStr;
+			}
+			
+			public function close():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:TextArea id="debugText" x="10" y="10" width="430" height="230"/>
+</mx:TitleWindow>

@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SmartChart xmlns="mxmlComponet.gadget.chart.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" borderColor="#ffffff">
+	<mx:Script>
+		<![CDATA[
+			import smartWork.util.StringTokenizer;
+			import mx.events.CubeEvent;
+			import mx.controls.olapDataGridClasses.OLAPDataGridItemRendererProvider;
+			import mx.controls.olapDataGridClasses.OLAPDataGridHeaderRendererProvider;
+			import mx.olap.IOLAPQuery;
+			import mx.olap.OLAPQuery;
+			import mx.olap.OLAPMember;
+			import mx.olap.IOLAPResult;
+			import mx.controls.Alert;
+			import mx.rpc.AsyncResponder;
+			import mx.rpc.AsyncToken;
+			import mx.collections.ArrayCollection;
+			import mx.olap.IOLAPMember;
+			import mx.olap.IOLAPAxisPosition;
+			import mx.collections.IList;
+			import mx.olap.IOLAPQueryAxis;
+			import mx.olap.IOLAPSet;
+			import mx.olap.OLAPSet;
+			import mx.olap.OLAPCube;
+			import mx.controls.OLAPDataGrid;
+			
+			[Bindable]
+			private var flatData:ArrayCollection = new ArrayCollection();
+			private var cubeElements:Array = new Array(); 
+			private var xAxisArr:Array = new Array();
+			private var yAxisArr:Array = new Array();
+			private var measureArr:Array = new Array();
+			private var measureUnitArr:Array = new Array();
+			private var measureFunctionArr:Array = new Array();
+			private var measureCheck:String = "N";
+			private var query:IOLAPQuery;
+			private var _displayUnit:Boolean;
+			private var axisChange:Boolean = false;
+			
+			public function set displayUnit(bool:Boolean):void{
+				unitInfo.visible = bool;
+			}
+			
+			override public function set chartXml(xml:XML):void{
+				_chartXml = xml;
+				trancingXml();
+			}
+			
+			public function trancingXml():void{
+				measureCheck = String(_chartXml.defineInfo.measure.@check);
+				var xAxis:XMLList = _chartXml.defineInfo.xAxis;
+            	var yAxis:XMLList = _chartXml.defineInfo.yAxis;
+            	var measure:XMLList = _chartXml.defineInfo.measure;
+            	var measureUnit:XMLList = _chartXml.defineInfo.measureUnit;
+            	var measureFunction:XMLList = _chartXml.defineInfo.measureFilterFunctionType;
+            	var xAxisTok:StringTokenizer = new StringTokenizer(xAxis[0], ",");
+            	var yAxisTok:StringTokenizer = new StringTokenizer(yAxis[0], ",");
+            	var measureTok:StringTokenizer = new StringTokenizer(measure[0], ",");
+            	var measureUnitTok:StringTokenizer = new StringTokenizer(measureUnit[0], ",");
+            	var measureFunctionTok:StringTokenizer = new StringTokenizer(measureFunction[0], ",");
+            	while(xAxisTok.hasMoreTokens()){
+            		xAxisArr.push(xAxisTok.nextToken());
+            	}
+            	while(yAxisTok.hasMoreTokens()){
+            		yAxisArr.push(yAxisTok.nextToken());
+            	}
+            	while(measureTok.hasMoreTokens()){
+            		measureArr.push(measureTok.nextToken());
+            	}
+            	while(measureUnitTok.hasMoreTokens()){
+            		measureUnitArr.push(measureUnitTok.nextToken());
+            	}
+            	while(measureFunctionTok.hasMoreTokens()){
+            		measureFunctionArr.push(measureFunctionTok.nextToken());
+            	}
+            	
+            	var dataList:XMLList = _chartXml.dataInfo.item;
+            	var dataTok:StringTokenizer;
+            	var dataElement:StringTokenizer;
+            	for(var i:int=0; i<dataList.length(); i++){
+            		var flatModel:FlatDataModel = new FlatDataModel();
+            		dataTok = new StringTokenizer(dataList[i], ",");
+            		while(dataTok.hasMoreTokens()){
+            			dataElement = new StringTokenizer(dataTok.nextToken(), ":");
+            			flatModel[dataElement.nextToken()] = dataElement.nextToken();
+            		}
+            		flatData.addItem(flatModel);
+            	}
+            	
+            	if(yAxisArr.length>0 && xAxisArr.length==0){
+					axisChange = true;
+				}
+				
+				makeCube();
+				makeUnitText();
+			}
+			
+			private function makeUnitText():void{
+				var unitText:String = "";
+				for(var i:int=0; i<measureArr.length; i++){
+					unitText += String(measureArr[i]) + "(";
+					var token:StringTokenizer = new StringTokenizer(measureUnitArr[i], "|");
+					if(token.getTokenTotalCount()>1){
+						token.nextToken();
+						unitText += token.nextToken() + ") ";
+					}else{
+						unitText += resourceManager.getString("ChartGadgetETC", "NoneText") +  ") ";
+					}
+				}
+				unitInfo.text = resourceManager.getString("ChartGadgetETC", "UnitInfoText") + " : " + unitText;
+				makeFunctionText();
+			}
+			
+			private function makeFunctionText():void{
+				var unitText:String = "";
+				for(var i:int=0; i<measureArr.length; i++){
+					unitText += String(measureArr[i]) + "(";
+					unitText += changeFunctionName(measureFunctionArr[i]) + ") ";	
+				}
+				unitInfo.text += "  " + resourceManager.getString("ChartGadgetETC", "ValueInfoText") + " : " + unitText;
+			}
+			
+			private function changeFunctionName(functionName:String):String{
+				if(functionName=="sum"){
+					functionName = resourceManager.getString("ChartGadgetETC", "SumValueText");
+				}else if(functionName=="max"){
+					functionName = resourceManager.getString("ChartGadgetETC", "MaxValueText");
+				}else if(functionName=="min"){
+					functionName = resourceManager.getString("ChartGadgetETC", "MinValueText");
+				}else if(functionName=="avg"){
+					functionName = resourceManager.getString("ChartGadgetETC", "AvgValueText");
+				}else if(functionName=="count"){
+					functionName = resourceManager.getString("ChartGadgetETC", "CountText");
+				}
+				return functionName;
+			}
+				
+			private function cubeCompleteHandler(event:CubeEvent):void{
+				query = new OLAPQuery();
+				makeXQuery();
+				makeYQuery();
+				cubeRun();
+			}
+			
+			private function makeCube():void {
+				makeDimension();
+				makeMeasure();
+				makeRenderer();
+				cube.refresh();
+				cube.addEventListener("complete",cubeCompleteHandler);
+			}
+			
+			private function makeDimension():void{
+				var xAttributes:Array = new Array();
+				var yAttributes:Array = new Array();
+				var XDim : mx.olap.OLAPDimension = new mx.olap.OLAPDimension();
+				XDim.name = "XDim";
+				for(var i:int=0; i<xAxisArr.length; i++){
+					var temp : mx.olap.OLAPAttribute = new mx.olap.OLAPAttribute();
+					temp.dataField = String(xAxisArr[i]);
+					temp.name = String(xAxisArr[i]);
+					xAttributes.push(temp);
+				}
+				var YDim : mx.olap.OLAPDimension = new mx.olap.OLAPDimension();
+				YDim.name = "YDim";
+				for(var k:int=0; k<yAxisArr.length; k++){
+					var temp2 : mx.olap.OLAPAttribute = new mx.olap.OLAPAttribute();
+					temp2.dataField = String(yAxisArr[k]);
+					temp2.name = String(yAxisArr[k]);
+					yAttributes.push(temp2);
+				}
+				XDim.elements = xAttributes;
+				YDim.elements = yAttributes;
+				cubeElements.push(XDim);
+				cubeElements.push(YDim);
+			}
+			
+			private function makeMeasure():void{
+				for(var i:int=0; i<measureArr.length; i++){
+					var temp : mx.olap.OLAPMeasure = new mx.olap.OLAPMeasure();
+					var functionStr:String = measureFunctionArr[i];
+					if(functionStr=="count" || functionStr==null){
+						functionStr = "sum";
+					}
+					temp.name = String(measureArr[i]);
+					temp.dataField = String(measureArr[i]);
+					temp.aggregator = functionStr;
+					cubeElements.push(temp);
+				}
+				cube.elements = cubeElements;
+			}
+			
+			private function makeRenderer():void{
+				var headArr:Array = new Array();
+				var dataArr:Array = new Array();
+				
+				var xHeader:OLAPDataGridHeaderRendererProvider = new OLAPDataGridHeaderRendererProvider();
+				xHeader.uniqueName = "XDim";
+				xHeader.styleName = "headerStyle";
+				xHeader.type = OLAPDataGrid.OLAP_LEVEL;
+				headArr.push(xHeader);
+				
+				var yHeader:OLAPDataGridHeaderRendererProvider = new OLAPDataGridHeaderRendererProvider();
+				yHeader.uniqueName = "YDim";
+				yHeader.styleName = "headerStyle";
+				yHeader.type = OLAPDataGrid.OLAP_DIMENSION;
+				headArr.push(yHeader);
+				
+				var yItem:OLAPDataGridItemRendererProvider = new OLAPDataGridItemRendererProvider();
+				yItem.uniqueName = "[YDim].["+yAxisArr[yAxisArr.length-1]+"]";
+				yItem.type = OLAPDataGrid.OLAP_HIERARCHY;
+				yItem.formatter = usdFormatter;
+				dataArr.push(yItem);
+				
+				var xItem:OLAPDataGridItemRendererProvider = new OLAPDataGridItemRendererProvider();
+				xItem.uniqueName = "[XDim].["+xAxisArr[xAxisArr.length-1]+"]";
+				xItem.type = OLAPDataGrid.OLAP_HIERARCHY;
+				xItem.formatter = usdFormatter;
+				dataArr.push(xItem);
+				
+				var mItem:OLAPDataGridItemRendererProvider = new OLAPDataGridItemRendererProvider();
+				mItem.uniqueName = "Measures";
+				mItem.styleName = "measuresStyle";
+				mItem.type = OLAPDataGrid.OLAP_DIMENSION;
+				mItem.formatter = usdFormatter;
+				dataArr.push(mItem);
+				
+				olapGrid.headerRendererProviders = headArr;
+				olapGrid.itemRendererProviders = dataArr;
+			}
+			
+			
+//			private function makeXQuery():void{
+//				var measureSet:OLAPSet = new OLAPSet();
+//				measureSet.addElements(cube.findDimension("Measures").members);
+//				var xSetArr:Array = new Array();
+//				var olapSet:IOLAPSet;
+//				var xDefaultSet:OLAPSet= new OLAPSet;
+//				var colQuerxAxis:IOLAPQueryAxis = query.getAxis(OLAPQuery.COLUMN_AXIS);
+//				for(var i:int=0; i<xAxisArr.length; i++){
+//					var tempSet:OLAPSet= new OLAPSet;
+//					if(i!=(xAxisArr.length-1)){
+//    					tempSet.addElements(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).children);
+//    					if(i==0 && xAxisArr.length>1){
+//    						xDefaultSet.addElement(tranceDefaultMemberName(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).defaultMember, "계"));
+//    					}
+//    				}else{
+//    					tempSet.addElements(tranceAllName(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).members, "계"));
+//    				}
+//    				xSetArr.push(tempSet);
+//				}
+//				
+//				for(var k:int=0; k<xSetArr.length; k++){
+//					if(k==0){
+//						olapSet = OLAPSet(xSetArr[k]).hierarchize(true);
+//					}else{
+//						olapSet = olapSet.crossJoin(OLAPSet(xSetArr[k])).hierarchize(true);
+//					}
+//				}
+//				
+//				if(measureCheck=="C"){
+//					if(olapSet!=null){
+//						olapSet = olapSet.crossJoin(measureSet).hierarchize(true);
+//					}
+//					if(xDefaultSet!=null){
+//						xDefaultSet = xDefaultSet.crossJoin(measureSet) as OLAPSet;
+//					}else{
+//						xDefaultSet = measureSet;
+//					}
+//				}
+//				if(olapSet!=null){
+//					colQuerxAxis.addSet(olapSet);
+//				}
+//				colQuerxAxis.addSet(xDefaultSet);
+//			}
+			
+			private function makeXQuery():void{
+				var measureSet:OLAPSet = new OLAPSet();
+				measureSet.addElements(cube.findDimension("Measures").members);
+				var xSetArr:Array = new Array();
+				var olapSet:IOLAPSet;
+				var xDefaultSet:OLAPSet= new OLAPSet;
+				var xDefaultSetArr:Array = new Array();
+				var colQuerxAxis:IOLAPQueryAxis = query.getAxis(OLAPQuery.COLUMN_AXIS);
+				var allName:String = resourceManager.getString("ChartGadgetETC", "AllNameText");
+				
+				for(var i:int=0; i<xAxisArr.length; i++){
+					var tempSet:OLAPSet= new OLAPSet;
+					var defalutTempSet:OLAPSet= new OLAPSet;
+					if(axisChange){
+						if(i!=(xAxisArr.length-1)){
+	    					tempSet.addElements(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).children);
+	    				}else{
+	    					tempSet.addElements(tranceAllName(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).members, allName));
+	    				}
+	    				if(xAxisArr.length>1){
+	    					defalutTempSet.addElement(tranceDefaultMemberName(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).defaultMember, allName));
+	    				}
+					}else{
+						if(i!=(xAxisArr.length-1)){
+	    					tempSet.addElements(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).children);
+	    					if(i==0 && xAxisArr.length>1){
+	    						xDefaultSet.addElement(tranceDefaultMemberName(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).defaultMember, allName));
+	    					}
+	    				}else{
+	    					tempSet.addElements(tranceAllName(cube.findDimension("XDim").findAttribute(String(xAxisArr[i])).members, allName));
+	    				}
+					}
+    				
+    				xSetArr.push(tempSet);
+    				
+    				if(axisChange){
+    					xDefaultSetArr.push(defalutTempSet);
+    				}
+				}
+				
+				for(var k:int=0; k<xSetArr.length; k++){
+					if(k==0){
+						olapSet = OLAPSet(xSetArr[k]).hierarchize(true);
+					}else{
+						olapSet = olapSet.crossJoin(OLAPSet(xSetArr[k])).hierarchize(true);
+					}
+				}
+				
+				if(axisChange){
+					for(var h:int=0; h<xDefaultSetArr.length; h++){
+						if(h==0){
+							xDefaultSet = xDefaultSetArr[h] as OLAPSet;
+						}else{
+							xDefaultSet = xDefaultSet.crossJoin(OLAPSet(xDefaultSetArr[h])) as OLAPSet;
+						}
+					}
+				}
+				if(measureCheck=="C"){
+					if(olapSet!=null){
+						olapSet = olapSet.crossJoin(measureSet).hierarchize(true);
+					}else{
+						xDefaultSet = measureSet;
+					}
+				}
+				
+				if(olapSet!=null){
+					colQuerxAxis.addSet(olapSet);
+				}
+				colQuerxAxis.addSet(xDefaultSet);
+			}
+			
+			private function makeYQuery():void{
+				var measureSet:OLAPSet = new OLAPSet();
+				measureSet.addElements(cube.findDimension("Measures").members);
+				var ySetArr:Array = new Array();
+				var olapSet:IOLAPSet;
+				var yDefaultSet:OLAPSet = new OLAPSet;;
+				var yDefaultSetArr:Array = new Array();
+				var rowQueryAxis:IOLAPQueryAxis = query.getAxis(OLAPQuery.ROW_AXIS);
+				var allName:String = resourceManager.getString("ChartGadgetETC", "AllNameText");
+				
+				for(var i:int=0; i<yAxisArr.length; i++){
+					var tempSet:OLAPSet= new OLAPSet;
+					var defalutTempSet:OLAPSet= new OLAPSet;
+					if(!axisChange){
+						if(i!=(yAxisArr.length-1)){
+	    					tempSet.addElements(cube.findDimension("YDim").findAttribute(String(yAxisArr[i])).children);
+	    				}else{
+	    					tempSet.addElements(tranceAllName(cube.findDimension("YDim").findAttribute(String(yAxisArr[i])).members, allName));
+	    				}
+	    				if(yAxisArr.length>1){
+	    					defalutTempSet.addElement(tranceDefaultMemberName(cube.findDimension("YDim").findAttribute(String(yAxisArr[i])).defaultMember, allName));
+	    				}
+					}else{
+						if(i!=(yAxisArr.length-1)){
+	    					tempSet.addElements(cube.findDimension("YDim").findAttribute(String(yAxisArr[i])).children);
+	    					if(i==0 && yAxisArr.length>1){
+	    						yDefaultSet.addElement(tranceDefaultMemberName(cube.findDimension("YDim").findAttribute(String(yAxisArr[i])).defaultMember, allName));
+	    					}
+	    				}else{
+	    					tempSet.addElements(tranceAllName(cube.findDimension("YDim").findAttribute(String(yAxisArr[i])).members, allName));
+	    				}
+					}
+    				
+    				ySetArr.push(tempSet);
+    				
+    				
+    				yDefaultSetArr.push(defalutTempSet);
+    				
+				}
+				
+				for(var k:int=0; k<ySetArr.length; k++){
+					if(k==0){
+						olapSet = OLAPSet(ySetArr[k]).hierarchize(true);
+					}else{
+						olapSet = olapSet.crossJoin(OLAPSet(ySetArr[k])).hierarchize(true);
+					}
+				}
+				
+				for(var h:int=0; h<yDefaultSetArr.length; h++){
+					if(h==0){
+						yDefaultSet = yDefaultSetArr[h] as OLAPSet;
+					}else{
+						yDefaultSet = yDefaultSet.crossJoin(OLAPSet(yDefaultSetArr[h])) as OLAPSet;
+					}
+				}
+				
+				if(measureCheck=="R"){
+					if(olapSet!=null){
+						olapSet = olapSet.crossJoin(measureSet).hierarchize(true);
+					} else{
+						yDefaultSet = measureSet;
+					}
+				}
+				if(olapSet!=null){
+					rowQueryAxis.addSet(olapSet);
+				}
+				rowQueryAxis.addSet(yDefaultSet);
+			}
+			
+			
+			private function cubeRun():void{
+				var resultToken:AsyncToken = cube.execute(query);
+				resultToken.addResponder(new AsyncResponder(displayResult, displayFault));		
+			}
+			
+			private function orientationExe():void{
+//				query = new OLAPQuery();
+//				var xTempArr:Array = new Array();
+//				var yTempArr:Array = new Array();
+//				for(var i:int=0; i<xAxisArr.length; i++){
+//					yTempArr.push(xAxisArr[i]);
+//				}
+//				for(var j:int=0; j<yAxisArr.length; j++){
+//					xTempArr.push(yAxisArr[j]);
+//				}
+//				xAxisArr = xTempArr;
+//				yAxisArr = yTempArr;
+//				makeCube();
+	        }
+			
+			private function displayFault():void{
+				Alert.show("Result Fault");
+			}
+		
+			private function displayResult(result:Object, token:Object):void{
+				if (!result){
+					return;
+				}
+				var olapResult:IOLAPResult = result as IOLAPResult;
+				olapGrid.dataProvider = olapResult;
+			}
+			
+			private function myStyleFunc(row:IOLAPAxisPosition, column:IOLAPAxisPosition, value:Number):Object{
+				if(row.members[0].isAll)
+					return {fontFamily:"Tahoma", fontWeight:"bold", fontSize:11, fill:0xff0000};
+				
+				if(column.members[0].isAll)
+					return {fontFamily:"Tahoma", fontWeight:"bold", fontSize:11, fill:0xff0000};
+
+             	return {fontFamily:"Tahoma", fontWeight:"normal", fontSize:11 };
+        	}  
+        	
+        	private function tranceAllName(list:IList, str:String):IList{
+	        	for(var i:int=0; i<list.length; i++){
+	    			if(OLAPMember(list[i]).displayName == "(All)"){
+	    				OLAPMember(list[i]).displayName = str;
+	    			}
+	    		}
+	    		return list;
+	        }   
+	        
+	        private function tranceDefaultMemberName(mem:IOLAPMember, str:String):IOLAPMember{
+				if(mem.displayName == "(All)"){
+					OLAPMember(mem).displayName = str;
+				}
+	    		return mem;
+	        }   
+		]]>
+	</mx:Script>
+	<mx:CurrencyFormatter id="usdFormatter" precision="0" currencySymbol="" decimalSeparatorFrom="." decimalSeparatorTo="." useNegativeSign="true" 
+	    	useThousandsSeparator="true" alignSymbol="left"/>
+	<mx:OLAPCube name="FlatSchemaCube" dataProvider="{flatData}" id="cube" />
+	<mx:HBox width="100%" height="17" id="unitArea">
+		<mx:Label id="unitInfo" width="50%"/>
+		<mx:Box width="100%" height="100%" horizontalAlign="right">
+		</mx:Box>
+	</mx:HBox>
+	<mx:OLAPDataGrid id="olapGrid" width="100%" height="100%" defaultCellString="0" styleFunction="myStyleFunc" styleName="olapGridStyle"
+		rowAxisHeaderStyleName="rowAxisHeaderStyle" columnAxisHeaderStyleName="columnAxisHeaderStyle" textAlign="right"/>
+</SmartChart>

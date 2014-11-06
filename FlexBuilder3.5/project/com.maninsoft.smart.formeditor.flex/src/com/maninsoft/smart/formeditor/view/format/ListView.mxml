@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<view:AbstractFormatView 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:view="com.maninsoft.smart.formeditor.view.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import mx.controls.List;
+			import mx.collections.ArrayCollection;
+			
+			private var list:List;
+			private var listData:ArrayCollection;
+			override public function refreshVisual():void{
+				if(this.list == null){
+					this.list.percentWidth = 100;
+					this.list.percentHeight = 100;
+					
+					this.list.editable = true;
+					this.list.selectable = true;
+					
+					this.listData = new ArrayCollection();
+					this.listData.addItem(new Object);
+					
+					this.list.dataProvider = this.listData;
+					this.addChild(this.list);
+				}
+			}
+		
+			override public function get formatType():FormatType {
+				return FormatTypes.list;
+			}
+		]]>
+	</mx:Script>
+</view:AbstractFormatView>

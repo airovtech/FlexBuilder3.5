@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TypeDetailView 
+	xmlns="com.maninsoft.smart.formeditor.refactor.view.property.detail.type.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="날짜">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			import mx.formatters.DateBase;
+			import com.maninsoft.smart.formeditor.model.type.LocaleType;
+			import mx.resources.Locale;
+			import com.maninsoft.smart.formeditor.model.property.FormDateTypes;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.model.property.FormDateType;
+			
+			private function setLocaleDate(formDateType:FormDateType):void{
+				DateBase.dayNamesLong = formDateType.days;
+				DateBase.dayNamesShort = formDateType.dayShorts;
+				DateBase.monthNamesLong = formDateType.months;
+				DateBase.monthNamesShort = formDateType.monthShorts;
+				DateBase.timeOfDay = formDateType.times;
+				
+				patternList.dataProvider = formDateType.dateFormatStrings;
+			}
+			
+			private function change():void{
+				changeFormItemType = FormItemType(patternList.selectedItem).clone();
+				dispatchEvent(new Event(Event.CHANGE));				
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox height="100%" width="100%">
+		<mx:Text text="형식 : " fontSize="12"/>
+		<mx:List id="patternList" width="100%" 
+			itemRenderer="com.maninsoft.smart.formeditor.refactor.view.property.renderer.DateFormTypeRenderer"
+			dataProvider="{FormDateType(dateLocale.selectedItem).dateFormatStrings}"
+			selectedItem="{formItemType.formatString}"
+			/>
+			<!--change="formItemType.formatString=String(List(event.target).selectedItem)"-->
+		<mx:HBox>
+			<mx:Text text="위치:" fontSize="12"/>
+			<mx:ComboBox id="dateLocale" fontSize="12"
+				dataProvider="{FormDateTypes.getFormDateTypes()}" labelField="localeLabel" 
+				creationComplete="{setLocaleDate(FormDateType(dateLocale.selectedItem))}" change="{setLocaleDate(FormDateType(dateLocale.selectedItem))}"
+				selectedIndex="{FormDateTypes.getLocaleTypeIndex(formItemType.locale.type)}"
+				/>	
+		</mx:HBox>
+	</mx:VBox>
+</TypeDetailView>

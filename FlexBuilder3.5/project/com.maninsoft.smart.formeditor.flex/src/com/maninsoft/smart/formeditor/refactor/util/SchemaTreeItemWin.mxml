@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" x="350" y="230" width="216" height="154" layout="absolute" 
+	title="스키마 필드 추가" fontSize="12" fontFamily="Arial"
+	close="cancel()" showCloseButton="true" verticalScrollPolicy="off" horizontalScrollPolicy="off"><!---->
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			
+			// 폼 선택 취소
+			// 1. 폼 선택정보 제거	
+			// 2. 취소 이벤트
+			private function cancel():void{
+				dispatchEvent(new Event(Event.CANCEL));
+				close();	
+			}
+			
+			// 폼 선택
+			// 1. 완료 이벤트
+			private function complete():void{
+				dispatchEvent(new Event(Event.COMPLETE));
+				close();	
+			}
+			
+			private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+
+			[Bindable]				
+            public var formEntityModel:FormEntity;
+            
+            public function get parentEntity():FormEntity{
+            	if(toped.selected)
+            		return null;
+            	return formEntityModel;
+         	}
+
+		]]>
+	</mx:Script>
+	<mx:VBox x="0" y="0" width="100%" height="100%" verticalGap="3" >
+	   <!-- Display item label.-->
+	    <!--<mx:Label text="{formEntityModel.getPath() + '에 폼 아이템 추가'}"/>-->
+		<mx:Text text="{formEntityModel.getPath() + '에 폼 아이템 추가'}" color="#EF9516"/>
+	    <!-- Display the text '이름:' and let the user edit it.-->
+	    <mx:HBox>
+	        <mx:Text text="이름:"/>
+	        <mx:TextInput id="formModelName" 
+	            width="150"             
+			/>
+	    </mx:HBox>
+	
+	    <!-- Display the status using a CheckBox control 
+	        and let the user edit it.-->
+	    <mx:CheckBox id="toped" 
+	        label="루트에 생성"/>
+		<mx:Canvas width="200" height="25">
+			<mx:Button x="86.5" y="0" label="확인" click="complete()"/>
+			<mx:Button x="142" y="0" label="취소" click="cancel()"/>
+	    </mx:Canvas>		
+	</mx:VBox>
+</mx:TitleWindow>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Tree xmlns:mx="http://www.adobe.com/2006/mxml"
+	 selectedIndex="0" labelFunction="schemaItemLabelFunc"  
+	 disclosureClosedIcon="{IconLibrary.arrowSide}"	disclosureOpenIcon="{IconLibrary.arrowDown}" 
+	 showRoot="{!listType}" dataProvider="{(listType)?this.formModelList:this.formModel}" iconFunction="getIcon" 
+	 fontSize="12" fontFamily="Verdana">		
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.model.AbstractFormResource;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			
+			[Bindable]
+			public var formModel:FormDocument;
+			
+			[Bindable]
+			public var formModelList:ArrayCollection;
+			
+			[Bindable]
+			public var listType:Boolean = false;
+			
+			// 스키마 아이템 아이콘
+			private function getIcon(item:Object):Class{
+				return AbstractFormResource(item).icon;
+			}	
+			// 스키마 아이템 트리용 라벨 함수
+			private function schemaItemLabelFunc(item:Object):String{
+				if(item is FormDocument){
+					return FormDocument(item).name;
+				}else if(item is FormEntity){
+					return FormEntity(item).name;
+				}
+				return "";
+			}
+		]]>
+	</mx:Script>
+</mx:Tree>

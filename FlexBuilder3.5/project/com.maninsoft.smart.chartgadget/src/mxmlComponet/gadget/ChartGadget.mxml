@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GadgetPanel xmlns="smartWork.custormObj.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="crComplete()">
+	<mx:Script>
+		<![CDATA[
+			import portalAs.Properties;
+			import mx.rpc.events.ResultEvent;
+			import mxmlComponet.gadget.chart.*;
+			
+			private function crComplete():void{
+				//srv.url = Properties.basePath + "smartserver/services/testChart.jsp";
+				var reqParameter:Object = new Object();
+				reqParameter["method"] = "getGadgetData";
+				reqParameter["userId"] = Properties.userId;
+				reqParameter["gadgetId"] = gadgetId;
+				srv.url = Properties.basePath + "smartserver/services/portal/gadgetService.jsp";
+				srv.send(reqParameter);
+			}
+			
+			private function addSeries(event:ResultEvent):void{
+				var xmlResult:XML = XML(event.result);
+				var chart:SmartChart;
+				if(xmlResult.@type == "COLUMN_CHART"){
+					chart = new SmartColumnChart();
+				}else if(xmlResult.@type == "BAR_CHART"){
+					chart = new SmartBarChart();
+				}else if(xmlResult.@type == "LINE_CHART"){
+					chart = new SmartLineChart();
+				}else if(xmlResult.@type == "PIE_CHART"){
+					chart = new SmartPieChart();
+				}else if(xmlResult.@type == "AREA_CHART"){
+					chart = new SmartAreaChart();
+				}else if(xmlResult.@type == "GRID"){
+					chart = new SmartGrid();
+				}
+				
+				if(chart!=null){
+					this.addChild(chart);
+					chart.percentWidth = 100;
+					chart.percentHeight = 100;
+					chart.chartXml = xmlResult;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="srv" resultFormat="e4x" result="addSeries(event)" method="post"/>
+</GadgetPanel>

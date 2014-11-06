@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="24" height="43">
+<!--	<mx:Style source="/assets/css/default.css"/>
+-->	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.modeler.xpdl.navigator.DiagramTreeForm;
+			import com.maninsoft.smart.modeler.toolTipMenu.event.ToolTipMenuEvent;
+
+			public var form:DiagramTreeForm;
+			
+			private function clickQuickMenu(e:MouseEvent):void{
+				var event:ToolTipMenuEvent = new ToolTipMenuEvent(Button(e.target).name);
+				dispatchEvent(event);
+			}
+			
+			public function open():void{
+				this.visible = true;
+			}
+			
+			public function close():void{
+				this.visible = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox id="menuBox" x="0" y="0" width="22" height="27" horizontalGap="2" verticalAlign="top" styleName="quickmenuStyle">
+		<mx:Button id="editorBtn"  width="22" height="22" styleName="editBtnToolTip"  
+			useHandCursor="true"  toolTip="{resourceManager.getString('WorkbenchETC', 'editText')}" click="{clickQuickMenu(event)}" name="{ToolTipMenuEvent.EDITOR}"/>
+	</mx:HBox>
+	<mx:Box styleName="quickmenuStyle" right="0" y="23" width="18" height="18">
+		<mx:Button id="closeBtn" styleName="closeBtnQuickMenu" click="{close()}"/>
+	</mx:Box>
+</mx:Canvas>

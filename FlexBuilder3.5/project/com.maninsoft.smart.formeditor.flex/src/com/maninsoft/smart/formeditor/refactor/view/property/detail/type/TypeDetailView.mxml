@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="일반"
+	height="100%" width="100%" fontSize="15" fontWeight="bold"  borderStyle="solid" borderColor="#000000"
+	xmlns:type="com.maninsoft.smart.formeditor.model.type.*">
+	<mx:Metadata>
+		[Event(name="change")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.model.property.FormItemType;
+			
+			[Bindable]
+			public var formItemType:FormItemType;
+			
+			public var changeFormItemType:FormItemType;
+		]]>
+	</mx:Script>
+</mx:Panel>

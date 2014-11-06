@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Filter xmlns="mxmlComponet.home.chartInfo.filter.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="350" height="80" 
+	 remove="filterRemove()">
+	<mx:Script>
+		<![CDATA[
+			import mxmlComponet.home.chartInfo.model.ValueFilterModel;
+			
+			[Bindable]
+			private var _filterModel:ValueFilterModel;
+			[Bindable]
+			private var functionTypes: Array = [ {label:"", data:""}, {label:"SUM", data:"sum"}, {label:"COUNT", data:"count"}, {label:"MAX", data:"max"}
+					, {label:"MIN", data:"min"}, {label:"AVG", data:"avg"} ];
+			private var functionTypes2: Array = [ {label:"COUNT", data:"count"} ];
+			
+			override public function crComplete():void{
+				comBoFunctionSetting();
+				numbericTypeCheck();
+			}
+			
+			private function comBoFunctionSetting():void{
+				for(var i:int=0; i<functionTypes.length; i++){
+					if(functionTypes[i].data == filterModel.functionType){
+						functionTypeCombo.selectedIndex = i;
+						break;
+					}
+				}	
+			}
+			
+			private function numbericTypeCheck():void{
+				if(_filterModel.dataType!="float" && _filterModel.dataType!="double" && _filterModel.dataType!="int" && _filterModel.dataType!="long"
+				   && _filterModel.dataType!="number"){
+					functionTypeCombo.dataProvider = functionTypes2;
+					functionTypeCombo.selectedIndex = 0;
+				}else{
+					functionTypeCombo.dataProvider = functionTypes;
+				}
+			}
+			
+			public function set filterModel(model:ValueFilterModel):void{
+				_filterModel = model;
+				//comBoFunctionSetting();
+			}
+			
+			public function get filterModel():ValueFilterModel{
+				return _filterModel;
+			}
+			
+			private function filterRemove():void{
+				try{
+					filterModel.functionType = functionTypeCombo.selectedItem.data as String;
+					filterModel.minValue = minText.text;
+					filterModel.maxValue = maxText.text;
+				}catch(e:Error){}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" backgroundColor="#EDF5B4">
+		<mx:HBox width="100%" height="50%" verticalAlign="middle">
+			<mx:Label text="함수" styleName="normalLabel"/>
+			<mx:ComboBox dataProvider="{functionTypes}" id="functionTypeCombo"/>
+		</mx:HBox>
+		<mx:HBox width="100%" height="50%" verticalAlign="middle">
+			<mx:Label text="value범위" styleName="normalLabel"/>
+			<mx:TextInput width="120" id="minText" text="{filterModel.minValue}"/>
+			<mx:Label text="~"/>
+			<mx:TextInput width="120" id="maxText" text="{filterModel.maxValue}"/>
+		</mx:HBox>
+	</mx:VBox>
+</Filter>

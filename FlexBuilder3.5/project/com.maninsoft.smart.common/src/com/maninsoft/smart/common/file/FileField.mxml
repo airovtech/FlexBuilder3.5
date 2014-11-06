@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="300" height="100" creationComplete="{init()}">
+	<mx:Metadata>
+        [Event(name="change", type="flash.events.Event")]
+    </mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.Fault;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import com.maninsoft.smart.common.assets.FileAssets;
+			import flash.events.*;
+			import flash.net.URLLoader;
+			import flash.net.URLRequest;
+			import flash.xml.*;
+			
+			import mx.controls.Tree;
+			import mx.events.TreeEvent;
+			
+			private var btnIcon:Class = FileAssets.attachFileIcon;
+			
+			[Bindable]
+			public var baseUrl:String;
+			[Bindable]
+			public var userId:String;
+			[Bindable]
+			private var pop:FileUpload;
+			
+			
+			private var _fileGroupId:String;
+			[Bindable]
+			public function set fileGroupId(fileGroupId:String):void{
+				this._fileGroupId = fileGroupId;
+				pop = FileUpload(PopUpManager.createPopUp(this, FileUpload, true));
+				pop.baseUrl = baseUrl;
+				pop.userId = userId;
+				pop.groupId = fileGroupId;
+				PopUpManager.removePopUp(pop);
+			}
+			
+			public function get fileGroupId():String{
+				return this._fileGroupId;
+			}
+			
+			private function init():void{
+				
+			}
+			
+			private function filePop():void{
+				pop = FileUpload(PopUpManager.createPopUp(this, FileUpload, true));
+				pop.baseUrl = baseUrl;
+				pop.userId = userId;
+				pop.showCloseButton = true;
+				pop.owner = this;
+				pop.groupId = fileGroupId;
+				pop.addEventListener(CustormEvent.CUSTORM_ITEM_CLICK, 
+					function(e:CustormEvent):void{						
+						receiveGropuId(e);						
+					}
+				);
+//				PopUpManager.centerPopUp(pop);
+			}
+			
+			private function receiveGropuId(event:CustormEvent):void{
+				this.fileGroupId = event["groupId"];
+			}
+		]]>
+	</mx:Script>
+	<mx:DataGrid id="fileInfoGrid" x="0" y="0" fontSize="11" height="{this.height}" width="{this.width - fileBtn.width - 5}" editable="false" enabled="true"
+		dataProvider="{pop.getDocumentService.lastResult.Document}"
+		styleName="formFile">
+		<mx:columns>
+			<mx:DataGridColumn headerText="파일 이름" width="{fileInfoGrid.width / 10 * 7}" dataField="fileName" textAlign="center"/>
+			<mx:DataGridColumn headerText="사이즈" width="{fileInfoGrid.width / 10 * 3}" dataField="fileSize" textAlign="center"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Button id="fileBtn" y="{(this.height - fileBtn.height)/2}" icon="{btnIcon}" click="{filePop()}" right="0" height="22" width="40"
+		styleName="formFileButton"/>	
+</mx:Canvas>

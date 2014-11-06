@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="100%" minWidth="400" height="100%" minHeight="400"
+	close="PopUpManager.removePopUp(this)" creationComplete="initCom()" xmlns:common="mxmlComponet.common.*" title="첨부 문서"
+	titleStyleName="normalLabel" fontSize="11" dropShadowEnabled="false"
+	 borderThicknessBottom="3" borderThicknessLeft="3" borderThicknessRight="3" borderThicknessTop="3" cornerRadius="5" alpha="3"> 	
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.xml.SimpleXMLEncoder;
+			import mx.managers.PopUpManager; 
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+		[Event(name="uploadComplete", type="flash.events.Event")]
+		[Event(name="uploadProgress", type="flash.events.ProgressEvent")]
+		[Event(name="uploadCancel", type="flash.events.Event")]
+		[Event(name="uploadIOError", type="flash.events.IOErrorEvent")]
+		[Event(name="uploadSecurityError", type="flash.events.SecurityErrorEvent")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.common.event.CustormEvent;
+			import com.maninsoft.smart.common.assets.DialogAssets;
+			import com.maninsoft.smart.common.assets.FileAssets;
+			import mx.collections.XMLListCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.*; 
+			import mx.managers.*;
+            import mx.events.*;
+			import flash.events.*;
+			import flash.net.*;
+			
+			[Bindable]
+			public var baseUrl:String;
+			[Bindable]
+			public var userId:String;
+			
+			private var _strUploadUrl:String;
+			private var _refAddFiles:FileReferenceList;	
+			private var _refUploadFile:FileReference;
+			private var _arrUploadFiles:Array;
+			private var _numCurrentUpload:Number = 0;	
+			
+			private var fr:FileReference;
+			[Bindable]
+			public var groupId:String="";	
+			[Bindable]
+			private var downLoadFileName:String;
+			[Bindable]
+			private var downLoadFilePath:String;
+			[Bindable]
+			private var xmlResultDownload:XML;
+			
+			
+			// upload Url을 세팅한다.
+			public function set uploadUrl(strUploadUrl:String):void {
+				_strUploadUrl = strUploadUrl;
+			}
+			
+			// 초기화
+			private function initCom():void {
+				_arrUploadFiles = new Array();				
+				enableUI();
+				uploadCheck();
+				searchDocumentList();
+			}
+			
+			// 파일찾기 버튼 클릭시 File시스템에서 파일을 찾을 수 있다.
+			private function addFiles():void {
+				_refAddFiles = new FileReferenceList();
+				_refAddFiles.addEventListener(Event.SELECT, onSelectFile);
+				_refAddFiles.browse();
+			}
+			
+			// 업로드 시킬파일을 선택한 경우 처리.
+			private function onSelectFile(event:Event):void {
+				var arrFoundList:Array = new Array();
+				for (var i:Number = 0; i < _arrUploadFiles.length; i++) {
+					for (var j:Number = 0; j < _refAddFiles.fileList.length; j++) {
+						if (_arrUploadFiles[i].name == _refAddFiles.fileList[j].name) {
+							arrFoundList.push(_refAddFiles.fileList[j].name);
+							_refAddFiles.fileList.splice(j, 1);
+							j--;
+						}
+					}
+				}
+				if (_refAddFiles.fileList.length >= 1) {				
+					for (var k:Number = 0; k < _refAddFiles.fileList.length; k++) {
+						_arrUploadFiles.push({
+							name:_refAddFiles.fileList[k].name,
+							size:formatFileSize(_refAddFiles.fileList[k].size),
+							file:_refAddFiles.fileList[k]});
+					}
+					listFiles.dataProvider = _arrUploadFiles;
+					listFiles.selectedIndex = _arrUploadFiles.length - 1;
+				}				
+				if (arrFoundList.length >= 1) {
+					Alert.show("The file(s): \n\n• " + arrFoundList.join("\n• ") + "\n\n...are already on the upload list. Please change the filename(s) or pick a different file.", "File(s) already on list");
+				}
+				updateProgBar();
+				scrollFiles();
+				uploadCheck();
+			}
+			
+			// 파일 사이즈에 단위를 세팅한다.
+			private function formatFileSize(numSize:Number):String {
+				var strReturn:String;
+				numSize = Number(numSize / 1000);
+				strReturn = String(numSize.toFixed(1) + " KB");
+				if (numSize > 1000) {
+					numSize = numSize / 1000;
+					strReturn = String(numSize.toFixed(1) + " MB");
+					if (numSize > 1000) {
+						numSize = numSize / 1000;
+						strReturn = String(numSize.toFixed(1) + " GB");
+					}
+				}				
+				return strReturn;
+			}
+			
+			// 선택한 파일 항목을 삭제한다.
+			private function removeFiles():void {
+				var arrSelected:Array = listFiles.selectedIndices;
+				if (arrSelected.length >= 1) {
+					for (var i:Number = 0; i < arrSelected.length; i++) {
+						_arrUploadFiles[Number(arrSelected[i])] = null;
+					}
+					for (var j:Number = 0; j < _arrUploadFiles.length; j++) {
+						if (_arrUploadFiles[j] == null) {
+							_arrUploadFiles.splice(j, 1);
+							j--;
+						}
+					}
+					listFiles.dataProvider = _arrUploadFiles;
+					listFiles.selectedIndex = 0;					
+				}
+				updateProgBar();
+				scrollFiles();
+				uploadCheck();
+			}
+			
+			// 선택한 파일 항목을 삭제한다.
+			private function removeFilesAll():void {
+				var count:Number = count = _arrUploadFiles.length;
+				for (var i:Number = 0; i < count; i++) {
+					_arrUploadFiles[i] = null;
+				}
+				for (var j:Number = 0; j < _arrUploadFiles.length; j++) {
+					if (_arrUploadFiles[j] == null) {
+						_arrUploadFiles.splice(j, 1);
+						j--;
+					}
+				}
+				listFiles.dataProvider = _arrUploadFiles;
+				listFiles.selectedIndex = 0;					
+				
+				updateProgBar();
+				scrollFiles();
+				uploadCheck();
+			}
+			
+			// 업로드 상태인지 확인체크
+			private function uploadCheck():void {
+				if (_arrUploadFiles.length == 0) {
+					btnUpload.enabled = false;
+					listFiles.verticalScrollPolicy = "off";
+				} else {
+					btnUpload.enabled = true;
+					listFiles.verticalScrollPolicy = "on";
+				}
+			}
+			
+			// 버튼 비활성화
+			private function disableUI():void {
+				btnAdd.enabled = false;
+				btnRemove.enabled = false;
+				btnUpload.enabled = false;
+				btnCancel.enabled = true;
+				listFiles.enabled = false;
+				listFiles.verticalScrollPolicy = "off";
+			}
+			
+			// 버튼 활성화
+			private function enableUI():void {
+				btnAdd.enabled = true;
+				btnRemove.enabled = true;
+				btnUpload.enabled = true;
+				btnCancel.enabled = false;
+				listFiles.enabled = true;
+				listFiles.verticalScrollPolicy = "on";
+			}
+			
+			private function scrollFiles():void {
+				listFiles.verticalScrollPosition = listFiles.selectedIndex;
+				listFiles.validateNow();
+			}
+			
+			private function startUpload():void {
+				if (_arrUploadFiles.length > 0) {
+					disableUI();
+					listFiles.selectedIndex = _numCurrentUpload;
+					scrollFiles();
+					var request:URLRequest = new URLRequest();
+					request.method = URLRequestMethod.POST;
+					var variables:URLVariables = new URLVariables();
+					variables.userId = userId;
+					//variables.refType = "3";
+					//variables.groupId = groupId;
+				    request.data = variables;
+				    //request.url = _strUploadUrl;
+				    //request.url = "http://192.168.10.21:9090/smartserver/services/portal/documentTest.jsp&";
+				    request.url = baseUrl + "smartworksV3/services/portal/documentService.jsp?method=createDocument&groupId=" + groupId;
+				    //request.url = "http://192.168.10.21:9090/smartserver/services/portal/documentService.jsp?method=createDocument";
+				    _refUploadFile = new FileReference();
+				    _refUploadFile = listFiles.selectedItem.file;
+				    _refUploadFile.addEventListener(ProgressEvent.PROGRESS, onUploadProgress);
+				    _refUploadFile.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, responseHandler);
+				   	//_refUploadFile.addEventListener(Event.COMPLETE, onUploadComplete);
+				    _refUploadFile.addEventListener(IOErrorEvent.IO_ERROR, onUploadIoError);
+				  	_refUploadFile.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onUploadSecurityError);
+				    //_refUploadFile.upload(request, "file", false);
+				    _refUploadFile.upload(request, "file");
+				}
+			}
+			
+			private function clearUpload():void {
+				_refUploadFile.removeEventListener(ProgressEvent.PROGRESS, onUploadProgress);
+				_refUploadFile.removeEventListener(Event.COMPLETE, onUploadComplete);
+				_refUploadFile.removeEventListener(IOErrorEvent.IO_ERROR, onUploadIoError);
+				_refUploadFile.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, onUploadSecurityError);
+				_refUploadFile.cancel();
+				_numCurrentUpload = 0;
+				removeFilesAll()
+				updateProgBar();
+				enableUI();
+			}
+			
+			private function onUploadCanceled():void {
+				clearUpload();
+				dispatchEvent(new Event("uploadCancel"));
+			}
+			
+			//업로드  Progress
+			private function onUploadProgress(event:ProgressEvent):void {
+				var numPerc:Number = Math.round((event.bytesLoaded / event.bytesTotal) * 100);
+				updateProgBar(numPerc);
+				var evt:ProgressEvent = new ProgressEvent("uploadProgress", false, false, event.bytesLoaded, event.bytesTotal);
+				dispatchEvent(evt);
+			}
+			
+			// 업로드  Progress 갱신
+			private function updateProgBar(numPerc:Number = 0):void {
+				var strLabel:String = (_numCurrentUpload + 1) + "/" + _arrUploadFiles.length;
+				strLabel = (_numCurrentUpload + 1 <= _arrUploadFiles.length && numPerc > 0 && numPerc < 100) ? numPerc + "% - " + strLabel : strLabel;
+				strLabel = (_numCurrentUpload + 1 == _arrUploadFiles.length && numPerc == 100) ? "Upload Complete - " + strLabel : strLabel;
+				strLabel = (_arrUploadFiles.length == 0) ? "" : strLabel;
+				progBar.label = strLabel;
+				progBar.setProgress(numPerc, 100);
+				progBar.validateNow();
+			}
+			
+			
+			private function responseHandler(event:DataEvent):void {
+				var xml:XML = XML(event.data);
+				groupId = xml;
+				var eventObj:CustormEvent = new CustormEvent("custormItemClick");
+				eventObj["groupId"] = groupId;
+				dispatchEvent(eventObj);
+				
+				_numCurrentUpload++;				
+				if (_numCurrentUpload < _arrUploadFiles.length) {
+					startUpload();
+				} else {
+					enableUI();
+					clearUpload();
+					dispatchEvent(new Event("uploadComplete"));
+				}
+				searchDocumentList();
+			}
+			
+			// 업로드가  종료되었을때 
+			private function onUploadComplete(event:Event):void {
+				_numCurrentUpload++;				
+				if (_numCurrentUpload < _arrUploadFiles.length) {
+					startUpload();
+				} else {
+					enableUI();
+					clearUpload();
+					dispatchEvent(new Event("uploadComplete"));
+				}
+				searchDocumentList();
+			}
+			
+			// 업로드시 에러가 발생한 경우
+			private function onUploadIoError(event:IOErrorEvent):void {
+				clearUpload();
+				var evt:IOErrorEvent = new IOErrorEvent("uploadIoError", false, false, event.text);
+				dispatchEvent(evt);
+			}
+			
+			// 업로드시 보안에러 발생한 경우
+			private function onUploadSecurityError(event:SecurityErrorEvent):void {
+				clearUpload();
+				var evt:SecurityErrorEvent = new SecurityErrorEvent("uploadSecurityError", false, false, event.text);
+				dispatchEvent(evt);
+			}
+			
+			// 파일목록 보이게 또는 안보이게
+			private function changeView():void {
+				currentState = (currentState == "mini") ? "" : "mini";
+			}
+			
+			private function getWorkListResult(event:ResultEvent):void {
+			}
+			
+			public function searchDocumentList():void{
+				getDocumentService.url = baseUrl + "smartserver/services/portal/documentService.jsp?method=findDocumentByGroupId";
+				getDocumentService.send();
+			}
+			
+			public function DownloadDInit():void {
+				downLoadFileName = documentListGrid.selectedItem.fileName;
+				downLoadFilePath = documentListGrid.selectedItem.filePath;
+		   		if(downLoadFileName!=null && downLoadFileName!=""){
+		    		downloadService.url = baseUrl + "smartserver/services/portal/documentDownLoadService.jsp";
+					downloadService.send();
+		   		}
+		    }
+		   
+		    private function getDownloadtResult(event:ResultEvent):void {
+				xmlResultDownload = XML(event.result);   
+				DownloadDExe();
+			}
+		   
+		   public function DownloadDExe():void {
+		   		if(downLoadFileUrl.text!=null && downLoadFileUrl.text!=""){
+			    	fr = new FileReference();   
+			    	fr.addEventListener(Event.OPEN,onOpenFile);
+			    	fr.addEventListener(ProgressEvent.PROGRESS,onFileProgress);
+			    	fr.addEventListener(Event.COMPLETE,onCompleteDownload);
+			    	var request:URLRequest = new URLRequest();
+			    	request.method = URLRequestMethod.POST;
+			    	request.url = downLoadFileUrl.text;
+			    	try {
+			     		fr.download(request);
+			    	} catch (e:SecurityError){
+			     		Alert.show(e.toString());
+			    	}
+			    }
+		   }
+		   
+		   public function onOpenFile(event:Event):void {
+    			dpg.label = '다운로드 %3%%';
+   			}
+   
+   			public function onCompleteDownload(event:Event):void {
+   				downloaCompletedService.url = baseUrl + "smartserver/services/portal/documentDownLoadDelete.jsp";
+				downloaCompletedService.send();
+    			Alert.show('다운로드 완료');
+   			}
+   			
+   			public function onFileProgress(event:ProgressEvent):void {
+    			dpg.setProgress(event.bytesLoaded,event.bytesTotal);
+   			}
+			
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="custormItemClick", type="com.maninsoft.smart.common.event.CustormEvent")]
+    </mx:Metadata>
+	<mx:HTTPService id="getDocumentService"  resultFormat="e4x" useProxy="false" result="getWorkListResult(event)" method="post">
+		<mx:request>
+			<groupId>{groupId}</groupId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="downloadService"  resultFormat="e4x" useProxy="false" method="post" result="getDownloadtResult(event)">
+		<mx:request>
+			<filePath>{downLoadFilePath}</filePath>
+			<fileName>{downLoadFileName}</fileName>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="downloaCompletedService"  resultFormat="e4x" useProxy="false" method="post">
+		<mx:request>
+			<downLoadFileName>{downLoadFileName}</downLoadFileName>
+			<downLoadDirName>{downLoadDirName.text}</downLoadDirName>
+		</mx:request>
+	</mx:HTTPService>
+	
+	<mx:states>
+		<mx:State name="mini">
+			<mx:SetProperty target="{this}" name="height" value="60"/>
+			<mx:SetProperty target="{this}" name="minHeight" value="60"/>
+			<mx:SetStyle target="{btnView}" name="icon" value="{FileAssets.applicationPutIcon}"/>
+		</mx:State>
+	</mx:states>
+	<mx:transitions>
+		<mx:Transition fromState="*" toState="*">
+			<mx:Resize target="{this}" duration="1000"/>
+		</mx:Transition>
+	</mx:transitions>
+	
+	<mx:TextInput id="downLoadFileUrl" text="{xmlResultDownload.downLoadFileUrl}" width="0%" visible="false"/>
+	<mx:TextInput id="downLoadDirName" text="{xmlResultDownload.downLoadDirName}" width="0%" visible="false"/>
+	
+	<mx:VBox width="100%" height="100%" verticalGap="0">
+		<mx:Canvas width="100%" height="60%">
+			<mx:VBox width="100%" height="100%" verticalGap="0">
+				<mx:Label text="업로드 된 파일" height="5%" styleName="boldLabel"/>
+				<mx:DataGrid width="100%" height="60%" dataProvider="{getDocumentService.lastResult.Document}" id="documentListGrid">
+					<mx:columns>
+						<mx:DataGridColumn headerText="id" dataField="id" width="0"/>
+						<mx:DataGridColumn headerText="제목" dataField="title" textAlign="center"/>
+						<mx:DataGridColumn headerText="파일이름" dataField="fileName" textAlign="center"/>
+						<mx:DataGridColumn headerText="사이즈" dataField="fileSize" textAlign="center"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:ControlBar horizontalAlign="center2" verticalAlign="middle" id="con2" width="100%">
+					<mx:ProgressBar id="dpg" mode="manual" label="" labelPlacement="center" width="100%"/>
+					<mx:Button label="Download" toolTip="Dowload file(s)" id="btnDownload" click="DownloadDInit()" icon="{FileAssets.bulletGoIcon}"/>
+				</mx:ControlBar>	
+				<mx:Spacer width="100%" height="20"/>
+			</mx:VBox>
+		</mx:Canvas>
+		<mx:HRule width="100%" height="3"/>
+		<mx:Canvas width="100%" height="40%">
+			<mx:VBox width="100%" height="100%" verticalGap="0">
+				<mx:Label text="업로드 할 파일" width="100%" height="5%" styleName="boldLabel"/>
+				<mx:DataGrid id="listFiles" left="0" top="0" bottom="0" right="0"
+					allowMultipleSelection="true" verticalScrollPolicy="on"
+					draggableColumns="false" resizableColumns="false" sortableColumns="false" width="100%" height="95%"> 
+					<mx:columns>
+						<mx:DataGridColumn headerText="파일" dataField="name" wordWrap="true" textAlign="center"/>
+						<mx:DataGridColumn headerText="사이즈" dataField="size" width="75" textAlign="center"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+		</mx:Canvas>
+	</mx:VBox>
+	<mx:ControlBar horizontalAlign="center" verticalAlign="middle" id="con">
+		<mx:Button id="btnAdd" toolTip="Add file(s)" click="addFiles()" icon="{DialogAssets.addButton}" width="26"/>
+		<mx:Button id="btnRemove" toolTip="Remove file(s)" click="removeFiles()" icon="{DialogAssets.removeButton}" width="26"/>
+		<mx:ProgressBar id="progBar" mode="manual" label="" labelPlacement="center" width="100%"/>
+		<mx:Button id="btnCancel" toolTip="Cancel upload" icon="{DialogAssets.cancelButton}" width="26" click="onUploadCanceled()"/>
+		<mx:Button label="Upload" toolTip="Upload file(s)" id="btnUpload" click="startUpload()" icon="{FileAssets.bulletGoIcon}"/>
+		<mx:Button id="btnView" toolTip="Show/Hide file(s)" icon="{FileAssets.applicationGetIcon}" width="26" click="changeView()"/>
+	</mx:ControlBar>	
+</mx:TitleWindow>

@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	backgroundColor="#FFFFFF" borderStyle="none" borderThickness="3" borderColor="#FF8400"
+	horizontalGap="0" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+	width="{this.formModel.width}" height="{this.formModel.height}"
+	creationComplete="init()" click="selectHandler(event)">
+	<mx:Metadata>
+		[Event(name="formExecute", type="com.maninsoft.smart.formeditor.refactor.event.FormRuntimeEvent")]
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.HDividedBox;
+			import com.maninsoft.smart.formeditor.refactor.event.FormPropertyEvent;
+			import mx.events.PropertyChangeEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormModelEditEvent;
+			import com.maninsoft.smart.workbench.common.command.model.Command;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import com.maninsoft.smart.formeditor.refactor.event.FormRuntimeEvent;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.util.Map;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormEntityCommand;
+			import mx.events.CollectionEvent;
+			import mx.automation.codec.ArrayPropertyCodec;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.command.UpdateFormModelCommand;
+			import com.maninsoft.smart.formeditor.refactor.edit.part.FormModelEditPart;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			import  com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			
+			[Bindable]
+			public var mode:String = Constants.MODE_DESIGN;
+						
+			[Bindable]
+			public var editDomain:FormEditDomain;
+			
+	        [Bindable]
+	        private var _formModel:FormDocument;
+	        
+	        [Bindable]
+	        public function set formModel(formModel:FormDocument):void{
+	        	if(formModel != null){
+		        	this._formModel = formModel;
+		        	registerViewer();
+	//	        	registerModelListener();
+		        	refreshVisual();	        		
+	        	}
+	        }	    
+	        
+	        public function get formModel():FormDocument{
+	        	return this._formModel;	        	
+	        }
+	        
+	        public var formModelEditPart:FormModelEditPart;
+	        
+	        /************************************초기화**********************************************/
+   	        protected function init():void{
+	        	registerContextMenu();
+	        	registerViewer();
+	        }
+	        
+	        protected function registerViewer():void{
+	        	if(formModelEditPart == null)
+	        		formModelEditPart = new FormModelEditPart();
+	        	formModelEditPart.editDomain = this.editDomain;
+	        	formModelEditPart.formModel = this.formModel;
+	        	formModelEditPart.formEditPartViewer = this;
+	        }
+
+	        protected function registerModelListener():void{
+//	        	this._formModel.addEventListener(FormItemPropertyChangeConstants.UPDATE_FORM_INFO, updateFormInfoHandler);
+	        }
+	        	        
+	        private var myContextMenu:ContextMenu;
+	        
+	        protected function registerContextMenu():void{
+	        	if(myContextMenu == null)
+	        		myContextMenu = new ContextMenu();
+	        		
+				addCustomMenuItems();
+
+				this.contextMenu = myContextMenu;
+	        }
+        	
+	        private function addCustomMenuItems():void {
+	            var addItem:ContextMenuItem = new ContextMenuItem("단 추가");
+	            myContextMenu.customItems.push(addItem);
+	            addItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, addFormModelCellSize);
+	            
+	            var removeItem:ContextMenuItem = new ContextMenuItem("단 제거");
+	            myContextMenu.customItems.push(removeItem);
+	            removeItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, removeFormModelCellSize);	            
+	        }
+//	        /**************************폼 모델 핸들러*********************************************/
+//	        private function updateFormInfoHandler(event:FormModelEditEvent):void{
+//	        	if(event.target == this._formModel){
+//	        		refreshVisual();	
+//	        	}
+//	        }
+	        /*****************************화면********************************************/
+	        
+	        private var entityViewerMatrix:ArrayCollection = new ArrayCollection();
+	        private var viewerMap:Map = new Map();
+	        
+	        public function refreshBasicVisual():void{
+	        	this.formHead.text = this.formModel.name;
+	        }
+	        
+	        public function refreshVisual():void{
+	        	//기본 정보 업데이트
+	        	refreshBasicVisual();
+	        	
+	        	// 모델의 자식이 남아 있는 것과 비교하여 모델에 남아있는 자식에 해당하는 뷰어만 남김
+	        	// 1.기존 뷰어 맵을 제거할 뷰어 맵으로 복사 
+	        	// 2. 차일드가 있는 경우에 제거할 뷰어 맵에서 뷰어 제거
+	        	// 3. 뷰어 맵에 아이템 추가
+	        	// 4. 제거할 뷰어맵 제거
+	        	
+	        	// 1.기존 뷰어 맵을 제거할 뷰어 맵으로 복사 
+	        	// 제거할 뷰어의 맵 생성하고 뷰어 맵은 초기화
+	        	var removeViewerMap:Map = viewerMap;
+	        	viewerMap = new Map();
+	        	
+	        	// 기존 form entity viewer 모두 제거
+	        	this.formModelGrid.removeAllChildren();
+	        	this.entityViewerMatrix.removeAll();
+	        	
+	        	if(this.formModel.children != null && this.formModel.children.length > 0){
+	        		
+		        	// 컬럼 넘버
+		        	var gridItemColNum:int = -1;
+		        	// row 넘버
+		        	var gridItemRowNum:int = -1;
+		        	
+		        	var row:HDividedBox;
+					for(var i:int = 0 ; i < this.formModel.children.length ; i++){
+//						if((i%this.formModel.cellSize) == 0){
+						if((i%1) == 0){
+							row = new HDividedBox();
+							row.setStyle("horizontalGap", 3);
+							this.formModelGrid.addChild(row);
+							row.percentWidth = 100;
+							
+							gridItemColNum = 0;
+							gridItemRowNum++;
+						}
+						var formEntityModel:FormEntity = FormEntity(this.formModel.children.getItemAt(i));
+						
+						// 2.차일드가 있는 경우에 제거할 뷰어 맵에서 뷰어 제거
+		        		var formEntityViewer:FormEntityModelEditPartViewer;
+		        		if(removeViewerMap.containsKey(formEntityModel)){
+		        			formEntityViewer = FormEntityModelEditPartViewer(removeViewerMap.remove(formEntityModel));
+		        		}else{
+			        		formEntityViewer = new FormEntityModelEditPartViewer();
+			        		formEntityViewer.editDomain = this.editDomain;
+			        		formEntityViewer.formEntityModel = formEntityModel;
+			        		formEntityViewer.formViewer = this;
+			        		formEntityViewer.mode = this.mode;
+			        		formEntityViewer.percentWidth = 100;
+			        		formEntityViewer.percentHeight = 100;
+		        		}
+		        		formEntityViewer.refreshVisual();
+		        		
+		        		formEntityViewer.rowNum = gridItemRowNum;
+			        	formEntityViewer.colNum = gridItemColNum;		
+			        	
+			        	row.addChild(formEntityViewer);
+			        	gridItemColNum++;	
+			        	
+			        	// 3. 뷰어 맵에 아이템 추가
+		        		this.viewerMap.putItem(formEntityModel, formEntityViewer);
+					}	
+					
+					var lastRow:HDividedBox = new HDividedBox();
+					lastRow.setStyle("horizontalGap", 3);
+					this.formModelGrid.addChild(lastRow);
+					lastRow.percentWidth = 100;
+					lastRow.percentHeight = 100;
+	        	}
+
+				
+//	        	// 첫번째 행 생성
+//	        	var gridRow:GridRow = new GridRow();
+//	        	var gridRowArray:ArrayCollection = new ArrayCollection();
+//	        	this.entityViewerMatrix.addItem(gridRowArray);
+////    			gridRow.percentHeight = 100;
+//    			gridRow.percentWidth = 100;
+//    			//this.formModelGrid.setStyle(
+//
+//	        	this.formModelGrid.addChild(gridRow);
+//	        	
+//	        	// 컬럼 넘버
+//	        	var gridItemColNum:int = 0;
+//	        	// row 넘버
+//	        	var gridItemRowNum:int = 0;
+//	        	
+////	        	var 
+//	        	for each(var formEntityModel:FormEntity in this.formModel.children){
+//	        		// 컬럼넘버가 첫번째가 아니고 폼에서 지정한 셀 사이즈를 넘으면 다음행으로 
+//	        		if(gridItemColNum != 0 && (gridItemColNum + formEntityModel.cellSize) > this.formModel.cellSize){
+//	        			gridRow = new GridRow();
+////	        			gridRow.percentHeight = 100;
+//	        			gridRow.percentWidth = 100;
+////	        			if(this.mode == Constants.MODE_DESIGN){
+////		        			gridRow.setStyle("borderStyle", "solid");
+////		        			gridRow.setStyle("borderColor", "#B7BABC");
+////        				}
+//	        			this.formModelGrid.addChild(gridRow);
+//	        			
+//	        			gridItemColNum = 0;
+//	        			gridItemRowNum++;  
+//	        			
+//	        			gridRowArray = new ArrayCollection();
+//	        			this.entityViewerMatrix.addItem(gridRowArray);
+//	        		}
+//	        		
+//	        		// 2.차일드가 있는 경우에 제거할 뷰어 맵에서 뷰어 제거
+//	        		var formEntityViewer:FormEntityModelEditPartViewer;
+//	        		if(removeViewerMap.containsKey(formEntityModel)){
+//	        			formEntityViewer = FormEntityModelEditPartViewer(removeViewerMap.remove(formEntityModel));
+//	        		}else{
+//		        		formEntityViewer = new FormEntityModelEditPartViewer();
+//		        		formEntityViewer.editDomain = this.editDomain;
+//		        		formEntityViewer.formEntityModel = formEntityModel;
+//		        		formEntityViewer.formViewer = this;
+//		        		formEntityViewer.mode = this.mode;
+//	        		}
+//	        		formEntityViewer.refreshVisual();
+//	        		
+//	        		formEntityViewer.rowNum = gridItemRowNum;
+//		        	formEntityViewer.colNum = gridItemColNum;
+//		        		
+//	        		// 3. 뷰어 맵에 아이템 추가
+//	        		this.viewerMap.putItem(formEntityModel, formEntityViewer);
+//	        		
+//	        		for(var i:int = 0 ; i < formEntityModel.cellSize ; i++){
+//	        			gridRowArray.addItem(formEntityViewer);	
+//	        		}	        		
+//	        		
+//	        		var gridItem:GridItem = new GridItem();
+////        			gridItem.percentHeight = 100;
+//        			gridItem.percentWidth = 100;
+////        			if(this.mode == Constants.MODE_DESIGN){
+////	        			gridItem.setStyle("borderStyle", "solid");
+////	        			gridItem.setStyle("borderColor", "#B7BABC");
+////        			}
+//        			// entity 모델의 셀 사잊에 맞게 컬럼 통합
+//        			if(formEntityModel.cellSize > 1)  
+//        				gridItem.colSpan = (this.formModel.cellSize < formEntityModel.cellSize)?this.formModel.cellSize:formEntityModel.cellSize;       			
+//
+//	        		gridItem.addChild(formEntityViewer);
+//	        		
+//					gridRow.addChild(gridItem);
+//					gridItemColNum = gridItemColNum + formEntityModel.cellSize;
+//	        	}
+	        }	 
+	        
+	        private var selectionItems:ArrayCollection = new ArrayCollection();
+	        
+	        // 포커스 활성화
+	        public function select(formResources:ArrayCollection):void{
+	        	
+	        	this.selectionItems = formResources;
+	        	
+	        	if(formResources.contains(this.formModel)){
+	        		this.setStyle("borderStyle", "inset");
+	        	}else{
+	        		this.setStyle("borderStyle", "none");
+	        	}
+	        	
+	        	for each(var childViewer:FormEntityModelEditPartViewer in this.viewerMap.valuesArray()){
+	        		childViewer.select(formResources);
+	        	}
+	        }
+	        
+
+	        
+			public function addFormModelCellSize(event:ContextMenuEvent):void{
+				var command:UpdateFormModelCommand = new UpdateFormModelCommand(this.formModel.name);
+				command.formModel = this.formModel;
+//				command.newValue = this.formModel.cellSize - 1;
+				command.newValue = 1;
+				command.type = FormDocument.PROP_CELL_SIZE;
+				
+				this.editDomain.getCommandStack().execute(command);
+			}
+			
+			public function removeFormModelCellSize(event:ContextMenuEvent):void{
+				var command:UpdateFormModelCommand = new UpdateFormModelCommand(this.formModel.name);
+				command.formModel = this.formModel;
+//				command.newValue = this.formModel.cellSize - 1;
+				command.newValue = 0;
+				command.type = FormDocument.PROP_CELL_SIZE;
+				
+				this.editDomain.getCommandStack().execute(command);
+			}
+			/*********************************선택(포커스) 처리****************************************/
+			private function selectHandler(event:MouseEvent):void{
+				if(getFormModelViewer(event.target) == this){
+					var formEvent:FormEditEvent = new FormEditEvent(FormEditEvent.SELECT_FORM_DOCUMENT);
+					formEvent.formDocument = this.formModel;
+					dispatchEvent(formEvent);				
+				}
+			}
+			
+			private function getFormModelViewer(target:Object):FormModelEditPartViewer{
+				if(target is FormEntityModelEditPartViewer)
+					return null;
+					
+				if(target is FormModelEditPartViewer)
+					return FormModelEditPartViewer(target);				
+					
+				if(DisplayObject(target).parent != null)
+					return getFormModelViewer(DisplayObject(target).parent);
+					
+				return null;
+			}
+			
+			/**********************************폼 아이템 멀티 실렉션**************************************/
+			
+//			private var startFormEntityViewer:FormEntityModelEditPartViewer;
+//			private var currentFormEntityViewer:FormEntityModelEditPartViewer;
+//			
+//			private var selectionEntityViewers:ArrayCollection = new ArrayCollection();
+//			
+//			private	var minRow:int = -1;
+//			private var minCol:int = -1;
+//			private var maxRow:int = -1;
+//			private var maxCol:int = -1;
+//					
+//			public function selectEntity(formEntityViewer:FormEntityModelEditPartViewer, type:String):void{
+//				if(type == MouseEvent.MOUSE_DOWN){
+//					this.formModel.release();
+//					releaseEntityViewer();
+//					
+//					startFormEntityViewer = formEntityViewer;
+//					currentFormEntityViewer = formEntityViewer;
+//				}else if (type == MouseEvent.MOUSE_MOVE){
+//					currentFormEntityViewer = formEntityViewer;
+//				}
+//				
+//				if(startFormEntityViewer != null){
+////					minRow = (startFormEntityViewer.rowNum < currentFormEntityViewer.rowNum)?startFormEntityViewer.rowNum:currentFormEntityViewer.rowNum;
+//					minCol = (startFormEntityViewer.colNum < currentFormEntityViewer.colNum)?startFormEntityViewer.colNum:currentFormEntityViewer.colNum;
+////					maxRow = (startFormEntityViewer.rowNum < currentFormEntityViewer.rowNum)?currentFormEntityViewer.rowNum:startFormEntityViewer.rowNum;
+//					maxCol = ((startFormEntityViewer.colNum + startFormEntityViewer.formEntityModel.cellSize) < (currentFormEntityViewer.colNum + currentFormEntityViewer.formEntityModel.cellSize))?
+//						currentFormEntityViewer.colNum + currentFormEntityViewer.formEntityModel.cellSize - 1:startFormEntityViewer.colNum + startFormEntityViewer.formEntityModel.cellSize - 1;
+//					
+////					for(var i:int = minRow ; i <= maxRow ; i++){
+//						var gridRowArray:ArrayCollection = ArrayCollection(entityViewerMatrix.getItemAt(startFormEntityViewer.rowNum));
+//						for(var j:int = minCol ; j <= maxCol && j < gridRowArray.length ; j++){
+//							if(!(selectionEntityViewers.contains(gridRowArray.getItemAt(j))))
+//								selectionEntityViewers.addItem(gridRowArray.getItemAt(j));						
+//						}					
+////					}
+//					
+//					selectEntityViewer();	
+//					
+//					var event:FormEditEvent;
+//					
+//					if(selectionEntityViewers.length > 1){
+//						event = new FormEditEvent(FormEditEvent.SELECT_FORM_ITEMS);
+//						for each(var selectionViewer:FormEntityModelEditPartViewer in selectionEntityViewers){
+//							event.formItems.addItem(selectionViewer.formEntityModel);
+//						}
+//						dispatchEvent(event);
+//					}else if(selectionEntityViewers.length == 1){
+//						event = new FormEditEvent(FormEditEvent.SELECT_FORM_ITEM);
+//						event.formItem = FormEntityModelEditPartViewer(selectionEntityViewers.getItemAt(0)).formEntityModel;
+//						dispatchEvent(event);
+//					}else{
+//						// 선택이 안된 경우
+//					}
+//				}
+//			}
+//			
+//			private function selectEntityViewer():void{
+//				for each(var selectionViewer:FormEntityModelEditPartViewer in selectionEntityViewers){
+//					selectionViewer.formEntityModel.selected = true;
+//				}
+//			}
+//			
+//			private function releaseEntityViewer():void{
+//				selectionEntityViewers.removeAll();
+//			}
+			
+//			public function sumCell():void{
+//				var minViewer:FormEntityModelEditPartViewer = (startFormEntityViewer.colNum < currentFormEntityViewer.colNum)?startFormEntityViewer:currentFormEntityViewer;
+//				
+//				var command:UpdateFormEntityCommand = new UpdateFormEntityCommand(this.formModel.name);
+//				command.formEntityModel = minViewer.formEntityModel;
+//				command.newValue = maxCol - minViewer.colNum + 1;
+//				command.type = FormEntityModel.PROP_CELL_SIZE;
+//				
+//				this.editDomain.getCommandStack().execute(command);				
+//			}
+//			
+			public function updateTitle():void{
+				if(this.mode == Constants.MODE_DESIGN){
+					var command:UpdateFormModelCommand = new UpdateFormModelCommand(this.formModel.name);
+					command.formModel = this.formModel;
+					command.newValue = formHead.text;
+					command.type = FormDocument.PROP_NAME;
+					
+					this.editDomain.getCommandStack().execute(command);					
+				}
+			}
+			
+//			public function executeWorkItem():void{
+//				dispatchEvent(new FormRuntimeEvent(FormRuntimeEvent.TYPE_WORKITEM_EXECUTE));		
+//			}
+			[Bindable]
+			private var _valueXml:XML = <DataRecord workItemId="" formId="" formVersion="">
+										</DataRecord>;
+//			[Bindable]
+//			public function set valueXml(valueXml:XML):void{
+//	        	if(valueXml != null){
+//	        		this._valueXml = valueXml;
+//	        		for each(var childViewer:FormEntityModelEditPartViewer in this.viewerMap.valuesArray()){
+//	        			childViewer.valueXmlList = this._valueXml.DataField.(@id==childViewer.formEntityModel.id);	        			
+//	        		}
+//	        	} 
+//	        }
+//	        
+//	        public function get valueXml():XML{
+//	        	var valueXml:XML = _valueXml.copy();
+//	        	valueXml.@formId = this.formModel.id;
+//	        	valueXml.@formVersion = this.formModel.version;
+//	        	
+//        		for each(var childViewer:FormEntityModelEditPartViewer in this.viewerMap.valuesArray()){
+//        			for each(var valueXml:XML in childViewer.valueXmlList)
+//        				valueXml.appendChild(valueXml);
+//        		}
+//	        	
+//	        	return valueXml;   
+//	        }	 
+	        
+			[Bindable]
+			public function set valueXml(valueXml:XML):void{
+	        	if(valueXml != null){
+	        		this._valueXml = valueXml;
+	        		for each(var childViewer:FormEntityModelEditPartViewer in this.viewerMap.valuesArray()){
+	        			childViewer.valueXml = valueXml;	        			
+	        		}
+	        	} 
+	        }
+	        
+	        public function get valueXml():XML{
+	        	if(this.formModel != null){
+	        		var valueXml:XML = _valueXml.copy();
+		        	valueXml.@formId = this.formModel.id;
+		        	
+	        		for each(var childViewer:FormEntityModelEditPartViewer in this.viewerMap.valuesArray()){
+	        			for each(var itemXml:XML in childViewer.valueXml.DataField)
+	        				valueXml.appendChild(itemXml);
+	        		}		        	
+		        	return valueXml;  
+	        	}
+ 				return null;
+	        }	 
+	        public function changeFormModelCellSize(cellSize:int):void{
+				var command:UpdateFormModelCommand = new UpdateFormModelCommand(this.formModel.name);
+				command.formModel = this.formModel;
+				command.newValue = cellSize;
+				command.type = FormDocument.PROP_CELL_SIZE;
+				
+				this.editDomain.getCommandStack().execute(command);
+			}
+			
+			public function changeFormEntityModelCellSize(cellSize:int):void{
+				
+				var command:Command;
+				
+				if(this.selectionItems.length > 0){
+					command = new UpdateFormEntityCommand(FormEntity.PROP_CELL_SIZE);
+					UpdateFormEntityCommand(command).formEntityModel = FormEntity(this.selectionItems.getItemAt(0));
+					UpdateFormEntityCommand(command).newValue = cellSize;
+					UpdateFormEntityCommand(command).type = FormEntity.PROP_CELL_SIZE;
+					
+					if(this.selectionItems.length > 1){
+						var chainCommand:UpdateFormEntityCommand
+						for(var i:int = 1 ; i < this.selectionItems.length ; i++){
+							chainCommand = new UpdateFormEntityCommand(FormEntity.PROP_CELL_SIZE);
+							chainCommand.formEntityModel = FormEntity(this.selectionItems.getItemAt(i));
+							chainCommand.newValue = cellSize;
+							chainCommand.type = FormEntity.PROP_CELL_SIZE;
+							
+							command = command.chain(chainCommand);
+						}						
+					}
+					this.editDomain.getCommandStack().execute(command);					
+				}
+
+			}
+			
+			public function getSelectionFormEntityCellSize():int{
+				if(this.selectionItems.length == 1){
+						return FormEntity(this.selectionItems.getItemAt(0)).cellSize;
+				}
+				return -1;
+			}
+			
+			public function getTitleVisible():Boolean{
+				return (this.mode == Constants.MODE_DESIGN || ((this.formModel != null) && (this.formModel.name != '')));
+			}
+		]]>
+	</mx:Script>
+	<mx:Box id="leftSpace" width="{this.formModel.leftSpace}" height="100%">
+	</mx:Box>	
+	<mx:VBox 
+		width="{this.formModel.width - this.formModel.leftSpace - this.formModel.rightSpace}" 
+		height="{this.formModel.height}"
+		horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:Box id="topSpace" width="100%" height="{this.formModel.topSpace}">
+		</mx:Box>
+		<mx:VBox 		
+			width="{this.formModel.width - this.formModel.leftSpace - this.formModel.rightSpace}" 
+			height="{this.formModel.height - this.formModel.topSpace - this.formModel.bottomSpace}">
+			<mx:TextInput id="formHead" width="100%" height="30" borderStyle="{(this.mode == Constants.MODE_DESIGN)?'solid':'none'}" 
+				textAlign="center" fontSize="20" fontFamily="Arial"
+				text="{formModel.name}" editable="{this.mode == Constants.MODE_DESIGN}" visible="{getTitleVisible()}"
+				change="updateTitle()">		
+			</mx:TextInput>
+			<!--<mx:Text id="formHeadText" text="{formModel.title}" width="100%" height="100%" textAlign="center" fontSize="16" fontFamily="Arial" visible="{this.mode == Constants.MODE_RUNTIME}">		
+			</mx:Text>-->
+			<mx:Spacer width="100%" height="{this.formModel.headSpace}">			
+			</mx:Spacer>
+<!--			<mx:Grid id="formModelGrid" width="100%" borderStyle="none" borderColor="#B7BABC">
+			</mx:Grid>		-->
+			<mx:VDividedBox id="formModelGrid" width="100%" borderStyle="solid" borderColor="#B7BABC" verticalGap="1">
+			</mx:VDividedBox>			
+		</mx:VBox>
+		<!--<mx:Canvas width="100%" visible="{this.mode == Constants.MODE_RUNTIME}">
+			<mx:Button label="완료" right="5" click="executeWorkItem()" fontSize="12" fontFamily="Arial"/>
+		</mx:Canvas>	-->	
+		<mx:Box id="bottomSpace" width="100%" height="{this.formModel.bottomSpace}">
+		</mx:Box>
+	</mx:VBox>
+	<mx:Box id="rightSpace" width="{this.formModel.rightSpace}" height="100%" >
+	</mx:Box>
+</mx:HBox>

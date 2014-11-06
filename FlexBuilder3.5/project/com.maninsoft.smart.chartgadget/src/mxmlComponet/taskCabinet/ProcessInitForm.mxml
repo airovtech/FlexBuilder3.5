@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="com.maninsoft.smart.formeditor.refactor.view.*">
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent;
+			import portalAs.FindApplication;
+			import portalAs.Properties;
+			
+			private var _formIdProcessIdVer:String;
+			[Bindable]
+			public var labelTitle:String;
+						
+			public function set formIdProcessIdVer(formIdProcessIdVer:String):void{
+				this._formIdProcessIdVer = formIdProcessIdVer;
+				var param:Array =  formIdProcessIdVer.split("|");
+				runtimeForm.loadForm(param[0], param[1], param[2]);
+			}
+			public function get formIdProcessIdVer():String{
+				return this._formIdProcessIdVer;
+			}
+			
+			private function workExe(mode:String):void{
+				if(mode == "save"){
+					runtimeForm.saveForm();
+				}else if(mode == "execute"){
+					runtimeForm.executeForm();
+				}else if(mode == "return"){
+					runtimeForm.returnForm();
+				}else if(mode == "terminate"){
+					runtimeForm.terminateForm();
+				}else if(mode == "entrust"){
+					//runtimeForm.entrustForm(entruster.text);
+				}
+				buttonDisble(false);
+			}
+			
+			private function buttonDisble(btnMode:Boolean):void{
+				btn2.enabled = btnMode;
+				btn6.enabled = btnMode;
+			}
+			
+			private function sucess():void{
+				var eventObj:WorklistServiceEvent = new WorklistServiceEvent("sucessWorkitemExecute");
+				dispatchEvent(eventObj);
+			}
+			
+			private function fail():void{	
+				buttonDisble(true);
+			}
+			
+			private function cancel():void{	
+				sucess();
+			}
+		]]>
+	</mx:Script>
+	<mx:Metadata>
+        [Event(name="sucessWorkitemExecute", type="com.maninsoft.smart.formeditor.refactor.event.service.WorklistServiceEvent")]
+    </mx:Metadata>
+	<mx:VBox width="100%" height="100%">
+		<ns1:RuntimeForm id="runtimeForm" width="100%" height="95%" basePath="{Properties.basePath}" userId="{Properties.userId}" 
+			sucessWorkitemExecute="sucess()" failWorkitemExecute="fail()" verticalScrollPolicy="auto"/>	
+		<mx:Canvas width="100%" height="5%" backgroundColor="#FFFFFF">
+			<mx:HBox width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" horizontalGap="3" id="hb">
+				<mx:Button id="btn2" label="완료"  click="workExe('execute')" fontSize="11" styleName="normalStyle"/>
+				<mx:Button id="btn6" label="취소"  click="cancel()" fontSize="11" styleName="normalStyle"/>
+				<mx:Spacer width="10"/>
+			</mx:HBox>
+		</mx:Canvas>
+	</mx:VBox>
+</mx:Canvas>

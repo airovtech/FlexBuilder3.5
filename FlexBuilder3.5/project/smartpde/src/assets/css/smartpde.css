@@ -1,0 +1,145 @@
+/* CSS file */
+
+	ToolTip{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+	}
+		
+	.selectApprovalLineGrid{
+	}
+	
+	.selectUserTN{
+		borderColor: #c7c7c7;
+		borderStyle: solid;
+		borderThickness: 1;
+		cornerRadius: 3;
+		tabHeight: 25;
+		tabOffset: 0;
+	}
+	
+	.selectUserOrganizationTree{
+		borderStyle: none;
+		borderThickness: 0;
+	}
+	
+	.selectDialogDG{
+		backgroundColor: #ffffff;
+		alternatingItemColors: #ffffff,#ffffff;
+		borderStyle: none;
+		verticalGridLines: false;
+		horizontalGridLines: false;
+	}
+
+	.selectDialogDGItemBox{
+		borderStyle: none;
+		horizontalGap: 1;
+		paddingLeft: 10;
+		verticalAlign: middle;
+	}
+	
+	.selectDialogDGItemImage{
+		borderStyle: none;
+		alpha: 0;
+		cornerRadius: 0;
+		paddingLeft: 0;
+		paddingRight: 0;
+		paddingTop: 0;
+		paddingBottom: 0;
+	}
+	
+	.selectDialogDGItemText{
+		paddingTop: 2;
+	}
+	
+	.selectApprovalLineDG{
+		backgroundColor: #ffffff;
+		alternatingItemColors: #ffffff,#ffffff;
+		borderStyle: none;
+		textAlign: left;
+		verticalGridLines: false;
+		horizontalGridLines: true;
+		headerColors: #E0EAF3, #E0EAF3;
+	}
+
+	.selectSystemServiceDG{
+		backgroundColor: #ffffff;
+		alternatingItemColors: #ffffff,#ffffff;
+		borderStyle: none;
+		textAlign: left;
+		verticalGridLines: false;
+		horizontalGridLines: true;
+		headerColors: #E0EAF3, #E0EAF3;
+	}
+
+	.selectLinkConditionDG{
+		backgroundColor: #ffffff;
+		alternatingItemColors: #ffffff,#ffffff;
+		borderStyle: node;
+		textAlign: left;
+		verticalGridLines: false;
+		horizontalGridLines: true;
+		headerColors: #E0EAF3, #E0EAF3;
+	}
+	
+	.linkConditionOperandColumn{
+		textAlign: right;
+	}
+	
+	.linkConditionOperatorColumn{
+		textAlign: center;
+	}
+	
+	.linkConditionGroupBox{
+		verticalGap: 2;
+	}
+	
+	.selectActivityFieldTree{
+		boderStyle: none;
+		borderThickness: 0;
+	}
+	
+	.formListToolBar{
+		borderStyle: none;
+		paddingTop: 3;
+		paddingBottom: 7;
+		paddingLeft: 98;
+		paddingRight: 3;
+		horizontalGap: 6;
+	}
+
+	.selectMoveFormTree{
+		boderStyle: none;
+		borderThickness: 0;
+	}
+	
+	.problemDialogTextBox{
+		borderStyle: none;
+		verticalScrollPolicy: off;
+		horizontalScrollPolicy: off;
+	}
+	
+	.subProcessViewer{
+		backgroundColor: #ffffff;
+		borderStyle: solid;
+		borderThickness: 1;
+		dropShadowEnabled: true;
+		dropShadowColor: #000000;
+		shadowDistance: 3;
+		shadowDirection: right;
+		cornerRadius: 5;
+		headerHeight: 25;
+
+		paddingTop: 0;
+		paddingLeft: 0;
+		paddingRight: 0;
+		paddingBottom: 0;
+		
+		borderThicknessTop: 0;
+		borderThicknessBottom: 0;
+		borderThicknessLeft: 0;
+		borderThicknessRight: 0;
+
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontColor: #000000;
+	}

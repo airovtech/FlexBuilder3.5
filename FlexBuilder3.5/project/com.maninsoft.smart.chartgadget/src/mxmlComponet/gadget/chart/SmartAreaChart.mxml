@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SmartChart xmlns="mxmlComponet.gadget.chart.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:axis="mxmlComponet.home.chartInfo.axis.*" borderColor="#ffffff">
+	<mx:Script>
+		<![CDATA[
+			import mx.charts.LinearAxis;
+			import mx.charts.renderers.CrossItemRenderer;
+			import mx.graphics.Stroke;
+			import mx.events.ListEvent;
+			import mx.controls.ComboBox;
+			import mx.charts.HitData;
+			import mx.charts.series.items.AreaSeriesItem;
+			import mx.charts.series.AreaSeries;
+			import mx.graphics.LinearGradient;
+			import mx.collections.XMLListCollection;
+			import mxmlComponet.gadget.ChartGadget2;
+			
+			private var repeatDelay:int = 25;
+			private var repeatCount:int = 40;
+			private var repeat:int = 0;
+			override public function set chartXml(xml:XML):void{
+				_chartXml = xml;
+				tranceResArray = [];
+				ChartXmlUtil.xyMakeTitle(_chartXml, grouping.label, valueInfo.label);
+				ChartXmlUtil.unitTitle(_chartXml, unitInfo);
+				ChartXmlUtil.makeChartXml(chartType, _chartXml, tranceXml, tranceResArray, repeatCount);
+				areaChart.dataProvider = new XMLListCollection(tranceResArray[repeat].res);
+				var timerSlide: Timer = new Timer(repeatDelay, repeatCount-1);
+				timerSlide.addEventListener(TimerEvent.TIMER, doTimerSlide);
+				timerSlide.start();
+				var myAC:XMLListCollection = new XMLListCollection(tranceXml.act);
+				var seriesArray:Array = new Array;
+				for (var i:int = 0; i < myAC.length; i++){
+					var area:AreaSeries = new AreaSeries;
+					area.displayName=myAC.getItemAt(i) + "";
+					area.yField=myAC.getItemAt(i).attribute("name");
+					area.setStyle("form", "curve");
+					seriesArray.push(area);
+				}
+				areaChart.series = seriesArray;
+
+				var verAxisMax:Number = 0;
+				var groupingList:XMLListCollection = new XMLListCollection(_chartXml.grouping);
+				if(groupingList){
+					for( i=0; i<groupingList.length; i++){
+						var valueList:XMLList =groupingList[i].remark.value;
+						var colMax:Number = 0;
+						if(valueList){
+							for(var j:int=0; j<valueList.length(); j++){
+								if(areaChart.type == "stacked"){
+									colMax += Number(valueList[j]);
+								}else{
+									if(colMax < Number(valueList[j])) colMax = Number(valueList[j]);
+								}
+							}
+							if(verAxisMax < colMax) verAxisMax = colMax;
+						}
+					}
+				}
+				if(verAxisMax>0) verAxis.maximum = verAxisMax;
+
+				if(_chartXml.@dimension == 2){
+					legendBox.visible = false;
+					legendBox.width = 0;
+				}else if(_chartXml.@dimension == 3){
+					legendBox.visible = true;
+				}	
+
+				matrixObj.xmlResult = xml;
+
+				areaChart.dataTipFunction = function displayDataTip(e:HitData):String {
+					var si:AreaSeriesItem = e.chartItem as AreaSeriesItem;
+					var s:String;
+						s = "<font size='11'>"+ AreaSeries(si.element).displayName + "\n" +  numForm.format(si.item[AreaSeries(si.element).yField]) + "</font><br/>";
+						//s = "<font size='11'>"+ AreaSeries(si.element).displayName + "\n" +  numForm.format(si.yNumber) + "</font><br/>";
+					return s;};
+			}
+
+			private function doTimerSlide(event: TimerEvent):void{
+				areaChart.dataProvider = new XMLListCollection(XML(tranceResArray[++repeat]).res);
+				if(repeat+1==repeatCount)
+					areaChart.dataProvider = new XMLListCollection(tranceXml.res);
+
+			}			
+
+			override public function set chartViewType(viewType:String): void{
+				if(viewType == "CHART"){
+					chartBox.visible = true;
+					matrixBox.visible = false;
+					chartBox.percentHeight = 95;
+					matrixBox.height = 0;
+				}else if(viewType=="MATRIX"){
+					matrixBox.visible = true;
+					chartBox.visible = false;
+					matrixBox.percentHeight = 95;
+					chartBox.height = 0;
+				}
+			}
+/*			
+			private function goChartAndMatrix(event:MouseEvent):void{
+				var objId:String = Button(event.target).id;
+				if(objId=="chartMove"){
+					chartBox.visible = true;
+					matrixBox.visible = false;
+					chartBox.percentHeight = 95;
+					matrixBox.height = 0;
+				}else if(objId=="matrixMove"){
+					matrixBox.visible = true;
+					chartBox.visible = false;
+					matrixBox.percentHeight = 95;
+					chartBox.height = 0;
+				}
+			}
+*/
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" verticalGap="2" verticalAlign="middle" borderColor="#ffffff">
+
+		<mx:HBox width="100%" height="0">
+			<mx:HBox width="50%" height="30">
+				<mx:Label id="unitInfo" width="50%"/>
+			</mx:HBox>
+			<mx:HBox width="50%" height="30" horizontalAlign="right">
+				<mx:Legend id="legendBox" visible="false" width="0" labelPlacement="right" direction="horizontal" dataProvider="{areaChart}"/>
+				<mx:Spacer width="20"/>
+<!--
+				<mx:Button id="chartMove" toolTip="{resourceManager.getString('ChartGadgetETC', 'ChartViewTTip')}"  click="goChartAndMatrix(event);" styleName="columnBtn"/>
+				<mx:Button id="matrixMove" toolTip="{resourceManager.getString('ChartGadgetETC', 'MatrixViewTTip')}"  click="goChartAndMatrix(event);" styleName="gridBtn"/>
+				<mx:Spacer width="10"/>
+-->
+			</mx:HBox>
+		</mx:HBox>
+		<mx:VBox id="chartBox" width="100%" height="100%" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff">
+			<mx:HBox width="100%" height="100%" horizontalGap="2" horizontalAlign="center" verticalAlign="middle" borderColor="#ffffff">
+				<mx:VBox width="30" height="100%" horizontalAlign="center" verticalAlign="middle" id="YBox">
+					<axis:CustormLabel id="valueInfo" width="{YBox.height}" height="20" angle="270" widthAndHeightChange="true" rotateble="true" />
+				</mx:VBox>					
+				<mx:VBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" id="chartArea">
+			        <mx:AreaChart id="areaChart" styleName="areaChartStyle" height="100%" width="100%" type="stacked"
+			            showDataTips="true" >
+			            <mx:seriesFilters>
+				            <mx:Array/>
+				        </mx:seriesFilters>   
+			            <mx:horizontalAxis>
+							<mx:CategoryAxis id="catAxis"  categoryField="@cycle"/>
+						</mx:horizontalAxis>
+						<mx:verticalAxis>
+							<mx:LinearAxis id="verAxis" labelFunction="{defineAxisLabel}"/>
+						</mx:verticalAxis>
+			        </mx:AreaChart>
+		        </mx:VBox>			
+			</mx:HBox>	
+			<mx:HBox width="100%" height="30" horizontalAlign="center" verticalAlign="middle" id="XBox">
+				<axis:CustormLabel id="grouping" width="100%" height="20" rotateble="false" widthAndHeightChange="false"/>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox id="matrixBox" width="100%" height="0" borderStyle="solid" paddingTop="10" paddingBottom="10" paddingLeft="10" paddingRight="10" borderColor="#ffffff"
+			 visible="false">
+			 <ChartTranceMatrix width="100%" height="100%" id="matrixObj"/>
+		</mx:VBox>
+	</mx:VBox>
+</SmartChart>

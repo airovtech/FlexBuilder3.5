@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()">
+	<mx:Style>
+		.closeBtn {
+			upSkin:        Embed('/images/cancel2.png');
+			overSkin:      Embed('/images/cancel2.png');
+			downSkin:      Embed('/images/cancel2.png');
+			disabledSkin:  Embed('/images/cancel2.png');
+		}
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import flash.utils.getDefinitionByName;
+			import mx.core.Container;
+			import mx.collections.XMLListCollection;
+			import mx.containers.VBox;
+			import mx.controls.Button;
+			
+			public var dataId:String;
+			public var closeBtn:Button = new Button();
+			public var box:VBox = new VBox;
+			[Bindable]
+			public var selXml:XMLList;
+			public var componentName:String;
+			private var dec:AccordionWorkDeclaration
+			
+			private function init():void{
+				closeBtn.width = 15;
+				closeBtn.height = 15;
+				closeBtn.setStyle("top", 3);
+				closeBtn.setStyle("right", 3);
+				closeBtn.styleName = "closeBtn";
+				this.addChild(closeBtn);
+				
+				box.percentWidth=100;
+				box.percentHeight=100;
+				var headCan:Canvas = new Canvas();
+				headCan.percentWidth=100;
+				headCan.percentHeight=10;
+				
+				var workCon:AccordionEmbedWork;
+				var clazz:Class = Class(getDefinitionByName(componentName));
+				workCon = AccordionEmbedWork(new clazz());
+				workCon.selXml = this.selXml;
+				
+				var wokrCan:Canvas = new Canvas();
+				wokrCan.addChild(workCon);
+				wokrCan.percentWidth=100;
+				wokrCan.percentHeight=90;
+				wokrCan.setStyle("backgroundColor", "#FFFFFF");
+				
+				box.addChild(headCan);
+				box.addChild(wokrCan);
+				this.addChild(box);
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

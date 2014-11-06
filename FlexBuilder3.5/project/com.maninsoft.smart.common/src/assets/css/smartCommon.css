@@ -1,0 +1,84 @@
+	.uiDefaultFont{
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontColor: #000000;
+	}
+
+	.abstractSimpleDialog{
+	 	borderStyle: solid;
+		backgroundColor: #ffffff;
+		borderColor: #000000;
+	 	cornerRadius: 0;
+	 	dropShadowEnabled: false;
+	 	headerHeight: 0;
+
+		paddingLeft: 0;
+		paddingRight: 0;
+		paddingTop: 0;
+		paddingBottom: 0;
+
+	 	borderThickness: 1;
+	 	borderThicknessBottom: 2;
+	 	borderThicknessLeft: 2;
+	 	borderThicknessRight: 2;
+	 	borderThicknessTop: 2;
+
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontColor: #000000;
+	}
+
+	.abstractDialog{
+		backgroundColor: #E2EBFF;
+		borderStyle: solid;
+		borderColor: #000000;
+		borderThickness: 1;
+		dropShadowEnabled: true;
+		dropShadowColor: #000000;
+		shadowDistance: 3;
+		shadowDirection: right;
+		cornerRadius: 0;
+		headerHeight: 25;
+
+		paddingTop: 0;
+		paddingLeft: 0;
+		paddingRight: 0;
+		paddingBottom: 0;
+		
+		borderThicknessTop: 0;
+		borderThicknessBottom: 0;
+		borderThicknessLeft: 5;
+		borderThicknessRight: 5;
+
+		fontFamily: "Tahoma";
+		fontSize: 12;
+		fontColor: #000000;
+
+/*		
+		closeButtonDisabledSkin: Embed(source="assets/button/dialog/btn_x.png");
+		closeButtonDownSkin:  Embed(source="assets/button/dialog/btn_x.png");
+		closeButtonOverSkin: Embed(source="assets/button/dialog/btn_x_w.png");
+		closeButtonUpSkin: Embed(source="assets/button/dialog/btn_x.png");
+*/
+	}
+
+	.dialogContentBox{
+		backgroundColor: #ffffff;
+		borderStyle: solid;
+		borderColor: #8BA3C7;
+		paddingTop: 6;
+		paddingLeft: 6;
+		paddingRight: 6;
+		paddingBottom: 6;
+		cornerRadius: 5;
+		fontFamily: "Tahoma";
+		fontSize: 11;
+		fontColor: #4c4c4c;
+	}
+	
+	.dialogButtonScope{
+		borderStyle: none;
+		verticalAlign: middle;
+		horizontalAlign: right;
+		horizontalGap: 9;
+	}

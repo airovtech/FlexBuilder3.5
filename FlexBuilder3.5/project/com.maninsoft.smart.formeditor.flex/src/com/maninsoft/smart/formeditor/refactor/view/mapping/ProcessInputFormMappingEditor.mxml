@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas label="시작" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:common="com.maninsoft.smart.formeditor.refactor.view.common.*"
+	>	
+	<mx:Script>
+		<![CDATA[
+			import com.maninsoft.smart.formeditor.refactor.util.ServiceClient;
+			import com.maninsoft.smart.formeditor.refactor.service.IFormPersistenceService;
+			import mx.controls.Tree;
+			import com.maninsoft.smart.formeditor.refactor.event.service.FormPersistenceEvent;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.refactor.event.service.WorkTypeEvent;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWWorkType;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWWorkTypeMapping;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			import com.maninsoft.smart.formeditor.refactor.view.common.FormDocumentSchemaTree;
+			import com.maninsoft.smart.formeditor.refactor.util.IconLibrary;
+			import mx.controls.Text;
+			import com.maninsoft.smart.workbench.common.meta.impl.SWForm;
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.refactor.util.ProcessFormSelectWindow;
+			import mx.events.ItemClickEvent;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			
+			private var _swForm:SWForm;
+			
+			public function get swForm():SWForm{
+				return _swForm;
+			}
+			[Bindable]
+			public function set swForm(swForm:SWForm):void{
+				this._swForm = swForm;
+				this.refreshVisual();
+			}
+			
+			public var serviceClient:ServiceClient;
+						
+			[Bindable]
+			public var formModel:FormDocument;
+			
+			[Bindable]
+			private var selectRefFormWin:ProcessFormSelectWindow;
+			
+//			[Bindable]
+//			public var forms:ArrayCollection = new ArrayCollection();
+			
+			private function formPrcInputFormMgrClickHandler(event:ItemClickEvent):void {				
+				if(event.index == 0){
+					selectRefFormWin = ProcessFormSelectWindow(PopUpManager.createPopUp(this,ProcessFormSelectWindow,true));
+					selectRefFormWin.addEventListener(Event.COMPLETE, function (e:Event):void{addPrcInputForm()});
+					
+					selectRefFormWin.serviceClient = this.serviceClient;
+					selectRefFormWin.loadFormListByProcess(this.swForm.getPackage().getProcessResource().id, this.swForm.getPackage().getProcessResource().version);
+					selectRefFormWin.start();
+					
+					PopUpManager.centerPopUp(selectRefFormWin);
+				} else if(event.index == 1){
+					if(fromPrcInputFormTree.selectedItem is FormDocument){
+						var removeNum:int = formList.getItemIndex(fromPrcInputFormTree.selectedItem);
+						formList.removeItemAt(removeNum);
+						workTypeList.removeItemAt(removeNum);
+					}
+				}			
+			}  
+			
+			
+			public function refreshVisual():void{
+				if(this.swForm != null && this.swForm.swWorkType != null){
+					mappingCanvas.graphics.clear();
+					notExistWorkTypes.removeAll();
+					
+					for each(var swMapping:SWWorkTypeMapping in this.swForm.swWorkType.mappings){
+						var formDocument:FormDocument = getFormByWorkType(swMapping.fromWorkTypeId);
+						if(formDocument == null){
+							// 필요한 폼을 찾는다.
+							notExistWorkTypes.addItem(swMapping.fromWorkTypeId);
+						}
+					}
+					
+					if(notExistWorkTypes.length == 0)
+						draw();
+					else{
+						notExistWorkTypeId = String(notExistWorkTypes.removeItemAt(notExistWorkTypes.length - 1));
+						serviceClient.formService.loadByWorkType(notExistWorkTypeId, loadNotExitFormResultHandler, function (e:Event):void{});
+					}
+				}				
+			}
+			
+			private var notExistWorkTypes:ArrayCollection = new ArrayCollection();
+			private var notExistWorkTypeId:String;
+			
+			private function loadNotExitFormResultHandler(event:FormPersistenceEvent):void{
+				workTypeList.addItem(notExistWorkTypeId);
+				formList.addItem(event.formModel);
+				if(notExistWorkTypes.length == 0)
+					draw();
+				else{
+					notExistWorkTypeId = String(notExistWorkTypes.removeItemAt(notExistWorkTypes.length - 1));
+				}	
+			}
+			
+			private function draw():void{
+				for each(var swMapping:SWWorkTypeMapping in this.swForm.swWorkType.mappings){
+					var fromFormDocument:FormDocument = getFormByWorkType(swMapping.fromWorkTypeId);
+					var fromItem:FormEntity = getFormEntityInForm(fromFormDocument, swMapping.fromWorkTypeFieldId);
+					var toItem:FormEntity = getFormEntityInForm(this.formModel, swMapping.fieldId);
+					
+					var fromNode:IListItemRenderer = getEnableItemRender(fromPrcInputFormTree, fromItem, getParentItemInModel);
+					var toNode:IListItemRenderer = getEnableItemRender(formTree, toItem, getParentItemInModel);
+					if(fromNode != null && toNode != null){
+						drawMapping(fromNode, toNode);
+					}					
+				}
+			}
+			
+			private function getEnableItemRender(targetTree:Tree, fromItem:Object, parentFunc:Function):IListItemRenderer{
+				var itemRender:IListItemRenderer = targetTree.itemToItemRenderer(fromItem);
+				if(itemRender != null)
+					return itemRender;
+				else{
+					var parentItem:Object = parentFunc(fromItem);
+					if(parentItem != null){
+						return getEnableItemRender(targetTree, parentItem, parentFunc);
+					}
+				}
+				return null;
+			}
+			
+			private function getParentItemInModel(item:Object):Object{
+				if(item is FormEntity){
+					if(FormEntity(item).parent != null)
+						return FormEntity(item).parent;	
+					else
+						return FormEntity(item).root;
+				}
+				return null;				
+			}			
+			
+
+			private function getFormEntityInForm(form:FormDocument, fieldId:String):FormEntity{
+				if(form.children != null && form.children.length > 0){
+					for each(var formEntity:FormEntity in form.children){
+						var targetFormEntity:FormEntity = getFormEntity(formEntity, fieldId);
+						if(targetFormEntity != null)
+							return targetFormEntity;
+					}
+				}
+				
+				return null;
+			}
+			
+			private function getFormEntity(formEntity:FormEntity, fieldId:String):FormEntity{
+				if(formEntity.id == fieldId)
+					return formEntity;
+				else if(formEntity.children != null && formEntity.children.length > 0){
+					for each(var childformEntity:FormEntity in formEntity.children){
+						var targetFormEntity:FormEntity = getFormEntity(childformEntity, fieldId);
+						if(targetFormEntity != null)
+							return targetFormEntity;
+					}
+				}
+				
+				return null;
+			}
+			
+			private function addPrcInputForm():void{
+//				workTypeList.addItem(selectRefFormWin.swWorkType.id);
+				formList.addItem(selectRefFormWin.selectFormModel);		
+			}
+			
+			private var fromObj:DisplayObject;
+			private var fromNode:IListItemRenderer;
+			
+			private var toObj:DisplayObject;
+			private var toNode:IListItemRenderer;
+			
+			private function clickFrom(e:ListEvent):void{
+				fromObj = DisplayObject(e.target);
+				fromNode = e.itemRenderer;
+			}
+			[Bindable]
+			private var formList:ArrayCollection = new ArrayCollection();
+			private var workTypeList:ArrayCollection = new ArrayCollection();
+			
+			private function getFormIndex(fromFormId:String, fromFormVersion:int):int{
+				for(var i:int = 0 ; i < formList.length ; i++){
+					var formDoc:FormDocument = FormDocument(formList.getItemAt(i));
+					if(formDoc.id == fromFormId){
+						return i;
+					}
+				}
+				return -1;
+			}
+			
+			private function getFormByWorkType(workTypeId:String):FormDocument{
+				for(var i:int = 0 ; i < workTypeList.length ; i++){
+					var targetWorkTypeId:String = String(workTypeList.getItemAt(i));
+					if(targetWorkTypeId == workTypeId){
+						return FormDocument(formList.getItemAt(i));
+					}
+				}
+				return null;
+			}
+						
+			private function clickTo(e:ListEvent):void{
+				if(fromObj != null && fromNode != null && fromNode.data is FormEntity){
+					toObj = DisplayObject(e.target);
+					toNode = e.itemRenderer;
+
+					drawMapping(fromNode, e.itemRenderer);
+					
+					var formDoc:FormDocument = FormEntity(fromNode.data).root;
+					var fromFormId:String = formDoc.id;
+					var fromFormVersion:int = 1;
+					
+					var formNum:int = getFormIndex(fromFormId, fromFormVersion);
+					
+					if(formNum == -1){
+						serviceClient.workTypeService.load(	fromFormId, fromFormVersion, 
+							function(e:WorkTypeEvent):void{
+								formList.addItem(formDoc);
+								workTypeList.addItem(e.swWorkType.id);
+								addMapping(swForm.swWorkType, FormEntity(toNode.data).id, e.swWorkType.id, FormEntity(fromNode.data).id);
+							},
+							serviceFault);
+					}else{
+						addMapping(this.swForm.swWorkType, FormEntity(toNode.data).id, String(workTypeList.getItemAt(formNum)), FormEntity(fromNode.data).id);						
+					}
+				}
+			}
+
+			private function drawMapping(fromNode:IListItemRenderer, toNode:IListItemRenderer):void{
+				var toObj:DisplayObject = DisplayObject(toNode.parent);
+				var fromObj:DisplayObject = DisplayObject(fromNode.parent);
+				
+				var fromY:Number = fromObj.y + fromObj.parent.y + fromObj.parent.parent.y + fromNode.y + (fromNode.height/2);
+				var toY:Number = toObj.y + toObj.parent.y + toNode.y + (toNode.height/2);
+				
+				mappingCanvas.graphics.lineStyle(1);
+				mappingCanvas.graphics.moveTo(0, fromY);
+				mappingCanvas.graphics.lineTo(mappingCanvas.width, toY);
+			}
+			private function addMapping(workType:SWWorkType, fieldId:String, fromWorkTypeId:String, fromFieldId:String):void{
+				var swWorkTypeMapping:SWWorkTypeMapping = new SWWorkTypeMapping();	
+				swWorkTypeMapping.workTypeId = workType.id;		
+				swWorkTypeMapping.fieldId = fieldId;
+				swWorkTypeMapping.fromWorkTypeId = fromWorkTypeId;
+				swWorkTypeMapping.fromWorkTypeFieldId = fromFieldId;
+				
+				swForm.swWorkType.mappings.addItem(swWorkTypeMapping);
+				mappingComplete();
+			}
+			
+			private function serviceFault(e:Event):void{
+				mappingComplete();
+			}
+			
+			private function mappingComplete():void{
+				toObj = null;
+				toNode = null;
+				
+				fromObj = null;
+				fromNode = null;
+			}
+			
+			private function getFormXML(entity:XML):XML{
+				if(entity.localName() == "form")
+					return entity;
+				else if(entity.parent() != null)
+					return getFormXML(entity.parent());
+				else
+					return null;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox x="0" y="0" width="100%" height="100%" horizontalGap="0">
+		<mx:VBox width="25%" height="100%" borderStyle="solid" verticalGap="0">
+			<mx:Text text="공급" fontSize="12" width="100%"/>
+			<mx:Box width="100%" borderStyle="solid">
+				<mx:ButtonBar id="formPrcInputFormMgrBox" itemClick="formPrcInputFormMgrClickHandler(event)" width="60" height="25">
+					<mx:dataProvider>
+						<mx:Array>
+							<mx:Object type="add" icon="{IconLibrary.plusSchemaItem}"  toolTip="추가"/>                   
+							<mx:Object type="delete" icon="{IconLibrary.minusSchemaItem}" toolTip="삭제"/>
+			        	</mx:Array>
+					</mx:dataProvider>
+				</mx:ButtonBar>
+			</mx:Box>
+			<mx:VBox id="formPrcInputFormList" width="100%" height="100%" >
+				<common:FormDocumentSchemaTree id="fromPrcInputFormTree" width="100%" height="100%" 
+					formModelList="{this.formList}" itemClick="{clickFrom(event)}" listType="true" 
+					change="refreshVisual()" dataChange="refreshVisual()" 
+					itemOpen="refreshVisual()" itemClose="refreshVisual()" added="refreshVisual()" removed="refreshVisual()" />
+			</mx:VBox>										
+		</mx:VBox>
+		<mx:Canvas id="mappingCanvas" width="50%" height="100%" borderStyle="solid"> 
+			
+		</mx:Canvas>
+		<mx:VBox width="25%" height="100%" verticalGap="0">
+			<mx:Text text="자신" fontSize="12" width="100%"/>
+			<common:FormDocumentSchemaTree id="formTree" formModel="{this.formModel}" width="100%" height="100%" borderStyle="solid"
+				itemClick="clickTo(event)" change="refreshVisual()"
+				itemOpen="refreshVisual()" itemClose="refreshVisual()" added="refreshVisual()" removed="refreshVisual()" />
+		</mx:VBox>									
+	</mx:HBox>
+</mx:Canvas>

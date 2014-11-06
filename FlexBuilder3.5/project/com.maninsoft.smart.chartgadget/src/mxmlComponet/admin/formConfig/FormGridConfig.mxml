@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="900" height="100%" 
+	xmlns:formConfig="mxmlComponet.admin.formConfig.*" xmlns:controls="com.maninsoft.smart.common.controls.*">
+		  <mx:XML id="mystates">
+		  </mx:XML>
+		  <mx:XML id="mystates2">
+		  	<Result status="OK"/>
+		  </mx:XML>
+		  <mx:XML id="mystates3">
+		  	<Result status="OK"/>
+		  </mx:XML>
+		  <mx:XML id="mystates4">
+		  </mx:XML>
+		  <mx:XML id="gridData">
+		  	<Result status="OK">
+				<data>
+					<aaaa>dummy</aaaa>
+					<bbbb>dummy</bbbb>
+					<cccc>dummy</cccc>
+					<column1>dummy</column1>
+					<column2>dummy</column2>
+					<column3>dummy</column3>
+				</data>
+			 </Result>
+		  </mx:XML>
+		   
+<mx:Script>
+ <![CDATA[
+ 	import mx.controls.Alert;
+ 	import mx.rpc.events.FaultEvent;
+ 	import com.maninsoft.smart.common.event.CustormEvent;
+ 	import portalAs.Properties;
+ 	import mx.controls.dataGridClasses.DataGridColumn;
+ 	import mx.collections.XMLListCollection;
+ 	import mx.charts.chartClasses.DualStyleObject;
+            import mx.events.DragEvent;
+            import mx.collections.ArrayCollection;
+            import mx.rpc.events.ResultEvent;
+            
+            [Bindable]
+            private var formId:String;
+            [Bindable]
+            private var titleFieldId:String;
+            
+            private function initSet():void{
+            	new XMLListCollection(mystates2.FieldViewInfo).removeAll();
+            	new XMLListCollection(mystates3.FieldViewInfo).removeAll();
+            	var fieldList:XMLListCollection = new XMLListCollection(mystates.FieldViewInfo);
+            	for(var i:int=0; i<fieldList.length; i++){
+            		if(fieldList[i].dispOrder !=  "-1"){
+            			mystates2.appendChild(fieldList[i].toString());
+            		}else{
+            			mystates3.appendChild(fieldList[i].toString());
+            		}
+            	}
+            	gridModify();
+            }
+            
+            private function gridModify():void{
+				var gridWidth:Number;
+				var columnWidth:Number;
+				var fieldList:XMLListCollection = new XMLListCollection(mystates2.FieldViewInfo);
+				testGrid.columns = new Array();
+				for(var i:int=0; i<fieldList.length+3; i++){
+					var comp:DataGridColumn = new DataGridColumn();
+					if(i<fieldList.length){
+						comp.headerText = fieldList[i].formFieldName;
+						comp.dataField = fieldList[i].formFieldName;
+						if(fieldList[i].tableWidth < 10){
+							columnWidth = 70;
+						}else{
+							columnWidth = fieldList[i].tableWidth;
+						}
+						trace("columnWidth:" + columnWidth);
+						comp.width = columnWidth;
+						gridWidth += columnWidth;
+					}else if(i==fieldList.length){
+						comp.headerText = "댓글";
+						comp.width = 70;
+						gridWidth += 70;
+					}else if(i==fieldList.length+1){
+						comp.headerText = "작성자";
+						comp.width = 70;
+						gridWidth += 70;
+					}else if(i==fieldList.length+2){
+						comp.headerText = "작성일";
+						comp.width = 70;
+						gridWidth += 70;
+					}
+					comp.setStyle("textAlign", "center");
+					var arr:Array = testGrid.columns;
+					arr.push(comp);
+					testGrid.columns = arr;
+					
+				}
+				testGrid.width = gridWidth;
+				var colArr:Array = testGrid.columns;
+				testGrid.columns = colArr;
+            }
+            
+            private function gridSizeChange():void{
+            	var colArr:Array = testGrid.columns;
+            	var tableWidthList:XMLListCollection = new XMLListCollection(mystates2.FieldViewInfo.tableWidth);
+            	for(var i:int=0; i<tableWidthList.length; i++){
+            		tableWidthList[i] = DataGridColumn(colArr[i]).width;
+            	}
+            }
+            
+            private function doDragDrop(event:DragEvent):void{ 
+            	try{
+	                var dgRow:Object=new Object();
+	                dgRow=event.dragSource.dataForFormat("items");
+	                var list:List = event.target as List;
+	                list.dataProvider.addItem(XML(dgRow[0]).toString());
+	                event.preventDefault();
+	            }  catch (e:Error){}
+            }
+            
+            private function doDragComplete(list:List):void{
+               list.dataProvider.removeItemAt(list.selectedIndex);
+               gridModify();
+            }
+            
+            private function doChange():void{
+               	var arr:Array = currList.selectedItems;
+               	var currArr:Array = new XMLListCollection(mystates.FieldViewInfo).toArray();
+               	var sel0:int = 0;
+               	var sel1:int = 0;
+               	if(arr.length==2){
+               		for(var i:int=0; i<currArr.length; i++){
+               			if(arr[0] == currArr[i]){
+               				sel0 = i;
+               			}
+               			if(arr[1] == currArr[i]){
+               				sel1 = i;
+               			}
+               		}
+               		arrChange(currArr, sel0, sel1);
+               		
+               		for(var k:int=0; k<currArr.length; k++){
+               			if(arr[0] == currArr[k]){
+               				sel0 = k;
+               			}
+               			if(arr[1] == currArr[k]){
+               				sel1 = k;
+               			}
+               		}
+               		arrChange(currArr, sel1, sel0);
+               	}
+            }
+            
+            private function oneStepChange(mod:String):void{
+            	var arr:Array = currList.selectedItems;
+            	var sel:int = currList.selectedIndex;
+            	var currArr:Array = new XMLListCollection(mystates.FieldViewInfo).toArray();
+            	if(arr.length==1){
+            		if(mod=="+"){
+            			arrChange(currArr, sel, sel+1);
+            		}else if(mod=="-"){
+            			arrChange(currArr, sel, sel-1);
+            		}
+            	}
+            }
+            
+            private function arrChange(arr:Array, targetCount:int, destCount:int):void{
+            	new XMLListCollection(mystates.FieldViewInfo).removeAll();
+            	var spliced:Array = arr.splice(targetCount, 1);
+				arr.splice(destCount, 0, spliced);	
+				for(var i:int=0; i<arr.length; i++){
+					new XMLListCollection(mystates.FieldViewInfo).addItem(XML(arr[i]));
+				}
+				currList.selectedIndex = destCount;
+            }
+            
+            public function save():void{
+            	var fieldListOrg:XMLListCollection = new XMLListCollection(mystates.FieldViewInfo);
+            	var fieldListVi:XMLListCollection = new XMLListCollection(mystates2.FieldViewInfo);
+            	var fieldListNVi:XMLListCollection = new XMLListCollection(mystates3.FieldViewInfo);
+            	fieldListOrg.removeAll();
+            	
+            	for(var i:int=0; i<fieldListVi.length; i++){
+            		fieldListVi[i].dispOrder = (i+1) + "";
+            		mystates.appendChild(fieldListVi[i].toString());
+            	}
+            	
+            	for(var k:int=0; k<fieldListNVi.length; k++){
+            		fieldListNVi[k].tableWidth = "0";
+            		fieldListNVi[k].dispOrder = "-1"
+            		mystates.appendChild(fieldListNVi[k].toString());
+            	}
+            	updateColumnViewService.url = Properties.basePath + "smartserver/services/portal/configService.jsp?method=updateColumnViewInfo";
+				updateColumnViewService.send();
+            }
+            	
+            private function formSelect(event:CustormEvent):void{
+            	formId = event["formId"];
+            	findColumnViewInfoService.url = Properties.basePath + "smartserver/services/portal/configService.jsp?method=findColumnViewInfo";
+				findColumnViewInfoService.send();
+            }
+            
+            private function findColumnViewInfoResult(event:ResultEvent):void {
+            	var xml:XML = XML(event.result);
+            	mystates = xml;
+            	mystates4 = xml;
+            	initSet();
+			}
+			
+			private function updateColumnViewSucess(event:ResultEvent):void {
+            	Alert.show("저장 되었습니다");
+			}
+			
+			private function updateColumnViewFail(event:FaultEvent):void {
+            	Alert.show("저장 실패 되었습니다.");
+			}
+			
+			private function updateTitle():void{
+				titleFieldId = titleCombo.selectedItem.formFieldId;
+				updateDomainTitleFieldService.url = Properties.basePath + "smartserver/services/portal/configService.jsp?method=updateDomainTitleField";
+				updateDomainTitleFieldService.send();
+			}
+			
+			private function updateDomainTitleFieldSucess(event:ResultEvent):void {
+            	Alert.show("제목이 저장 되었습니다");
+			}
+ ]]>
+</mx:Script>  
+	<mx:HTTPService id="findColumnViewInfoService"  resultFormat="e4x" useProxy="false" result="findColumnViewInfoResult(event)" method="post">
+		<mx:request>
+			<formId>{formId}</formId>
+			<userId>{Properties.userId}</userId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="updateColumnViewService"  resultFormat="e4x" useProxy="false" result="updateColumnViewSucess(event)"  
+		fault="updateColumnViewFail(event)" method="post">
+		<mx:request>
+			<viewInfoXml>{mystates}</viewInfoXml>
+			<userId>{Properties.userId}</userId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HTTPService id="updateDomainTitleFieldService"  resultFormat="e4x" useProxy="false" method="post" result="updateDomainTitleFieldSucess(event)">
+		<mx:request>
+			<formId>{formId}</formId>
+			<titleFieldId>{titleFieldId}</titleFieldId>
+			<userId>{Properties.userId}</userId>
+		</mx:request>
+	</mx:HTTPService>
+	<mx:HBox width="100%" height="100%">
+		<mx:Canvas width="25%" height="100%">
+			<formConfig:FormTree width="100%" height="100%" custormItemClick="formSelect(event)"/>
+		</mx:Canvas>
+		<mx:VBox width="650" height="100%">
+			<controls:GradientBox width="650" height="3%" cornerRadius="5" verticalAlign="middle" horizontalAlign="left" 
+				gradientTo="#B3B3B3" gradientFrom="#CBCBCB">
+				<mx:HBox width="650" height="100%" verticalAlign="middle" horizontalAlign="left" horizontalGap="2">
+					<mx:Label height="22" width="80" styleName="normalLabel" text="제목" textAlign="center"></mx:Label>
+					<mx:ComboBox dataProvider="{mystates4.FieldViewInfo}" id="titleCombo" height="22" width="190" styleName="normalLabel" 
+						labelField="formFieldName" change="updateTitle()">
+					</mx:ComboBox>
+				</mx:HBox>						
+			</controls:GradientBox>
+			<mx:VBox width="100%" height="97%" verticalAlign="top" horizontalAlign="center" verticalGap="50" verticalScrollPolicy="auto">
+				<mx:HBox width="650" height="100%">
+					<mx:VBox width="45%" height="100%">
+						<mx:Label text="보이는 항목" height="20"/>
+						<mx:List width="100%" height="100%"
+						 	id="currList" 
+						 	dataProvider="{mystates2.FieldViewInfo}" allowMultipleSelection="true"
+						 	dropEnabled="true" dragEnabled="true" dragDrop="{doDragDrop(event)}" labelField="formFieldName" dragComplete="{doDragComplete(currList)}"
+						 />
+					 </mx:VBox>
+					 <mx:Spacer width="10%"/>
+					 <mx:VBox width="45%" height="100%">
+						 <mx:Label text="안보이는 항목" height="20"/>
+						 <mx:List id="targetList" width="100%" height="100%"
+						     dropEnabled="true" dragEnabled="true"
+						     dataProvider="{mystates3.FieldViewInfo}" dragDrop="{doDragDrop(event)}" labelField="formFieldName" dragComplete="{doDragComplete(targetList)}"
+						 />
+					</mx:VBox>
+				</mx:HBox>
+				<mx:VBox width="500" height="20%" horizontalScrollPolicy="auto">
+					<mx:Label text="반영된 목록" height="20"/>
+					<mx:DataGrid id="testGrid" width="0" height="100%"
+					 dragEnabled="true" dataProvider="{gridData.data}" columnStretch="gridSizeChange()" horizontalScrollPolicy="auto">
+						<mx:columns>
+							<mx:DataGridColumn headerText="댓글" width="70" textAlign="center"/>                    
+							<mx:DataGridColumn headerText="작성자" width="70" textAlign="center"/>
+							<mx:DataGridColumn headerText="작성자" width="70" textAlign="center"/> 
+						</mx:columns>
+					</mx:DataGrid>		
+				</mx:VBox>
+				<mx:HBox width="100%" height="10%" horizontalAlign="right">
+					<mx:Button label="저장" click="save()"/>
+					<mx:Button label="취소"/>
+				</mx:HBox>
+			</mx:VBox>
+		</mx:VBox>
+	</mx:HBox>
+  
+ <!-- 
+ <mx:Spacer width="30"/>
+ <mx:Button label="change" click="{doChange()}"/>
+ <mx:Button label="+" click="{oneStepChange('+')}"/>
+ <mx:Button label="-" click="{oneStepChange('-')}"/>
+
+ <mx:Button label="initSet" click="{initSet()}"/>
+ <mx:Button label="xmlView" click="{xmlView()}"/>
+ -->
+</mx:Canvas>

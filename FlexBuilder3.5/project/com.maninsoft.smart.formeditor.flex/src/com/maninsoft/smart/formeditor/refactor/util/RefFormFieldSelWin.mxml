@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RefFormSelectWindow xmlns="com.maninsoft.smart.formeditor.refactor.util.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+	title="화면 필드 선택" alpha="3" titleStyleName="normalLabel">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			/**
+			 * 전체 폼 리스트를 보여주고 참조할 폼을 선택하고 사용하게 해줌  
+			 **/
+			 
+			import mx.managers.PopUpManager;
+			
+
+			
+			// 초기화 
+			// 1. 폼 리스트를 로드
+			public override function start():void{
+				changeFormFieldType();
+				
+				loadFormList();
+				
+				completeBtn.enabled = false;
+			}
+			
+			private function changeFormFieldType():void{
+				formTypeCombo.selectedIndex = 1;
+				formTypeCombo.height = 0;
+				formTypeCombo.visible = false;
+				
+				formTypeText.height = 0;
+				formTypeText.visible = false;
+				
+				tip.text = "* 추가하려는 화면 필드를 선택 후에 확인 버튼을 누르세요.";
+				
+				formFieldList.selectable = true;
+				formFieldList.addEventListener(ListEvent.ITEM_CLICK, clickFormField);
+			}
+			
+			
+			// 폼 필드 정보
+			[Bindable]
+			public var selectFormFieldId:String;	
+
+			[Bindable]
+			public var selectFormFieldName:String;	
+
+			// 리스트에서 선택된 항목의 참조 필드를 로드
+			protected function clickFormField(e:ListEvent):void{
+				var selectableField:ArrayCollection = ArrayCollection(this.formFieldList.dataProvider);
+				
+				this.selectFormFieldId = selectableField.getItemAt(e.rowIndex).id.toString();
+				this.selectFormFieldName = selectableField.getItemAt(e.rowIndex).name.toString();
+				
+				completeBtn.enabled = true;
+			}
+			
+			protected override function clickForm():void{
+				super.clickForm();
+				completeBtn.enabled = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:Style>
+		.textInputStyle{
+			backgroundAlpha: 0;
+		}
+		.normalLabel {
+			fontFamily: MALGUN;
+			fontAntiAliasType: advanced;
+			fontWeight: normal;	
+			fontSize: 11;
+		}
+	</mx:Style>
+</RefFormSelectWindow>

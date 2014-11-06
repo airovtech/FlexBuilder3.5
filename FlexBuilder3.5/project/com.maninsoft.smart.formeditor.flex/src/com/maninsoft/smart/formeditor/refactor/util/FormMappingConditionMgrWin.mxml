@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:item="com.maninsoft.smart.formeditor.refactor.simple.view.item.*"
+	title="필터 설정" fontSize="12">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import com.maninsoft.smart.formeditor.refactor.simple.view.item.FormSelectComboBox;
+			import mx.controls.ComboBox;
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			import com.maninsoft.smart.formeditor.model.condition.FormCondition;
+			import mx.events.DataGridEvent;
+			import com.maninsoft.smart.formeditor.model.condition.FormConditionOperatorTypes;
+			import com.maninsoft.smart.formeditor.model.mapping.FormMapping;
+			import com.maninsoft.smart.formeditor.model.FormDocument;
+			
+			private var _formDocument:FormDocument;
+			private var _targetFormDocument:FormDocument;
+			
+//			private var _mapping:FormMapping;
+			
+			public function set formDocument(formDocument:FormDocument):void{
+				this._formDocument = formDocument;
+				
+				firstOperCombo.dataProvider = this._formDocument.children;
+			}
+			
+			public function get formDocument():FormDocument{
+				return this._formDocument;
+			}
+			
+			public function set targetFormDocument(targetFormDocument:FormDocument):void{
+				this._targetFormDocument = targetFormDocument;
+				
+				secondOperCombo.dataProvider = this._targetFormDocument.children;
+			}
+			
+			public function get targetFormDocument():FormDocument{
+				return this._targetFormDocument;
+			}
+			
+//			public function set mapping(mapping:FormMapping):void{
+//				this._mapping = mapping;
+//				
+//				for each(var condition:FormCondition in this._mapping.conditions){
+//					conditionGridArray.addItem(condition);
+//				}
+//				
+//				if(conditionGridArray.length < 2){
+//					conditionGridArray.addItem(new FormCondition());
+//				}
+//			}
+//			
+//			public function get mapping():FormMapping{
+//				return this._mapping;
+//			}
+			
+			private var _condition:FormCondition;
+			
+			public function set condition(condition:FormCondition):void{
+				this._condition = condition;
+				
+				if(this._condition.connectOperator != null && this._condition.connectOperator != ""){
+					first = true;
+				}
+				
+				connectorOperator.selectedItem = this._condition.connectOperator;
+				firstOperCombo.selectedItem = getFormEntity(this.formDocument, this._condition.firstOperand);
+				operator.selectedItem = this._condition.operator;
+				secondOperCombo.selectedItem = getFormEntity(this.targetFormDocument, this._condition.secondOperand);
+			}
+			
+			private function getFormEntity(formDocument:FormDocument, formEntityId:String):FormEntity{
+				for each(var formEntity:FormEntity in formDocument.children){
+					if(formEntity.id == formEntityId){
+						return formEntity;
+					}
+				}
+				return null;
+			}
+			
+			public function get condition():FormCondition{
+				return this._condition;
+			}
+			
+			[Bindable]
+			public var first:Boolean = false;
+			
+			public var newCondition:FormCondition;
+			
+//			private function conditionGridEditing(event:DataGridEvent):void {
+//				// Handle the event here.
+//	            event.preventDefault();
+//	            conditionGrid.createItemEditor(event.columnIndex,event.rowIndex);
+//	            
+//            	if(event.columnIndex == 0){
+//	                ComboBox(conditionGrid.itemEditorInstance).dataProvider = FormConditionOperatorTypes.connectorOperators;
+//	        	}else if(event.columnIndex == 1){
+//	        		FormSelectComboBox(conditionGrid.itemEditorInstance).labelField = "name";
+//	                FormSelectComboBox(conditionGrid.itemEditorInstance).dataProvider = formDocument.children;
+//	        	}else if(event.columnIndex == 2){
+//
+//	                
+//	        	}else{
+//	        		FormSelectComboBox(conditionGrid.itemEditorInstance).labelField = "name";
+//	                FormSelectComboBox(conditionGrid.itemEditorInstance).dataProvider = targetFormDocument.children;
+//	        	}
+//            }
+//            
+//            private function conditionGridEditEnd(event:DataGridEvent):void {
+//
+//				var condition:FormCondition = FormCondition(conditionGridArray.getItemAt(event.rowIndex));
+//            	if(event.columnIndex == 0){
+//	               condition.connectOperator = ComboBox(conditionGrid.itemEditorInstance).selectedItem;
+//	        	}else if(event.columnIndex == 1){
+//	        		condition.firstOperand = FormSelectComboBox(conditionGrid.itemEditorInstance).selectFormField.id;
+//	        		condition.firstOperandName = FormSelectComboBox(conditionGrid.itemEditorInstance).selectFormField.name;
+//	        	}else if(event.columnIndex == 2){
+//	        		condition.operator = ComboBox(conditionGrid.itemEditorInstance).selectedItem;
+//	        	}else{
+//	        		condition.secondOperand = FormSelectComboBox(conditionGrid.itemEditorInstance).selectFormField.id;
+//	        		condition.secondOperandName = FormSelectComboBox(conditionGrid.itemEditorInstance).selectFormField.name;
+//	        	}
+//            }
+            
+            private function changeOperand():void{
+        		var formField:FormEntity = FormEntity(firstOperCombo.selectedItem);
+        		if(formField.systemType == "dateTime"){
+        			operator.dataProvider = FormConditionOperatorTypes.dateOperators;
+        		}else if(formField.systemType == "number"){
+        			operator.dataProvider = FormConditionOperatorTypes.numberOperators;
+        		}else if(formField.systemType == "string"){
+        			operator.dataProvider = FormConditionOperatorTypes.stringOperators;
+        		}else{
+        			operator.dataProvider = FormConditionOperatorTypes.generalOperators;
+        		}
+            }
+            
+            private function complete():void{
+        		if(connectorOperator.selectedItem == null)
+        			msgText.text = "! 연결 연산자가 없음.";
+        			
+        		if(firstOperCombo.selectedItem == null)
+        			msgText.text = "! 자신의 폼 필드가 선택되지 않음.";
+        			
+        		if(secondOperCombo.selectedItem == null)
+        			msgText.text = "! 대상의 폼 필드가 선택되지 않음.";
+        				
+        		this.newCondition = new FormCondition();
+        			
+        		this.newCondition.connectOperator = connectorOperator.selectedItem.toString();
+        		this.newCondition.firstOperand = FormEntity(firstOperCombo.selectedItem).id;
+        		this.newCondition.firstOperandName = FormEntity(firstOperCombo.selectedItem).name;
+        		this.newCondition.operator = operator.selectedItem.toString();
+        		this.newCondition.secondOperand = FormEntity(secondOperCombo.selectedItem).id;
+        		this.newCondition.secondOperandName = FormEntity(secondOperCombo.selectedItem).name;
+        		
+        		dispatchEvent(new Event(Event.COMPLETE));
+        		close();
+            }
+            
+            private function cancel():void{
+        		dispatchEvent(new Event(Event.CANCEL));
+        		close();
+            }
+            
+            private function close():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+	<mx:Text x="0" y="0" text="다음 조건에 맞는 항목 참조 : " fontSize="12"/>
+	<mx:ComboBox id="connectorOperator" x="0" y="30" width="50"
+		dataProvider="{FormConditionOperatorTypes.connectorOperators}"
+		enabled="{!first}">
+	</mx:ComboBox>
+	<item:FormSelectComboBox id="firstOperCombo" x="55" y="30" width="100"
+		labelField="name" creationComplete="{changeOperand()}" change="{changeOperand()}">
+		
+	</item:FormSelectComboBox>
+	<mx:ComboBox id="operator"  x="165" y="30" width="50" />
+	<item:FormSelectComboBox id="secondOperCombo" x="225" y="30" 
+		labelField="name">
+		
+	</item:FormSelectComboBox>
+	<mx:Text id="msgText" x="0" y="67" text="" fontSize="12" color="#FFAC52"/>
+	<mx:Button y="92" right="70" label="확인" click="{complete()}"/>
+	<mx:Button y="92" right="10" label="취소" click="{cancel()}"/>
+	<!--<mx:DataGrid id="conditionGrid" x="0" y="0" width="100%" height="100%" editable="true" 
+		itemEditBegin="{conditionGridEditing(event)}" itemEditEnd="{conditionGridEditEnd(event)}" rowCount="2">
+		<mx:columns>
+			<mx:DataGridColumn headerText="" editable="true" dataField="connectOperator" itemEditor="mx.controls.ComboBox"/>
+			<mx:DataGridColumn headerText="내부필드" editable="true" dataField="firstOperandName" itemEditor="com.maninsoft.smart.formeditor.refactor.simple.view.item.FormSelectComboBox"/>
+			<mx:DataGridColumn headerText="연산자" editable="true" dataField="operator" itemEditor="mx.controls.ComboBox"/>
+			<mx:DataGridColumn headerText="참조필드" editable="true" dataField="secondOperandName" itemEditor="com.maninsoft.smart.formeditor.refactor.simple.view.item.FormSelectComboBox"/>
+		</mx:columns>
+		<mx:dataProvider>
+			<mx:ArrayCollection id="conditionGridArray">
+				
+			</mx:ArrayCollection>
+		</mx:dataProvider>
+	</mx:DataGrid>-->
+</mx:TitleWindow>

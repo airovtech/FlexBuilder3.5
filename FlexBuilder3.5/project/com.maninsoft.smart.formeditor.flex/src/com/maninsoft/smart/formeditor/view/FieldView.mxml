@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * 
+ *  Package: 		com.maninsoft.smart.formeditor.view
+ *  Class: 			FieldView
+ * 					extends Canvas 
+ * 					implements ISelectableView
+ *  Author:			Maninsoft, Inc.
+ *  Description:	Form Editor에서  Form에서 선택된 Grid에 설정된 항목(Field)에 대한 view 클래스  
+ * 				
+ *  History:		Created by Maninsoft, Inc.
+ * 					2010.2.25 Modified by Y.S. Jung for SWV20005: 폼에디터에서 테이블항목이 다른 항목의 속성창에서 테이블항목으로 변경하면 라벨이 왼쪽이 나오는 에러
+ * 
+ *  Copyright (C) 2007-2010 Maninsoft, Inc. All Rights Reserved.
+ *  
+-->
+<mx:Canvas implements="com.maninsoft.smart.formeditor.view.ISelectableView" 
+	width="100%" height="100%" styleName="formFieldView"
+	creationComplete="init()" 
+	xmlns:mx="http://www.adobe.com/2006/mxml">
+	<!-- 	dividerRelease="{dividerRelease(event)}" -->
+	<mx:Metadata>
+		[Event(name="selectFormItem", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+		[Event(name="selectFormItems", type="com.maninsoft.smart.formeditor.refactor.event.FormEditEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Text;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.controls.Alert;
+			import com.maninsoft.smart.workbench.common.property.page.PropertyPage;
+			import com.maninsoft.smart.workbench.common.event.FormEditorEvent;
+			import com.maninsoft.smart.formeditor.assets.FormEditorAssets;
+			import mx.controls.Image;
+			import com.maninsoft.smart.formeditor.controller.GraphicalController;
+			import mx.containers.DividedBox;
+			import mx.containers.HDividedBox;
+			import com.maninsoft.smart.formeditor.view.format.TableView;
+			import mx.controls.Label;
+			import mx.containers.HBox;
+			import mx.controls.Button;
+			import com.maninsoft.smart.formeditor.util.FormSelectionPointBox;
+			import mx.controls.Menu;
+			import com.maninsoft.smart.formeditor.model.ISelectableModel;
+			import com.maninsoft.smart.formeditor.view.IFormatView;
+			import com.maninsoft.smart.formeditor.model.type.FormatType;
+			import com.maninsoft.smart.formeditor.util.FormEditorConfig;
+			import mx.containers.Box;
+			import mx.containers.VDividedBox;
+			import com.maninsoft.smart.formeditor.model.type.FormatTypes;
+			import com.maninsoft.smart.formeditor.refactor.event.FormEditEvent;
+			import mx.collections.ArrayCollection;
+			import com.maninsoft.smart.formeditor.refactor.Constants;
+			import com.maninsoft.smart.formeditor.refactor.editor.FormEditDomain
+			import com.maninsoft.smart.formeditor.model.FormEntity;
+			
+			public var formViewer:IFormContainerView;
+			private var _model:FormEntity;
+			public var mode:String 	= Constants.MODE_DESIGN;
+			public var editDomain:FormEditDomain;
+			private var _labelSize:Number = -1;
+			private var _contentsSize:Number = -1;
+			private var _verticalSize:Number = -1;
+			private var _selection:Boolean;
+			
+			public function get selection():Boolean {
+				return _selection;
+			}
+			public function set selection(selection:Boolean):void {
+				this._selection = selection;
+			}
+			public function get labelSize():Number{
+				if(_labelSize == -1)
+					return this.model.labelWidth;
+				return this._labelSize;
+			}
+			public function set labelSize(labelSize:Number):void{
+				this._labelSize = labelSize;
+			}
+			public function get contentsSize():Number{
+				if(_contentsSize == -1)
+					return this.model.contentWidth;
+				return this._contentsSize;
+			}
+			public function set contentsSize(contentsSize:Number):void{
+				this._contentsSize = contentsSize;
+			}
+			public function get verticalSize():Number{
+				if(_verticalSize == -1)
+					return this.model.height;
+				return this._verticalSize;
+			}
+			public function set verticalSize(verticalSize:Number):void{
+				this._verticalSize = verticalSize;
+			}
+			
+			public function get selectableModel():ISelectableModel{
+				return this.model;
+			}
+			
+			public function get model():FormEntity{
+				return this._model;
+			}
+			public function set model(model:FormEntity):void{
+				this._model = model;
+				registerViewer();
+			}
+			
+			public function getAbsLabelSize():Number{
+				return this.leftFormEntityLabel.width;	
+			}
+			public function getAbsContentsSize():Number{
+				return this.formatView.width;
+			}
+			
+			/*초기화*/
+			private function init():void{
+				refreshVisual();
+				registerListener();
+				registerConextMenu();
+			}
+						
+			private var controller:GraphicalController;
+			private function registerViewer():void {
+				if(controller == null)
+					controller = new GraphicalController();
+				controller.model = this.model;
+				controller.view = this;
+			}
+			
+			private function registerListener():void{
+				this.doubleClickEnabled = true;
+				this.addEventListener(MouseEvent.CLICK, selectHandler);
+				this.addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler);
+			}
+
+			public function refreshBasicVisual():void{
+				refreshLabelVisual();
+			}
+			
+			private var inMapBtn:Image;
+			private var outMapBtn:Image;
+			private var inMapMenu:Menu;
+			private var outMapMenu:Menu;
+			private static const MAPBUTTON_WIDTH:Number = 13 ;
+			private static const MAPBUTTON_HEIGHT:Number = 7 ;
+			public function refreshMappingVisual():void {
+				if (this.model != null && 
+					this.model.mappings != null && 
+					this.model.mappings.inMappings.length > 0) {
+					if (inMapBtn == null) {
+						inMapBtn = new Image();
+						inMapBtn.source = FormEditorAssets.hasImportIcon;
+					}
+					
+					if (this.contains(inMapBtn)) {
+						this.setChildIndex(inMapBtn, this.getChildren().length - 1);
+					} else {
+						this.addChild(inMapBtn);
+					}
+					
+					inMapBtn.x = this.labelSize - 15;
+					inMapBtn.y = 2;
+					inMapBtn.visible = true;
+					
+				} else {
+					if (inMapBtn != null && this.contains(inMapBtn))
+						this.removeChild(inMapBtn);
+				}
+				
+				if (this.model != null && 
+					this.model.mappings != null && 
+					this.model.mappings.outMappings.length > 0) {
+					if (outMapBtn == null) {
+						outMapBtn = new Image();
+						outMapBtn.source = FormEditorAssets.hasExportIcon;
+					}
+					
+					if (this.contains(outMapBtn)) {
+						this.setChildIndex(outMapBtn, this.getChildren().length - 1);
+					} else {
+						this.addChild(outMapBtn);
+					}
+					
+					outMapBtn.x = this.labelSize - 15;
+					outMapBtn.y = 12;
+					outMapBtn.visible = true;
+					
+				} else {					
+					if (outMapBtn != null && this.contains(outMapBtn))
+						this.removeChild(outMapBtn);
+				}
+			}
+			
+			public var formatView:IFormatView;
+			private var fieldView:DividedBox;
+			public var labelBox:HBox = new HBox();
+			private var leftFormEntityLabel:Label; 
+			
+			public function refreshVisual():void{
+				if(this.model != null){
+					
+					// 자기자신 그리기
+					// 1. 크기(모양) 그리기
+					// model.format.type == dataGrid이면 다른 타입과 달리 항목(label) 부분이 상위로 향한다.
+					this.labelBox.percentWidth = 100;
+					this.labelBox.verticalScrollPolicy = "off";
+					this.labelBox.horizontalScrollPolicy = "off";
+					this.labelBox.setStyle("backgroundColor", "#ececec");
+					this.labelBox.setStyle("horizontalGap", 0);
+					this.labelBox.setStyle("fontFamily", "Tahoma");
+ 					if (this.model.format.type == "dataGrid" || this.model.format.type == "label") {
+						/**
+						 * SWV20005: 폼에디터에서 테이블항목이 다른 항목의 속성창에서 테이블항목으로 변경하면 라벨이 왼쪽이 나오는 에러
+						 * 다른 항목에서 dataGrid항목으로 타입변경을 하면, fieldView를 삭제하여 다시 생성하게 함.
+						 * 2010.2.25 Modified by Y.S. Jung
+						 */
+ 						if ( this.fieldView!= null && this.fieldView is HDividedBox){
+ 							this.removeChild(fieldView);
+ 							this.fieldView = null;
+ 						}
+						if (this.fieldView == null) {
+							this.fieldView = new VDividedBox();
+							this.fieldView.liveDragging = true;
+							this.fieldView.verticalScrollPolicy = "off";
+							this.fieldView.horizontalScrollPolicy = "off";
+							this.fieldView.setStyle("verticalGap", 2);
+							this.fieldView.setStyle("horizontalGap", 0);
+							this.fieldView.setStyle("verticalAlign", "left");
+							
+							this.addChild(fieldView); 
+
+						}
+						this.fieldView.width = this.labelSize + this.contentsSize;
+						this.fieldView.height = this.verticalSize;
+	
+						this.width = this.fieldView.width;
+						this.height = this.fieldView.height;
+						
+						this.labelBox.height = 23;
+						if (!fieldView.contains(labelBox))
+							this.fieldView.addChild(labelBox);
+						
+						if (this.leftFormEntityLabel == null) {
+							if(this.model.format.type == "label")
+								this.leftFormEntityLabel = new Text();
+							else
+								this.leftFormEntityLabel = new Label();
+							this.leftFormEntityLabel.percentWidth = 100;
+							this.leftFormEntityLabel.percentHeight = 100;
+							this.leftFormEntityLabel.styleName = "formTextInputLabel";
+							this.leftFormEntityLabel.setStyle( "verticalAlign", "middle");							
+							this.leftFormEntityLabel.setStyle("fontFamily", "Tahoma");
+							this.labelBox.addChild(leftFormEntityLabel);
+						}
+						
+						if(this.model.format.type == "label"){
+							this.labelBox.height = this.verticalSize;
+							this.leftFormEntityLabel.setStyle("fontWeight", model.fontWeight);
+							this.leftFormEntityLabel.setStyle("fontSize", model.fontSize);
+							this.leftFormEntityLabel.setStyle("textAlign", model.textAlign);
+							this.leftFormEntityLabel.setStyle("color", "0x" + model.textColor);
+							this.leftFormEntityLabel.truncateToFit = false;				
+						}
+						
+					} else {
+						/**
+						 * SWV20005: 폼에디터에서 테이블항목이 다른 항목의 속성창에서 테이블항목으로 변경하면 라벨이 왼쪽이 나오는 에러
+						 * 다른 항목에서 dataGrid항목으로 타입변경을 하면, fieldView를 삭제하여 다시 생성하게 함.
+						 * 2010.2.25 Modified by Y.S. Jung
+						 */
+ 						if ( this.fieldView!= null && this.fieldView is VDividedBox){
+ 							this.removeChild(fieldView);
+ 							this.fieldView = null;
+ 						}
+						if (this.fieldView == null) {
+							this.fieldView = new HDividedBox();
+							this.fieldView.liveDragging = true;
+							this.fieldView.verticalScrollPolicy = "off";
+							this.fieldView.horizontalScrollPolicy = "off";
+							this.fieldView.setStyle("horizontalGap", 0);
+							this.fieldView.setStyle("verticalGap", 0);
+							this.fieldView.setStyle("verticalAlign", "middle");
+							
+							this.addChild(fieldView); 
+						}
+						this.fieldView.width = this.labelSize + this.contentsSize;
+						this.fieldView.height = this.verticalSize;
+	
+						this.width = this.fieldView.width;
+						this.height = this.fieldView.height;
+						
+						this.labelBox.percentHeight = 100;
+						if (!fieldView.contains(labelBox))
+							this.fieldView.addChild(labelBox);
+						
+						if (this.leftFormEntityLabel == null) {
+							this.leftFormEntityLabel = new Label();
+							
+							if (this.model.format.type != "richEditor") {
+								this.leftFormEntityLabel.height = 23;
+							}
+								
+							this.leftFormEntityLabel.styleName = "formTextInputLabel";
+							this.leftFormEntityLabel.setStyle( "VerticalAlign", "middle");														
+							this.labelBox.addChild(leftFormEntityLabel);
+						}
+					} 
+					
+				
+					// 2. 내용 (bindable 사용)
+					refreshBasicVisual();
+					
+					if (this.formatView != null && this.fieldView.contains(this.formatView as DisplayObject))
+						this.fieldView.removeChild(this.formatView as DisplayObject);
+					// 폼 포맷 뷰 생성
+					var format:FormatType = FormatTypes.getFormatType(this.model.format.type, false);
+					var formatClass:Class =format.formatClass;
+					if(formatView == null || !(this.formatView.formatType.type == format.type)){
+						var formatViewObj:Object = new formatClass();
+						if (formatViewObj is IFormatView)
+							this.formatView = formatViewObj as IFormatView;
+					}
+					this.formatView.editDomain = this.editDomain;
+					this.formatView.fieldView = this;
+					this.formatView.fieldModel = this.model;
+					this.formatView.option = {baseUrl: FormEditorConfig.baseUrl, userId: FormEditorConfig.userId};
+					
+					// 자식 그리기
+					if (model.labelVisible) {
+						// dataGrid이면 레이블이 상단으로 가기 때문에 사이즈를 달리한다.
+						if (this.model.format.type == "dataGrid" || this.model.format.type == "label") {
+							this.leftFormEntityLabel.percentWidth = 100;
+							if(this.model.format.type == "dataGrid")
+								this.leftFormEntityLabel.height = 23;
+							else
+								this.leftFormEntityLabel.percentHeight = 100;							
+						} else {
+							if (this.model.format.type == "richEditor") {
+								this.leftFormEntityLabel.width = this.labelSize;
+								this.leftFormEntityLabel.height = this.verticalSize;	
+							} else {
+								this.leftFormEntityLabel.width = this.labelSize;
+								this.leftFormEntityLabel.height = 23;	
+							}
+						}
+						if(this.formatView != null){
+							if (this.model.format.type == "dataGrid" || this.model.format.type == "label") {
+								this.formatView.width = this.labelSize + this.contentsSize;
+								this.formatView.height = this.verticalSize;
+							} else {
+								this.formatView.width = this.contentsSize;
+								this.formatView.height = this.verticalSize;
+							}
+						}
+					} else {
+						if(this.formatView != null){
+							this.formatView.width = this.model.labelWidth + this.model.contentWidth;
+							this.formatView.height = this.model.height;	
+						}
+					}
+					
+					if(this.formatView != null){
+						this.formatView.refreshVisual();
+						this.fieldView.addChild(this.formatView as DisplayObject);
+					}
+					refreshMappingVisual();
+				}
+			}
+
+			public function refreshFormVisual():void{
+				formViewer.refreshVisual();
+			}
+			
+			private var labelReqBox:Box;
+			
+			private function refreshLabelVisual():void{
+				if(this.initialized){
+					 this.leftFormEntityLabel.width = 0;
+					if(this.leftFormEntityLabel != null){
+						this.setStyle("backgroundColor", this.model.bgColor);
+						if(this.model.required){
+							if(this.labelReqBox == null){
+							 	labelReqBox = new Box();
+								labelBox.addChild(labelReqBox);
+								labelReqBox.width = 3;
+								labelReqBox.percentHeight = 100;
+								labelReqBox.styleName = "formTextInputLabelReqBox";
+							}else{
+								if(!(labelBox.contains(labelReqBox))){
+									labelBox.addChild(labelReqBox);
+								}
+							}
+						}else{
+							if(this.labelReqBox != null){
+								if(labelBox.contains(this.labelReqBox))
+							 		labelBox.removeChild(this.labelReqBox);
+							 	this.labelReqBox = null;
+							}
+						}
+						// 이름 변경 이벤트
+						var oldTitle:String;
+						if(this.leftFormEntityLabel.text.lastIndexOf('(*)') != -1){
+							oldTitle = this.leftFormEntityLabel.text.substr(0, this.leftFormEntityLabel.text.length - 3);
+						}else{
+							oldTitle = this.leftFormEntityLabel.text;
+						}
+						if(oldTitle != null && oldTitle != "" 
+							&& oldTitle != this.model.name){
+							var event:FormEditorEvent = new FormEditorEvent(FormEditorEvent.FORM_FIELD_RENAME);
+							event.formId = this.model.root.id;
+							event.formFieldId = this.model.id;
+							event.newName = this.model.name;
+							
+							dispatchEvent(event);
+							trace("[Event]FieldView refreshLabelVisual dispatch event : " + event);
+						}
+						
+						this.leftFormEntityLabel.text = this.model.name;
+						
+					}
+				}				 
+			}
+			
+			[Bindable]
+			private var selected:Boolean = false;
+			// 포커스 활성화
+			public function select(formResources:ArrayCollection):Boolean {
+				if (formResources.contains(this.model)) {
+					selected = true;
+				} else {					
+					selected = false;
+				}	
+				return selected;
+			}
+
+			
+			/******************************포커스*************************************************/
+			
+			//datagrid를 선택했을때 처리를 위한 변수
+			public var dataGridSelectFormEntity:FormEntity;
+			
+			private function selectHandler(event:MouseEvent):void {
+				if (getFieldView(event.target) == this) {
+					var formEvent:com.maninsoft.smart.formeditor.util.FormEditorEvent = 
+						new com.maninsoft.smart.formeditor.util.FormEditorEvent(com.maninsoft.smart.formeditor.util.FormEditorEvent.SELECTVIEW);
+					formEvent.view = this;
+					if (this.formatView is TableView) {
+						var tableView:TableView = this.formatView as TableView;
+						if(!tableView.isDataGridSelected){
+							this.dataGridSelectFormEntity = null;
+							tableView.release();
+						}else{
+							tableView.isDataGridSelected = false;
+						}
+						this.dispatchEvent(formEvent);	
+						trace("[Event]TableView selectHandler dispatch event : " + formEvent);
+					} else {
+						this.dispatchEvent(formEvent);	
+						trace("[Event]FieldView selectHandler dispatch event : " + formEvent);
+					}					
+				}
+			}
+
+			public function refreshPropertyPage():void{
+				var formEntity:FormEntity = this.dataGridSelectFormEntity;
+				if(this.formatView is TableView && formEntity != null) {
+					PropertyPage(parentApplication.workbench.formEditor.propertyPage).propSource =  formEntity;
+					PropertyPage(parentApplication.workbench.formEditor.propertyPage).title = resourceManager.getString("FormEditorETC", "tableItemPropertiesText");					
+				}else{
+					PropertyPage(parentApplication.workbench.formEditor.propertyPage).propSource = this.model;				
+					PropertyPage(parentApplication.workbench.formEditor.propertyPage).title = resourceManager.getString("FormEditorETC", "itemPropertiesText");
+				}
+			}
+			
+			private function doubleClickHandler(event:MouseEvent):void {
+				PropertyPage(parentApplication.workbench.formEditor.propertyPage).show(this, false);
+			}
+			
+			private function getFieldView(target:Object):FieldView {
+				if (target is FieldView)
+					return FieldView(target);
+					
+				if (DisplayObject(target).parent != null)
+					return getFieldView(target.parent);
+					
+				return null;
+			}
+
+			
+			/**********************실행 데이터 처리***********************************/		
+//			private function dividerRelease(e:DividerEvent):void{
+//				FormItemCommandUtil.executeResizeFormItem(this.editDomain, this.model, this.model.labelSize + e.delta, this.model.contentsSize - e.delta, this.model.height);
+//			}
+			
+ 			/*******************************마우스 메뉴****************************************/
+			[Bindable]
+			private var formItemContextMenu:ContextMenu = new ContextMenu();
+			
+			private function registerConextMenu():void {
+				formItemContextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, contextMenuTriggered);
+				formItemContextMenu.hideBuiltInItems();
+				buildMenuItem();
+				
+				this.contextMenu = formItemContextMenu;
+			}
+			
+			private var commonContextMenu:Array;
+			private var dataGridContextMenu:Array;
+			private var listContextMenu:Array;
+
+			// 컨텍스트 메뉴 생성
+			private function buildMenuItem():void {
+				buildCommonMenuItem();
+//				buildDataGridMenuItem();
+//				buildListMenuItem();
+			}
+			
+			private var commonMenu:Array = []
+			
+				
+			// 폼 컨텍스트 메뉴
+			private function buildCommonMenuItem():void
+			{
+				commonContextMenu = new Array();
+				
+				for each (var menuObj:Object in commonMenu) {
+					var menu:ContextMenuItem = new ContextMenuItem(menuObj["name"], menuObj["useSeperator"], menuObj["enabled"]);
+					menu.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, selectCommonMenu);
+					commonContextMenu.push(menu);
+				}
+			}
+						
+			private function contextMenuTriggered(event:ContextMenuEvent):void {
+					if(this.model.format.type == FormatTypes.dataGrid.type){
+						formItemContextMenu.customItems = dataGridContextMenu;
+					}
+					
+//					else if(this.model.array){
+//						formItemContextMenu.customItems = listContextMenu;
+//					}else{
+//						formItemContextMenu.customItems = commonContextMenu;
+//					}
+			}
+			
+			private function selectCommonMenu(event:ContextMenuEvent):void {
+				for each(var menu:Object in commonMenu){
+					if(menu.name == ContextMenuItem(event.currentTarget).caption)
+						menu.listener();
+				}
+			}
+			
+			public function isValid():Boolean {
+				return true;
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>
